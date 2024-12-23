@@ -95,7 +95,7 @@ A miner that wants to mine higher percentage into the dev-fund can pass the foll
 Due to community decision, the minimum amount in the precompiled binaries is 1%**
 
 # Donation Addresses
-**Hotifx**: `cryptix:qq70k0g89c0rjj4pe38495kflpjaahy2xlhp9jukufx8znwvj0p3wlxw068j8`
+**Hotifx**: `cryptix:qrjefk2r8wp607rmyvxmgjansqcwugjazpu2kk2r7057gltxetdvk8gl9fs0w`
 
 **Elichai**: `kaspa:qzvqtx5gkvl3tc54up6r8pk5mhuft9rtr0lvn624w9mtv4eqm9rvc9zfdmmpu`
 
