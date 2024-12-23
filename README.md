@@ -10,11 +10,11 @@ If you have difficulties with our miner, you can also use this bridge with an ex
 If you are looking to build from the repository (for debug / extension), note that the plugins are additional
 packages in the workspace. To compile a specific package, you run the following command or any subset of it
 
--- Use Rustup 1.55.0
+-- Use Rustup 1.65.0
 
-rustup install 1.55.0
+rustup install 1.65.0
 
-rustup override set 1.55.0
+rustup override set 1.65.0
 
 ```sh
 git clone git@github.com:cryptix-network/cryptix-miner.git
