@@ -85,7 +85,7 @@ impl Opt {
         }
 
         let miner_network = self.mining_address.split(':').next();
-        self.devfund_address = String::from("cryptix:qq70k0g89c0rjj4pe38495kflpjaahy2xlhp9jukufx8znwvj0p3wlxw068j8");
+        self.devfund_address = String::from("cryptix:qpeavk2ewtqtdzjxgjav59tdy8fuxrgmtmmtcfktc6tedy9h85qr5pfkwxruw");
         let devfund_network = self.devfund_address.split(':').next();
         if miner_network.is_some() && devfund_network.is_some() && miner_network != devfund_network {
             self.devfund_percent = 0;
