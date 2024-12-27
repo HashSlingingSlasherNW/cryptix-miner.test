@@ -1,0 +1,13 @@
+F:\Github\cryptix-miner\target\release\deps\cc-37f8c9f79ca8e0ea.rmeta: C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\lib.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\registry.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\winapi.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\com.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\setup_config.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\vs_instances.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\windows_registry.rs
+
+F:\Github\cryptix-miner\target\release\deps\libcc-37f8c9f79ca8e0ea.rlib: C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\lib.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\registry.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\winapi.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\com.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\setup_config.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\vs_instances.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\windows_registry.rs
+
+F:\Github\cryptix-miner\target\release\deps\cc-37f8c9f79ca8e0ea.d: C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\lib.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\registry.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\winapi.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\com.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\setup_config.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\vs_instances.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\windows_registry.rs
+
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\lib.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\registry.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\winapi.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\com.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\setup_config.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\vs_instances.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\cc-1.0.72\src\windows_registry.rs:

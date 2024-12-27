@@ -1,0 +1,12 @@
+F:\Github\cryptix-miner\target\release\deps\prost-af89073abe13b797.rmeta: C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\lib.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\error.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\message.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\types.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\encoding.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\../README.md
+
+F:\Github\cryptix-miner\target\release\deps\libprost-af89073abe13b797.rlib: C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\lib.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\error.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\message.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\types.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\encoding.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\../README.md
+
+F:\Github\cryptix-miner\target\release\deps\prost-af89073abe13b797.d: C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\lib.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\error.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\message.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\types.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\encoding.rs C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\../README.md
+
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\lib.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\error.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\message.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\types.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\encoding.rs:
+C:\Users\Hotfix\.cargo\registry\src\github.com-1ecc6299db9ec823\prost-0.11.0\src\../README.md:
