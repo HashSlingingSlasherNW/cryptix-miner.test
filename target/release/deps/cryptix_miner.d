@@ -22,4 +22,4 @@ F:\Github\cryptix-miner\target\release\build\cryptix-miner-fff6f1eb0afdbba7\out/
 # env-dep:CARGO_PKG_NAME=cryptix-miner
 # env-dep:CARGO_PKG_VERSION=0.2.1-GPU-0.7
 # env-dep:OUT_DIR=F:\\Github\\cryptix-miner\\target\\release\\build\\cryptix-miner-fff6f1eb0afdbba7\\out
-# env-dep:PACKAGE_COMPILE_TIME=2412271310
+# env-dep:PACKAGE_COMPILE_TIME=2412281207
