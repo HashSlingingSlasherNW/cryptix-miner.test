@@ -109,4 +109,4 @@ Due to community decision, the minimum amount in the precompiled binaries is 1%*
 
 ## Kudos
 
-- https://github.com/elichai/kaspa-miner
+- https://github.com/elichai/
