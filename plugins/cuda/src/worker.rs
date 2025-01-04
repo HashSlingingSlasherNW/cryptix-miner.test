@@ -13,9 +13,18 @@ use std::sync::{Arc, Weak};
 
 static BPS: f32 = 1.;
 
+
+static PTX_90: &str = include_str!("../resources/cryptix-cuda-sm90.ptx");
+static PTX_89: &str = include_str!("../resources/cryptix-cuda-sm89.ptx");
+static PTX_87: &str = include_str!("../resources/cryptix-cuda-sm87.ptx");
 static PTX_86: &str = include_str!("../resources/cryptix-cuda-sm86.ptx");
+static PTX_80: &str = include_str!("../resources/cryptix-cuda-sm80.ptx");
 static PTX_75: &str = include_str!("../resources/cryptix-cuda-sm75.ptx");
+static PTX_72: &str = include_str!("../resources/cryptix-cuda-sm72.ptx");
+static PTX_70: &str = include_str!("../resources/cryptix-cuda-sm70.ptx");
+static PTX_62: &str = include_str!("../resources/cryptix-cuda-sm62.ptx");
 static PTX_61: &str = include_str!("../resources/cryptix-cuda-sm61.ptx");
+static PTX_60: &str = include_str!("../resources/cryptix-cuda-sm60.ptx");
 static PTX_30: &str = include_str!("../resources/cryptix-cuda-sm30.ptx");
 static PTX_20: &str = include_str!("../resources/cryptix-cuda-sm20.ptx");
 
@@ -160,31 +169,70 @@ impl<'gpu> CudaGPUWorker<'gpu> {
         let minor = device.get_attribute(DeviceAttribute::ComputeCapabilityMinor)?;
         let _module: Arc<Module>;
         info!("Device #{} compute version is {}.{}", device_id, major, minor);
-        if major > 8 || (major == 8 && minor >= 6) {
+        if major >= 9 || (major == 9 && minor == 0) {
+            _module = Arc::new(Module::from_ptx(PTX_90, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_90. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 8 && minor == 9 {
+            _module = Arc::new(Module::from_ptx(PTX_89, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_89. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 8 && minor == 7 {
+            _module = Arc::new(Module::from_ptx(PTX_87, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_87. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 8 && minor == 6 {
             _module = Arc::new(Module::from_ptx(PTX_86, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
-                error!("Error loading PTX. Make sure you have the updated driver for you devices");
+                error!("Error loading PTX_86. Make sure you have the updated driver for you devices");
                 e
             })?);
-        } else if major > 7 || (major == 7 && minor >= 5) {
+        } else if major >= 8 && minor == 0 {
+            _module = Arc::new(Module::from_ptx(PTX_80, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_80. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 7 && minor == 5 {
             _module = Arc::new(Module::from_ptx(PTX_75, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
-                error!("Error loading PTX. Make sure you have the updated driver for you devices");
+                error!("Error loading PTX_75. Make sure you have the updated driver for you devices");
                 e
             })?);
-        } else if major > 6 || (major == 6 && minor >= 1) {
+        } else if major >= 7 && minor == 2 {
+            _module = Arc::new(Module::from_ptx(PTX_72, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_72. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 7 && minor == 0 {
+            _module = Arc::new(Module::from_ptx(PTX_70, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_70. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 6 && minor == 2 {
+            _module = Arc::new(Module::from_ptx(PTX_62, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_62. Make sure you have the updated driver for you devices");
+                e
+            })?);
+        } else if major >= 6 && minor == 1 {
             _module = Arc::new(Module::from_ptx(PTX_61, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
-                error!("Error loading PTX. Make sure you have the updated driver for you devices");
+                error!("Error loading PTX_61. Make sure you have the updated driver for you devices");
+                e
+        } else if major >= 6 && minor == 0 {
+            _module = Arc::new(Module::from_ptx(PTX_60, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_60. Make sure you have the updated driver for you devices");
                 e
             })?);
         } else if major >= 3 {
             _module = Arc::new(Module::from_ptx(PTX_30, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
                 error!("Error loading PTX. Make sure you have the updated driver for you devices");
                 e
-            })?);
+            })?);  
         } else if major >= 2 {
             _module = Arc::new(Module::from_ptx(PTX_20, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
                 error!("Error loading PTX. Make sure you have the updated driver for you devices");
                 e
-            })?);
+            })?);                    
         } else {
             return Err("Cuda compute version not supported".into());
         }
