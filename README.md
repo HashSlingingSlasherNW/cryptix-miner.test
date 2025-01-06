@@ -92,6 +92,9 @@ This will run the miner on the CPU (4 Threads) without CUDA GPU.
 `./cryptix-miner --mining-address cryptix:XXXXX --threads 4 --cuda-disable`
 
 
+## Discord
+Join Discord: [Cryptix Discord](https://discord.gg/SxXCXHFFeA)
+
 # Devfund
 
 The devfund is a fund managed by the Cryptix community in order to fund Cryptix development <br>
