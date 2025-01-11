@@ -136,6 +136,16 @@ async fn main() -> Result<(), Error> {
     let mut opt: Opt = Opt::from_arg_matches(&matches)?;
     opt.process()?;
     env_logger::builder().filter_level(opt.log_level()).parse_default_env().init();
+
+    info!("   _____                  _   _      ");
+    info!("  / ____|                | | (_)     ");
+    info!(" | |     _ __ _   _ _ __ | |_ ___  __");
+    info!(" | |    | '__| | | | '_ \\| __| \\ \\/ /");
+    info!(" | |____| |  | |_| | |_) | |_| |>  < ");
+    info!("  \\_____|_|   \\__, | .__/ \\__|_/_/\\_\\");
+    info!("               __/ | |               ");
+    info!("              |___/|_|                ");
+    info!("                                      ");
     info!("=================================================================================");
     info!("                 Cryptix-Miner GPU {}", env!("CARGO_PKG_VERSION"));
     info!(" Mining for: {}", opt.mining_address);
