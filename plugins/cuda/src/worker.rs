@@ -25,8 +25,8 @@ static PTX_70: &str = include_str!("../resources/cryptix-cuda-sm70.ptx");
 static PTX_62: &str = include_str!("../resources/cryptix-cuda-sm62.ptx");
 static PTX_61: &str = include_str!("../resources/cryptix-cuda-sm61.ptx");
 static PTX_60: &str = include_str!("../resources/cryptix-cuda-sm60.ptx");
-static PTX_30: &str = include_str!("../resources/cryptix-cuda-sm30.ptx");
-static PTX_20: &str = include_str!("../resources/cryptix-cuda-sm20.ptx");
+static PTX_52: &str = include_str!("../resources/cryptix-cuda-sm52.ptx");
+static PTX_50: &str = include_str!("../resources/cryptix-cuda-sm50.ptx");
 
 pub struct Kernel<'kernel> {
     func: Arc<Function<'kernel>>,
@@ -224,13 +224,13 @@ impl<'gpu> CudaGPUWorker<'gpu> {
                 error!("Error loading PTX_60. Make sure you have the updated driver for you devices");
                 e
             })?);
-        } else if major >= 3 {
-            _module = Arc::new(Module::from_ptx(PTX_30, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+        } else if major >= 5 && minor == 2 {
+            _module = Arc::new(Module::from_ptx(PTX_52, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
                 error!("Error loading PTX. Make sure you have the updated driver for you devices");
                 e
             })?);  
-        } else if major >= 2 {
-            _module = Arc::new(Module::from_ptx(PTX_20, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+        } else if major >= 5 {
+            _module = Arc::new(Module::from_ptx(PTX_50, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
                 error!("Error loading PTX. Make sure you have the updated driver for you devices");
                 e
             })?);                    
