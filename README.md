@@ -5,6 +5,11 @@
 Supports CPU & GPU + Stratum
 ![cryptix-miner](https://github.com/user-attachments/assets/912d2770-8b90-4e43-bdc2-101799c47e3f)
 
+### Supports:
+- Local Mining on Node via 127.0.0.1
+- HTTP Mining on Node via Webaddress
+- Stratum Mining on Pool not supported now
+
 ## Installation
 If you have difficulties with our miner, you can also use this bridge with an external mining software:
 [Cryptix Stratum Bridge](https://github.com/cryptix-network/cryptix-stratum-bridge)
