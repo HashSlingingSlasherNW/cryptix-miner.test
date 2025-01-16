@@ -29,853 +29,853 @@
 	.param .u64 heavy_hash_param_5
 )
 {
-	.reg .pred 	%p<14>;
+	.reg .pred 	%p<18>;
 	.reg .b16 	%rs<14>;
 	.reg .b32 	%r<4415>;
-	.reg .b64 	%rd<940>;
+	.reg .b64 	%rd<1057>;
 
 
 	ld.param.u8 	%rs1, [heavy_hash_param_3];
-	ld.param.u64 	%rd185, [heavy_hash_param_0];
-	ld.param.u64 	%rd186, [heavy_hash_param_1];
-	ld.param.u64 	%rd187, [heavy_hash_param_2];
-	ld.param.u64 	%rd188, [heavy_hash_param_4];
-	ld.param.u64 	%rd189, [heavy_hash_param_5];
-	cvta.to.global.u64 	%rd1, %rd188;
-	cvta.to.global.u64 	%rd2, %rd189;
+	ld.param.u64 	%rd197, [heavy_hash_param_0];
+	ld.param.u64 	%rd198, [heavy_hash_param_1];
+	ld.param.u64 	%rd199, [heavy_hash_param_2];
+	ld.param.u64 	%rd200, [heavy_hash_param_4];
+	ld.param.u64 	%rd201, [heavy_hash_param_5];
+	cvta.to.global.u64 	%rd1, %rd200;
+	cvta.to.global.u64 	%rd2, %rd201;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %ctaid.x;
 	mov.u32 	%r9, %tid.x;
 	mad.lo.s32 	%r10, %r8, %r7, %r9;
 	cvt.s64.s32 	%rd3, %r10;
-	setp.ge.u64 	%p1, %rd3, %rd187;
-	@%p1 bra 	$L__BB0_20;
+	setp.ge.u64 	%p1, %rd3, %rd199;
+	@%p1 bra 	$L__BB0_22;
 
 	cvt.u32.u64 	%r11, %rd3;
 	setp.ne.s32 	%p2, %r11, 0;
 	@%p2 bra 	$L__BB0_3;
 
-	mov.u64 	%rd190, 0;
-	st.global.u64 	[%rd2], %rd190;
+	mov.u64 	%rd202, 0;
+	st.global.u64 	[%rd2], %rd202;
 
 $L__BB0_3:
 	setp.eq.s16 	%p3, %rs1, 0;
 	@%p3 bra 	$L__BB0_5;
 
-	shl.b64 	%rd191, %rd3, 5;
-	add.s64 	%rd192, %rd1, %rd191;
-	ld.global.v2.u64 	{%rd193, %rd194}, [%rd192];
-	mul.lo.s64 	%rd197, %rd194, 5;
+	shl.b64 	%rd203, %rd3, 5;
+	add.s64 	%rd204, %rd1, %rd203;
+	ld.global.v2.u64 	{%rd205, %rd206}, [%rd204];
+	mul.lo.s64 	%rd209, %rd206, 5;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd197, 7;
-	shr.b64 	%rhs, %rd197, 57;
-	add.u64 	%rd198, %lhs, %rhs;
+	shl.b64 	%lhs, %rd209, 7;
+	shr.b64 	%rhs, %rd209, 57;
+	add.u64 	%rd210, %lhs, %rhs;
 	}
-	mul.lo.s64 	%rd861, %rd198, 9;
-	shl.b64 	%rd199, %rd194, 17;
-	ld.global.v2.u64 	{%rd200, %rd201}, [%rd192+16];
-	xor.b64  	%rd204, %rd200, %rd193;
-	xor.b64  	%rd205, %rd201, %rd194;
-	xor.b64  	%rd206, %rd194, %rd204;
-	xor.b64  	%rd207, %rd193, %rd205;
-	st.global.v2.u64 	[%rd192], {%rd207, %rd206};
-	xor.b64  	%rd208, %rd204, %rd199;
+	mul.lo.s64 	%rd978, %rd210, 9;
+	shl.b64 	%rd211, %rd206, 17;
+	ld.global.v2.u64 	{%rd212, %rd213}, [%rd204+16];
+	xor.b64  	%rd216, %rd212, %rd205;
+	xor.b64  	%rd217, %rd213, %rd206;
+	xor.b64  	%rd218, %rd206, %rd216;
+	xor.b64  	%rd219, %rd205, %rd217;
+	st.global.v2.u64 	[%rd204], {%rd219, %rd218};
+	xor.b64  	%rd220, %rd216, %rd211;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd205, 45;
-	shr.b64 	%rhs, %rd205, 19;
-	add.u64 	%rd209, %lhs, %rhs;
+	shl.b64 	%lhs, %rd217, 45;
+	shr.b64 	%rhs, %rd217, 19;
+	add.u64 	%rd221, %lhs, %rhs;
 	}
-	st.global.v2.u64 	[%rd192+16], {%rd208, %rd209};
+	st.global.v2.u64 	[%rd204+16], {%rd220, %rd221};
 	bra.uni 	$L__BB0_6;
 
 $L__BB0_5:
-	ld.global.u64 	%rd210, [%rd1];
-	xor.b64  	%rd861, %rd210, %rd3;
+	ld.global.u64 	%rd222, [%rd1];
+	xor.b64  	%rd978, %rd222, %rd3;
 
 $L__BB0_6:
-	and.b64  	%rd227, %rd861, %rd185;
-	or.b64  	%rd7, %rd227, %rd186;
-	ld.const.u64 	%rd228, [hash_header];
-	xor.b64  	%rd887, %rd228, 1242148031264380989;
-	ld.const.u64 	%rd229, [hash_header+8];
-	xor.b64  	%rd882, %rd229, 3008272977830772284;
-	ld.const.u64 	%rd230, [hash_header+16];
-	xor.b64  	%rd877, %rd230, 2188519011337848018;
-	ld.const.u64 	%rd231, [hash_header+24];
-	xor.b64  	%rd872, %rd231, 1992179434288343456;
-	ld.const.u64 	%rd232, [hash_header+32];
-	xor.b64  	%rd867, %rd232, 8876506674959887717;
-	ld.const.u64 	%rd233, [hash_header+40];
-	xor.b64  	%rd886, %rd233, 5399642050693751366;
-	ld.const.u64 	%rd234, [hash_header+48];
-	xor.b64  	%rd881, %rd234, 1745875063082670864;
-	ld.const.u64 	%rd235, [hash_header+56];
-	xor.b64  	%rd876, %rd235, 8605242046444978844;
-	ld.const.u64 	%rd236, [hash_header+64];
-	xor.b64  	%rd871, %rd236, -510048929142394560;
-	xor.b64  	%rd866, %rd7, 3343109343542796272;
+	and.b64  	%rd239, %rd978, %rd197;
+	or.b64  	%rd7, %rd239, %rd198;
+	ld.const.u64 	%rd240, [hash_header];
+	xor.b64  	%rd1004, %rd240, 1242148031264380989;
+	ld.const.u64 	%rd241, [hash_header+8];
+	xor.b64  	%rd999, %rd241, 3008272977830772284;
+	ld.const.u64 	%rd242, [hash_header+16];
+	xor.b64  	%rd994, %rd242, 2188519011337848018;
+	ld.const.u64 	%rd243, [hash_header+24];
+	xor.b64  	%rd989, %rd243, 1992179434288343456;
+	ld.const.u64 	%rd244, [hash_header+32];
+	xor.b64  	%rd984, %rd244, 8876506674959887717;
+	ld.const.u64 	%rd245, [hash_header+40];
+	xor.b64  	%rd1003, %rd245, 5399642050693751366;
+	ld.const.u64 	%rd246, [hash_header+48];
+	xor.b64  	%rd998, %rd246, 1745875063082670864;
+	ld.const.u64 	%rd247, [hash_header+56];
+	xor.b64  	%rd993, %rd247, 8605242046444978844;
+	ld.const.u64 	%rd248, [hash_header+64];
+	xor.b64  	%rd988, %rd248, -510048929142394560;
+	xor.b64  	%rd983, %rd7, 3343109343542796272;
 	mov.u32 	%r4412, 0;
-	mov.u64 	%rd885, 1123092876221303306;
-	mov.u64 	%rd884, 3784524041015224902;
-	mov.u64 	%rd883, -8517909413761200310;
-	mov.u64 	%rd880, 4963925045340115282;
-	mov.u64 	%rd879, 1082795874807940378;
-	mov.u64 	%rd878, 5237849264682708699;
-	mov.u64 	%rd875, -1409360996057663723;
-	mov.u64 	%rd874, -4494027153138273982;
-	mov.u64 	%rd873, -5621391061570334094;
-	mov.u64 	%rd870, -1817099578685924727;
-	mov.u64 	%rd869, -5035616039755945756;
-	mov.u64 	%rd868, 6706187291358897596;
-	mov.u64 	%rd865, -5613068297060437469;
-	mov.u64 	%rd864, -3386048033060200563;
-	mov.u64 	%rd863, 196324915476054915;
-	mov.u64 	%rd862, RC;
+	mov.u64 	%rd1002, 1123092876221303306;
+	mov.u64 	%rd1001, 3784524041015224902;
+	mov.u64 	%rd1000, -8517909413761200310;
+	mov.u64 	%rd997, 4963925045340115282;
+	mov.u64 	%rd996, 1082795874807940378;
+	mov.u64 	%rd995, 5237849264682708699;
+	mov.u64 	%rd992, -1409360996057663723;
+	mov.u64 	%rd991, -4494027153138273982;
+	mov.u64 	%rd990, -5621391061570334094;
+	mov.u64 	%rd987, -1817099578685924727;
+	mov.u64 	%rd986, -5035616039755945756;
+	mov.u64 	%rd985, 6706187291358897596;
+	mov.u64 	%rd982, -5613068297060437469;
+	mov.u64 	%rd981, -3386048033060200563;
+	mov.u64 	%rd980, 196324915476054915;
+	mov.u64 	%rd979, RC;
 
 $L__BB0_7:
-	xor.b64  	%rd237, %rd886, %rd887;
-	xor.b64  	%rd238, %rd237, %rd885;
-	xor.b64  	%rd239, %rd238, %rd884;
-	xor.b64  	%rd240, %rd239, %rd883;
-	xor.b64  	%rd241, %rd881, %rd882;
-	xor.b64  	%rd242, %rd241, %rd880;
-	xor.b64  	%rd243, %rd242, %rd879;
-	xor.b64  	%rd244, %rd243, %rd878;
-	xor.b64  	%rd245, %rd876, %rd877;
-	xor.b64  	%rd246, %rd245, %rd875;
-	xor.b64  	%rd247, %rd246, %rd874;
-	xor.b64  	%rd248, %rd247, %rd873;
-	xor.b64  	%rd249, %rd871, %rd872;
-	xor.b64  	%rd250, %rd249, %rd870;
-	xor.b64  	%rd251, %rd250, %rd869;
-	xor.b64  	%rd252, %rd251, %rd868;
-	xor.b64  	%rd253, %rd866, %rd867;
-	xor.b64  	%rd254, %rd253, %rd865;
-	xor.b64  	%rd255, %rd254, %rd864;
-	xor.b64  	%rd256, %rd255, %rd863;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd244, 1;
-	shr.b64 	%rhs, %rd244, 63;
-	add.u64 	%rd257, %lhs, %rhs;
-	}
-	xor.b64  	%rd258, %rd256, %rd257;
-	xor.b64  	%rd259, %rd258, %rd887;
-	xor.b64  	%rd260, %rd886, %rd258;
-	xor.b64  	%rd261, %rd885, %rd258;
-	xor.b64  	%rd262, %rd884, %rd258;
-	xor.b64  	%rd263, %rd883, %rd258;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd248, 1;
-	shr.b64 	%rhs, %rd248, 63;
-	add.u64 	%rd264, %lhs, %rhs;
-	}
-	xor.b64  	%rd265, %rd264, %rd240;
-	xor.b64  	%rd266, %rd882, %rd265;
-	xor.b64  	%rd267, %rd881, %rd265;
-	xor.b64  	%rd268, %rd880, %rd265;
-	xor.b64  	%rd269, %rd879, %rd265;
-	xor.b64  	%rd270, %rd878, %rd265;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd252, 1;
-	shr.b64 	%rhs, %rd252, 63;
-	add.u64 	%rd271, %lhs, %rhs;
-	}
-	xor.b64  	%rd272, %rd271, %rd244;
-	xor.b64  	%rd273, %rd877, %rd272;
-	xor.b64  	%rd274, %rd876, %rd272;
-	xor.b64  	%rd275, %rd875, %rd272;
-	xor.b64  	%rd276, %rd874, %rd272;
-	xor.b64  	%rd277, %rd873, %rd272;
+	xor.b64  	%rd249, %rd1003, %rd1004;
+	xor.b64  	%rd250, %rd249, %rd1002;
+	xor.b64  	%rd251, %rd250, %rd1001;
+	xor.b64  	%rd252, %rd251, %rd1000;
+	xor.b64  	%rd253, %rd998, %rd999;
+	xor.b64  	%rd254, %rd253, %rd997;
+	xor.b64  	%rd255, %rd254, %rd996;
+	xor.b64  	%rd256, %rd255, %rd995;
+	xor.b64  	%rd257, %rd993, %rd994;
+	xor.b64  	%rd258, %rd257, %rd992;
+	xor.b64  	%rd259, %rd258, %rd991;
+	xor.b64  	%rd260, %rd259, %rd990;
+	xor.b64  	%rd261, %rd988, %rd989;
+	xor.b64  	%rd262, %rd261, %rd987;
+	xor.b64  	%rd263, %rd262, %rd986;
+	xor.b64  	%rd264, %rd263, %rd985;
+	xor.b64  	%rd265, %rd983, %rd984;
+	xor.b64  	%rd266, %rd265, %rd982;
+	xor.b64  	%rd267, %rd266, %rd981;
+	xor.b64  	%rd268, %rd267, %rd980;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
 	shl.b64 	%lhs, %rd256, 1;
 	shr.b64 	%rhs, %rd256, 63;
-	add.u64 	%rd278, %lhs, %rhs;
+	add.u64 	%rd269, %lhs, %rhs;
 	}
-	xor.b64  	%rd279, %rd278, %rd248;
-	xor.b64  	%rd280, %rd872, %rd279;
-	xor.b64  	%rd281, %rd871, %rd279;
-	xor.b64  	%rd282, %rd870, %rd279;
-	xor.b64  	%rd283, %rd869, %rd279;
-	xor.b64  	%rd284, %rd868, %rd279;
+	xor.b64  	%rd270, %rd268, %rd269;
+	xor.b64  	%rd271, %rd270, %rd1004;
+	xor.b64  	%rd272, %rd1003, %rd270;
+	xor.b64  	%rd273, %rd1002, %rd270;
+	xor.b64  	%rd274, %rd1001, %rd270;
+	xor.b64  	%rd275, %rd1000, %rd270;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd240, 1;
-	shr.b64 	%rhs, %rd240, 63;
-	add.u64 	%rd285, %lhs, %rhs;
+	shl.b64 	%lhs, %rd260, 1;
+	shr.b64 	%rhs, %rd260, 63;
+	add.u64 	%rd276, %lhs, %rhs;
 	}
-	xor.b64  	%rd286, %rd252, %rd285;
-	xor.b64  	%rd287, %rd867, %rd286;
-	xor.b64  	%rd288, %rd866, %rd286;
-	xor.b64  	%rd289, %rd865, %rd286;
-	xor.b64  	%rd290, %rd864, %rd286;
-	xor.b64  	%rd291, %rd863, %rd286;
+	xor.b64  	%rd277, %rd276, %rd252;
+	xor.b64  	%rd278, %rd999, %rd277;
+	xor.b64  	%rd279, %rd998, %rd277;
+	xor.b64  	%rd280, %rd997, %rd277;
+	xor.b64  	%rd281, %rd996, %rd277;
+	xor.b64  	%rd282, %rd995, %rd277;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd266, 1;
-	shr.b64 	%rhs, %rd266, 63;
-	add.u64 	%rd292, %lhs, %rhs;
+	shl.b64 	%lhs, %rd264, 1;
+	shr.b64 	%rhs, %rd264, 63;
+	add.u64 	%rd283, %lhs, %rhs;
 	}
+	xor.b64  	%rd284, %rd283, %rd256;
+	xor.b64  	%rd285, %rd994, %rd284;
+	xor.b64  	%rd286, %rd993, %rd284;
+	xor.b64  	%rd287, %rd992, %rd284;
+	xor.b64  	%rd288, %rd991, %rd284;
+	xor.b64  	%rd289, %rd990, %rd284;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd261, 3;
-	shr.b64 	%rhs, %rd261, 61;
-	add.u64 	%rd293, %lhs, %rhs;
+	shl.b64 	%lhs, %rd268, 1;
+	shr.b64 	%rhs, %rd268, 63;
+	add.u64 	%rd290, %lhs, %rhs;
 	}
+	xor.b64  	%rd291, %rd290, %rd260;
+	xor.b64  	%rd292, %rd989, %rd291;
+	xor.b64  	%rd293, %rd988, %rd291;
+	xor.b64  	%rd294, %rd987, %rd291;
+	xor.b64  	%rd295, %rd986, %rd291;
+	xor.b64  	%rd296, %rd985, %rd291;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd274, 6;
-	shr.b64 	%rhs, %rd274, 58;
-	add.u64 	%rd294, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd268, 10;
-	shr.b64 	%rhs, %rd268, 54;
-	add.u64 	%rd295, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd276, 15;
-	shr.b64 	%rhs, %rd276, 49;
-	add.u64 	%rd296, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd283, 21;
-	shr.b64 	%rhs, %rd283, 43;
+	shl.b64 	%lhs, %rd252, 1;
+	shr.b64 	%rhs, %rd252, 63;
 	add.u64 	%rd297, %lhs, %rhs;
 	}
+	xor.b64  	%rd298, %rd264, %rd297;
+	xor.b64  	%rd299, %rd984, %rd298;
+	xor.b64  	%rd300, %rd983, %rd298;
+	xor.b64  	%rd301, %rd982, %rd298;
+	xor.b64  	%rd302, %rd981, %rd298;
+	xor.b64  	%rd303, %rd980, %rd298;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd280, 28;
-	shr.b64 	%rhs, %rd280, 36;
-	add.u64 	%rd298, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd260, 36;
-	shr.b64 	%rhs, %rd260, 28;
-	add.u64 	%rd299, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd269, 45;
-	shr.b64 	%rhs, %rd269, 19;
-	add.u64 	%rd300, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd281, 55;
-	shr.b64 	%rhs, %rd281, 9;
-	add.u64 	%rd301, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd270, 2;
-	shr.b64 	%rhs, %rd270, 62;
-	add.u64 	%rd302, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd291, 14;
-	shr.b64 	%rhs, %rd291, 50;
-	add.u64 	%rd303, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd287, 27;
-	shr.b64 	%rhs, %rd287, 37;
+	shl.b64 	%lhs, %rd278, 1;
+	shr.b64 	%rhs, %rd278, 63;
 	add.u64 	%rd304, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd262, 41;
-	shr.b64 	%rhs, %rd262, 23;
+	shl.b64 	%lhs, %rd273, 3;
+	shr.b64 	%rhs, %rd273, 61;
 	add.u64 	%rd305, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd284, 56;
-	shr.b64 	%rhs, %rd284, 8;
+	shl.b64 	%lhs, %rd286, 6;
+	shr.b64 	%rhs, %rd286, 58;
 	add.u64 	%rd306, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd290, 8;
-	shr.b64 	%rhs, %rd290, 56;
+	shl.b64 	%lhs, %rd280, 10;
+	shr.b64 	%rhs, %rd280, 54;
 	add.u64 	%rd307, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd282, 25;
-	shr.b64 	%rhs, %rd282, 39;
+	shl.b64 	%lhs, %rd288, 15;
+	shr.b64 	%rhs, %rd288, 49;
 	add.u64 	%rd308, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd275, 43;
-	shr.b64 	%rhs, %rd275, 21;
+	shl.b64 	%lhs, %rd295, 21;
+	shr.b64 	%rhs, %rd295, 43;
 	add.u64 	%rd309, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd273, 62;
-	shr.b64 	%rhs, %rd273, 2;
+	shl.b64 	%lhs, %rd292, 28;
+	shr.b64 	%rhs, %rd292, 36;
 	add.u64 	%rd310, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd263, 18;
-	shr.b64 	%rhs, %rd263, 46;
+	shl.b64 	%lhs, %rd272, 36;
+	shr.b64 	%rhs, %rd272, 28;
 	add.u64 	%rd311, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd289, 39;
-	shr.b64 	%rhs, %rd289, 25;
+	shl.b64 	%lhs, %rd281, 45;
+	shr.b64 	%rhs, %rd281, 19;
 	add.u64 	%rd312, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd277, 61;
-	shr.b64 	%rhs, %rd277, 3;
+	shl.b64 	%lhs, %rd293, 55;
+	shr.b64 	%rhs, %rd293, 9;
 	add.u64 	%rd313, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd288, 20;
-	shr.b64 	%rhs, %rd288, 44;
+	shl.b64 	%lhs, %rd282, 2;
+	shr.b64 	%rhs, %rd282, 62;
 	add.u64 	%rd314, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd267, 44;
-	shr.b64 	%rhs, %rd267, 20;
+	shl.b64 	%lhs, %rd303, 14;
+	shr.b64 	%rhs, %rd303, 50;
 	add.u64 	%rd315, %lhs, %rhs;
 	}
-	not.b64 	%rd316, %rd315;
-	and.b64  	%rd317, %rd309, %rd316;
-	xor.b64  	%rd318, %rd317, %rd259;
-	not.b64 	%rd319, %rd309;
-	and.b64  	%rd320, %rd297, %rd319;
-	xor.b64  	%rd882, %rd320, %rd315;
-	not.b64 	%rd321, %rd297;
-	and.b64  	%rd322, %rd303, %rd321;
-	xor.b64  	%rd877, %rd322, %rd309;
-	not.b64 	%rd323, %rd303;
-	and.b64  	%rd324, %rd259, %rd323;
-	xor.b64  	%rd872, %rd324, %rd297;
-	not.b64 	%rd325, %rd259;
-	and.b64  	%rd326, %rd315, %rd325;
-	xor.b64  	%rd867, %rd303, %rd326;
-	not.b64 	%rd327, %rd314;
-	and.b64  	%rd328, %rd293, %rd327;
-	xor.b64  	%rd886, %rd328, %rd298;
-	not.b64 	%rd329, %rd293;
-	and.b64  	%rd330, %rd300, %rd329;
-	xor.b64  	%rd881, %rd330, %rd314;
-	not.b64 	%rd331, %rd300;
-	and.b64  	%rd332, %rd313, %rd331;
-	xor.b64  	%rd876, %rd332, %rd293;
-	not.b64 	%rd333, %rd313;
-	and.b64  	%rd334, %rd298, %rd333;
-	xor.b64  	%rd871, %rd334, %rd300;
-	not.b64 	%rd335, %rd298;
-	and.b64  	%rd336, %rd314, %rd335;
-	xor.b64  	%rd866, %rd313, %rd336;
-	not.b64 	%rd337, %rd294;
-	and.b64  	%rd338, %rd308, %rd337;
-	xor.b64  	%rd885, %rd338, %rd292;
-	not.b64 	%rd339, %rd308;
-	and.b64  	%rd340, %rd307, %rd339;
-	xor.b64  	%rd880, %rd340, %rd294;
-	not.b64 	%rd341, %rd307;
-	and.b64  	%rd342, %rd311, %rd341;
-	xor.b64  	%rd875, %rd342, %rd308;
-	not.b64 	%rd343, %rd311;
-	and.b64  	%rd344, %rd292, %rd343;
-	xor.b64  	%rd870, %rd344, %rd307;
-	not.b64 	%rd345, %rd292;
-	and.b64  	%rd346, %rd294, %rd345;
-	xor.b64  	%rd865, %rd311, %rd346;
-	not.b64 	%rd347, %rd299;
-	and.b64  	%rd348, %rd295, %rd347;
-	xor.b64  	%rd884, %rd348, %rd304;
-	not.b64 	%rd349, %rd295;
-	and.b64  	%rd350, %rd296, %rd349;
-	xor.b64  	%rd879, %rd350, %rd299;
-	not.b64 	%rd351, %rd296;
-	and.b64  	%rd352, %rd306, %rd351;
-	xor.b64  	%rd874, %rd352, %rd295;
-	not.b64 	%rd353, %rd306;
-	and.b64  	%rd354, %rd304, %rd353;
-	xor.b64  	%rd869, %rd354, %rd296;
-	not.b64 	%rd355, %rd304;
-	and.b64  	%rd356, %rd299, %rd355;
-	xor.b64  	%rd864, %rd306, %rd356;
-	not.b64 	%rd357, %rd301;
-	and.b64  	%rd358, %rd312, %rd357;
-	xor.b64  	%rd883, %rd358, %rd310;
-	not.b64 	%rd359, %rd312;
-	and.b64  	%rd360, %rd305, %rd359;
-	xor.b64  	%rd878, %rd360, %rd301;
-	not.b64 	%rd361, %rd305;
-	and.b64  	%rd362, %rd302, %rd361;
-	xor.b64  	%rd873, %rd362, %rd312;
-	not.b64 	%rd363, %rd302;
-	and.b64  	%rd364, %rd310, %rd363;
-	xor.b64  	%rd868, %rd364, %rd305;
-	not.b64 	%rd365, %rd310;
-	and.b64  	%rd366, %rd301, %rd365;
-	xor.b64  	%rd863, %rd302, %rd366;
-	ld.global.nc.u64 	%rd367, [%rd862];
-	xor.b64  	%rd887, %rd318, %rd367;
-	add.s64 	%rd862, %rd862, 8;
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd299, 27;
+	shr.b64 	%rhs, %rd299, 37;
+	add.u64 	%rd316, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd274, 41;
+	shr.b64 	%rhs, %rd274, 23;
+	add.u64 	%rd317, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd296, 56;
+	shr.b64 	%rhs, %rd296, 8;
+	add.u64 	%rd318, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd302, 8;
+	shr.b64 	%rhs, %rd302, 56;
+	add.u64 	%rd319, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd294, 25;
+	shr.b64 	%rhs, %rd294, 39;
+	add.u64 	%rd320, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd287, 43;
+	shr.b64 	%rhs, %rd287, 21;
+	add.u64 	%rd321, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd285, 62;
+	shr.b64 	%rhs, %rd285, 2;
+	add.u64 	%rd322, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd275, 18;
+	shr.b64 	%rhs, %rd275, 46;
+	add.u64 	%rd323, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd301, 39;
+	shr.b64 	%rhs, %rd301, 25;
+	add.u64 	%rd324, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd289, 61;
+	shr.b64 	%rhs, %rd289, 3;
+	add.u64 	%rd325, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd300, 20;
+	shr.b64 	%rhs, %rd300, 44;
+	add.u64 	%rd326, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd279, 44;
+	shr.b64 	%rhs, %rd279, 20;
+	add.u64 	%rd327, %lhs, %rhs;
+	}
+	not.b64 	%rd328, %rd327;
+	and.b64  	%rd329, %rd321, %rd328;
+	xor.b64  	%rd330, %rd329, %rd271;
+	not.b64 	%rd331, %rd321;
+	and.b64  	%rd332, %rd309, %rd331;
+	xor.b64  	%rd999, %rd332, %rd327;
+	not.b64 	%rd333, %rd309;
+	and.b64  	%rd334, %rd315, %rd333;
+	xor.b64  	%rd994, %rd334, %rd321;
+	not.b64 	%rd335, %rd315;
+	and.b64  	%rd336, %rd271, %rd335;
+	xor.b64  	%rd989, %rd336, %rd309;
+	not.b64 	%rd337, %rd271;
+	and.b64  	%rd338, %rd327, %rd337;
+	xor.b64  	%rd984, %rd315, %rd338;
+	not.b64 	%rd339, %rd326;
+	and.b64  	%rd340, %rd305, %rd339;
+	xor.b64  	%rd1003, %rd340, %rd310;
+	not.b64 	%rd341, %rd305;
+	and.b64  	%rd342, %rd312, %rd341;
+	xor.b64  	%rd998, %rd342, %rd326;
+	not.b64 	%rd343, %rd312;
+	and.b64  	%rd344, %rd325, %rd343;
+	xor.b64  	%rd993, %rd344, %rd305;
+	not.b64 	%rd345, %rd325;
+	and.b64  	%rd346, %rd310, %rd345;
+	xor.b64  	%rd988, %rd346, %rd312;
+	not.b64 	%rd347, %rd310;
+	and.b64  	%rd348, %rd326, %rd347;
+	xor.b64  	%rd983, %rd325, %rd348;
+	not.b64 	%rd349, %rd306;
+	and.b64  	%rd350, %rd320, %rd349;
+	xor.b64  	%rd1002, %rd350, %rd304;
+	not.b64 	%rd351, %rd320;
+	and.b64  	%rd352, %rd319, %rd351;
+	xor.b64  	%rd997, %rd352, %rd306;
+	not.b64 	%rd353, %rd319;
+	and.b64  	%rd354, %rd323, %rd353;
+	xor.b64  	%rd992, %rd354, %rd320;
+	not.b64 	%rd355, %rd323;
+	and.b64  	%rd356, %rd304, %rd355;
+	xor.b64  	%rd987, %rd356, %rd319;
+	not.b64 	%rd357, %rd304;
+	and.b64  	%rd358, %rd306, %rd357;
+	xor.b64  	%rd982, %rd323, %rd358;
+	not.b64 	%rd359, %rd311;
+	and.b64  	%rd360, %rd307, %rd359;
+	xor.b64  	%rd1001, %rd360, %rd316;
+	not.b64 	%rd361, %rd307;
+	and.b64  	%rd362, %rd308, %rd361;
+	xor.b64  	%rd996, %rd362, %rd311;
+	not.b64 	%rd363, %rd308;
+	and.b64  	%rd364, %rd318, %rd363;
+	xor.b64  	%rd991, %rd364, %rd307;
+	not.b64 	%rd365, %rd318;
+	and.b64  	%rd366, %rd316, %rd365;
+	xor.b64  	%rd986, %rd366, %rd308;
+	not.b64 	%rd367, %rd316;
+	and.b64  	%rd368, %rd311, %rd367;
+	xor.b64  	%rd981, %rd318, %rd368;
+	not.b64 	%rd369, %rd313;
+	and.b64  	%rd370, %rd324, %rd369;
+	xor.b64  	%rd1000, %rd370, %rd322;
+	not.b64 	%rd371, %rd324;
+	and.b64  	%rd372, %rd317, %rd371;
+	xor.b64  	%rd995, %rd372, %rd313;
+	not.b64 	%rd373, %rd317;
+	and.b64  	%rd374, %rd314, %rd373;
+	xor.b64  	%rd990, %rd374, %rd324;
+	not.b64 	%rd375, %rd314;
+	and.b64  	%rd376, %rd322, %rd375;
+	xor.b64  	%rd985, %rd376, %rd317;
+	not.b64 	%rd377, %rd322;
+	and.b64  	%rd378, %rd313, %rd377;
+	xor.b64  	%rd980, %rd314, %rd378;
+	ld.global.nc.u64 	%rd379, [%rd979];
+	xor.b64  	%rd1004, %rd330, %rd379;
+	add.s64 	%rd979, %rd979, 8;
 	add.s32 	%r4412, %r4412, 1;
 	setp.ne.s32 	%p4, %r4412, 24;
 	@%p4 bra 	$L__BB0_7;
 
-	xor.b64  	%rd913, %rd887, 1242148031264380989;
-	xor.b64  	%rd908, %rd882, 3008272977830772284;
-	xor.b64  	%rd903, %rd877, 2188519011337848018;
-	xor.b64  	%rd898, %rd872, 1992179434288343456;
+	xor.b64  	%rd1030, %rd1004, 1242148031264380989;
+	xor.b64  	%rd1025, %rd999, 3008272977830772284;
+	xor.b64  	%rd1020, %rd994, 2188519011337848018;
+	xor.b64  	%rd1015, %rd989, 1992179434288343456;
 	mov.u32 	%r4413, 0;
-	mov.u64 	%rd911, 1123092876221303306;
-	mov.u64 	%rd910, 3784524041015224902;
-	mov.u64 	%rd909, -8517909413761200310;
-	mov.u64 	%rd906, 4963925045340115282;
-	mov.u64 	%rd905, 1082795874807940378;
-	mov.u64 	%rd904, 5237849264682708699;
-	mov.u64 	%rd901, -1409360996057663723;
-	mov.u64 	%rd900, -4494027153138273982;
-	mov.u64 	%rd899, -5621391061570334094;
-	mov.u64 	%rd896, -1817099578685924727;
-	mov.u64 	%rd895, -5035616039755945756;
-	mov.u64 	%rd894, 6706187291358897596;
-	mov.u64 	%rd891, -5613068297060437469;
-	mov.u64 	%rd890, -3386048033060200563;
-	mov.u64 	%rd889, 196324915476054915;
-	mov.u64 	%rd888, RC;
+	mov.u64 	%rd1028, 1123092876221303306;
+	mov.u64 	%rd1027, 3784524041015224902;
+	mov.u64 	%rd1026, -8517909413761200310;
+	mov.u64 	%rd1023, 4963925045340115282;
+	mov.u64 	%rd1022, 1082795874807940378;
+	mov.u64 	%rd1021, 5237849264682708699;
+	mov.u64 	%rd1018, -1409360996057663723;
+	mov.u64 	%rd1017, -4494027153138273982;
+	mov.u64 	%rd1016, -5621391061570334094;
+	mov.u64 	%rd1013, -1817099578685924727;
+	mov.u64 	%rd1012, -5035616039755945756;
+	mov.u64 	%rd1011, 6706187291358897596;
+	mov.u64 	%rd1008, -5613068297060437469;
+	mov.u64 	%rd1007, -3386048033060200563;
+	mov.u64 	%rd1006, 196324915476054915;
+	mov.u64 	%rd1005, RC;
 
 $L__BB0_9:
-	xor.b64  	%rd385, %rd912, %rd913;
-	xor.b64  	%rd386, %rd385, %rd911;
-	xor.b64  	%rd387, %rd386, %rd910;
-	xor.b64  	%rd388, %rd387, %rd909;
-	xor.b64  	%rd389, %rd907, %rd908;
-	xor.b64  	%rd390, %rd389, %rd906;
-	xor.b64  	%rd391, %rd390, %rd905;
-	xor.b64  	%rd392, %rd391, %rd904;
-	xor.b64  	%rd393, %rd902, %rd903;
-	xor.b64  	%rd394, %rd393, %rd901;
-	xor.b64  	%rd395, %rd394, %rd900;
-	xor.b64  	%rd396, %rd395, %rd899;
-	xor.b64  	%rd397, %rd897, %rd898;
-	xor.b64  	%rd398, %rd397, %rd896;
-	xor.b64  	%rd399, %rd398, %rd895;
-	xor.b64  	%rd400, %rd399, %rd894;
-	xor.b64  	%rd401, %rd892, %rd893;
-	xor.b64  	%rd402, %rd401, %rd891;
-	xor.b64  	%rd403, %rd402, %rd890;
-	xor.b64  	%rd404, %rd403, %rd889;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd392, 1;
-	shr.b64 	%rhs, %rd392, 63;
-	add.u64 	%rd405, %lhs, %rhs;
-	}
-	xor.b64  	%rd406, %rd404, %rd405;
-	xor.b64  	%rd407, %rd406, %rd913;
-	xor.b64  	%rd408, %rd912, %rd406;
-	xor.b64  	%rd409, %rd911, %rd406;
-	xor.b64  	%rd410, %rd910, %rd406;
-	xor.b64  	%rd411, %rd909, %rd406;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd396, 1;
-	shr.b64 	%rhs, %rd396, 63;
-	add.u64 	%rd412, %lhs, %rhs;
-	}
-	xor.b64  	%rd413, %rd412, %rd388;
-	xor.b64  	%rd414, %rd908, %rd413;
-	xor.b64  	%rd415, %rd907, %rd413;
-	xor.b64  	%rd416, %rd906, %rd413;
-	xor.b64  	%rd417, %rd905, %rd413;
-	xor.b64  	%rd418, %rd904, %rd413;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd400, 1;
-	shr.b64 	%rhs, %rd400, 63;
-	add.u64 	%rd419, %lhs, %rhs;
-	}
-	xor.b64  	%rd420, %rd419, %rd392;
-	xor.b64  	%rd421, %rd903, %rd420;
-	xor.b64  	%rd422, %rd902, %rd420;
-	xor.b64  	%rd423, %rd901, %rd420;
-	xor.b64  	%rd424, %rd900, %rd420;
-	xor.b64  	%rd425, %rd899, %rd420;
+	xor.b64  	%rd397, %rd1029, %rd1030;
+	xor.b64  	%rd398, %rd397, %rd1028;
+	xor.b64  	%rd399, %rd398, %rd1027;
+	xor.b64  	%rd400, %rd399, %rd1026;
+	xor.b64  	%rd401, %rd1024, %rd1025;
+	xor.b64  	%rd402, %rd401, %rd1023;
+	xor.b64  	%rd403, %rd402, %rd1022;
+	xor.b64  	%rd404, %rd403, %rd1021;
+	xor.b64  	%rd405, %rd1019, %rd1020;
+	xor.b64  	%rd406, %rd405, %rd1018;
+	xor.b64  	%rd407, %rd406, %rd1017;
+	xor.b64  	%rd408, %rd407, %rd1016;
+	xor.b64  	%rd409, %rd1014, %rd1015;
+	xor.b64  	%rd410, %rd409, %rd1013;
+	xor.b64  	%rd411, %rd410, %rd1012;
+	xor.b64  	%rd412, %rd411, %rd1011;
+	xor.b64  	%rd413, %rd1009, %rd1010;
+	xor.b64  	%rd414, %rd413, %rd1008;
+	xor.b64  	%rd415, %rd414, %rd1007;
+	xor.b64  	%rd416, %rd415, %rd1006;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
 	shl.b64 	%lhs, %rd404, 1;
 	shr.b64 	%rhs, %rd404, 63;
-	add.u64 	%rd426, %lhs, %rhs;
+	add.u64 	%rd417, %lhs, %rhs;
 	}
-	xor.b64  	%rd427, %rd426, %rd396;
-	xor.b64  	%rd428, %rd898, %rd427;
-	xor.b64  	%rd429, %rd897, %rd427;
-	xor.b64  	%rd430, %rd896, %rd427;
-	xor.b64  	%rd431, %rd895, %rd427;
-	xor.b64  	%rd432, %rd894, %rd427;
+	xor.b64  	%rd418, %rd416, %rd417;
+	xor.b64  	%rd419, %rd418, %rd1030;
+	xor.b64  	%rd420, %rd1029, %rd418;
+	xor.b64  	%rd421, %rd1028, %rd418;
+	xor.b64  	%rd422, %rd1027, %rd418;
+	xor.b64  	%rd423, %rd1026, %rd418;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd388, 1;
-	shr.b64 	%rhs, %rd388, 63;
-	add.u64 	%rd433, %lhs, %rhs;
+	shl.b64 	%lhs, %rd408, 1;
+	shr.b64 	%rhs, %rd408, 63;
+	add.u64 	%rd424, %lhs, %rhs;
 	}
-	xor.b64  	%rd434, %rd400, %rd433;
-	xor.b64  	%rd435, %rd893, %rd434;
-	xor.b64  	%rd436, %rd892, %rd434;
-	xor.b64  	%rd437, %rd891, %rd434;
-	xor.b64  	%rd438, %rd890, %rd434;
-	xor.b64  	%rd439, %rd889, %rd434;
+	xor.b64  	%rd425, %rd424, %rd400;
+	xor.b64  	%rd426, %rd1025, %rd425;
+	xor.b64  	%rd427, %rd1024, %rd425;
+	xor.b64  	%rd428, %rd1023, %rd425;
+	xor.b64  	%rd429, %rd1022, %rd425;
+	xor.b64  	%rd430, %rd1021, %rd425;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd414, 1;
-	shr.b64 	%rhs, %rd414, 63;
-	add.u64 	%rd440, %lhs, %rhs;
+	shl.b64 	%lhs, %rd412, 1;
+	shr.b64 	%rhs, %rd412, 63;
+	add.u64 	%rd431, %lhs, %rhs;
 	}
+	xor.b64  	%rd432, %rd431, %rd404;
+	xor.b64  	%rd433, %rd1020, %rd432;
+	xor.b64  	%rd434, %rd1019, %rd432;
+	xor.b64  	%rd435, %rd1018, %rd432;
+	xor.b64  	%rd436, %rd1017, %rd432;
+	xor.b64  	%rd437, %rd1016, %rd432;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd409, 3;
-	shr.b64 	%rhs, %rd409, 61;
-	add.u64 	%rd441, %lhs, %rhs;
+	shl.b64 	%lhs, %rd416, 1;
+	shr.b64 	%rhs, %rd416, 63;
+	add.u64 	%rd438, %lhs, %rhs;
 	}
+	xor.b64  	%rd439, %rd438, %rd408;
+	xor.b64  	%rd440, %rd1015, %rd439;
+	xor.b64  	%rd441, %rd1014, %rd439;
+	xor.b64  	%rd442, %rd1013, %rd439;
+	xor.b64  	%rd443, %rd1012, %rd439;
+	xor.b64  	%rd444, %rd1011, %rd439;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd422, 6;
-	shr.b64 	%rhs, %rd422, 58;
-	add.u64 	%rd442, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd416, 10;
-	shr.b64 	%rhs, %rd416, 54;
-	add.u64 	%rd443, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd424, 15;
-	shr.b64 	%rhs, %rd424, 49;
-	add.u64 	%rd444, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd431, 21;
-	shr.b64 	%rhs, %rd431, 43;
+	shl.b64 	%lhs, %rd400, 1;
+	shr.b64 	%rhs, %rd400, 63;
 	add.u64 	%rd445, %lhs, %rhs;
 	}
+	xor.b64  	%rd446, %rd412, %rd445;
+	xor.b64  	%rd447, %rd1010, %rd446;
+	xor.b64  	%rd448, %rd1009, %rd446;
+	xor.b64  	%rd449, %rd1008, %rd446;
+	xor.b64  	%rd450, %rd1007, %rd446;
+	xor.b64  	%rd451, %rd1006, %rd446;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd428, 28;
-	shr.b64 	%rhs, %rd428, 36;
-	add.u64 	%rd446, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd408, 36;
-	shr.b64 	%rhs, %rd408, 28;
-	add.u64 	%rd447, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd417, 45;
-	shr.b64 	%rhs, %rd417, 19;
-	add.u64 	%rd448, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd429, 55;
-	shr.b64 	%rhs, %rd429, 9;
-	add.u64 	%rd449, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd418, 2;
-	shr.b64 	%rhs, %rd418, 62;
-	add.u64 	%rd450, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd439, 14;
-	shr.b64 	%rhs, %rd439, 50;
-	add.u64 	%rd451, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd435, 27;
-	shr.b64 	%rhs, %rd435, 37;
+	shl.b64 	%lhs, %rd426, 1;
+	shr.b64 	%rhs, %rd426, 63;
 	add.u64 	%rd452, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd410, 41;
-	shr.b64 	%rhs, %rd410, 23;
+	shl.b64 	%lhs, %rd421, 3;
+	shr.b64 	%rhs, %rd421, 61;
 	add.u64 	%rd453, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd432, 56;
-	shr.b64 	%rhs, %rd432, 8;
+	shl.b64 	%lhs, %rd434, 6;
+	shr.b64 	%rhs, %rd434, 58;
 	add.u64 	%rd454, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd438, 8;
-	shr.b64 	%rhs, %rd438, 56;
+	shl.b64 	%lhs, %rd428, 10;
+	shr.b64 	%rhs, %rd428, 54;
 	add.u64 	%rd455, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd430, 25;
-	shr.b64 	%rhs, %rd430, 39;
+	shl.b64 	%lhs, %rd436, 15;
+	shr.b64 	%rhs, %rd436, 49;
 	add.u64 	%rd456, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd423, 43;
-	shr.b64 	%rhs, %rd423, 21;
+	shl.b64 	%lhs, %rd443, 21;
+	shr.b64 	%rhs, %rd443, 43;
 	add.u64 	%rd457, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd421, 62;
-	shr.b64 	%rhs, %rd421, 2;
+	shl.b64 	%lhs, %rd440, 28;
+	shr.b64 	%rhs, %rd440, 36;
 	add.u64 	%rd458, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd411, 18;
-	shr.b64 	%rhs, %rd411, 46;
+	shl.b64 	%lhs, %rd420, 36;
+	shr.b64 	%rhs, %rd420, 28;
 	add.u64 	%rd459, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd437, 39;
-	shr.b64 	%rhs, %rd437, 25;
+	shl.b64 	%lhs, %rd429, 45;
+	shr.b64 	%rhs, %rd429, 19;
 	add.u64 	%rd460, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd425, 61;
-	shr.b64 	%rhs, %rd425, 3;
+	shl.b64 	%lhs, %rd441, 55;
+	shr.b64 	%rhs, %rd441, 9;
 	add.u64 	%rd461, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd436, 20;
-	shr.b64 	%rhs, %rd436, 44;
+	shl.b64 	%lhs, %rd430, 2;
+	shr.b64 	%rhs, %rd430, 62;
 	add.u64 	%rd462, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd415, 44;
-	shr.b64 	%rhs, %rd415, 20;
+	shl.b64 	%lhs, %rd451, 14;
+	shr.b64 	%rhs, %rd451, 50;
 	add.u64 	%rd463, %lhs, %rhs;
 	}
-	not.b64 	%rd464, %rd463;
-	and.b64  	%rd465, %rd457, %rd464;
-	xor.b64  	%rd466, %rd465, %rd407;
-	not.b64 	%rd467, %rd457;
-	and.b64  	%rd468, %rd445, %rd467;
-	xor.b64  	%rd908, %rd468, %rd463;
-	not.b64 	%rd469, %rd445;
-	and.b64  	%rd470, %rd451, %rd469;
-	xor.b64  	%rd903, %rd470, %rd457;
-	not.b64 	%rd471, %rd451;
-	and.b64  	%rd472, %rd407, %rd471;
-	xor.b64  	%rd898, %rd472, %rd445;
-	not.b64 	%rd473, %rd407;
-	and.b64  	%rd474, %rd463, %rd473;
-	xor.b64  	%rd893, %rd451, %rd474;
-	not.b64 	%rd475, %rd462;
-	and.b64  	%rd476, %rd441, %rd475;
-	xor.b64  	%rd912, %rd476, %rd446;
-	not.b64 	%rd477, %rd441;
-	and.b64  	%rd478, %rd448, %rd477;
-	xor.b64  	%rd907, %rd478, %rd462;
-	not.b64 	%rd479, %rd448;
-	and.b64  	%rd480, %rd461, %rd479;
-	xor.b64  	%rd902, %rd480, %rd441;
-	not.b64 	%rd481, %rd461;
-	and.b64  	%rd482, %rd446, %rd481;
-	xor.b64  	%rd897, %rd482, %rd448;
-	not.b64 	%rd483, %rd446;
-	and.b64  	%rd484, %rd462, %rd483;
-	xor.b64  	%rd892, %rd461, %rd484;
-	not.b64 	%rd485, %rd442;
-	and.b64  	%rd486, %rd456, %rd485;
-	xor.b64  	%rd911, %rd486, %rd440;
-	not.b64 	%rd487, %rd456;
-	and.b64  	%rd488, %rd455, %rd487;
-	xor.b64  	%rd906, %rd488, %rd442;
-	not.b64 	%rd489, %rd455;
-	and.b64  	%rd490, %rd459, %rd489;
-	xor.b64  	%rd901, %rd490, %rd456;
-	not.b64 	%rd491, %rd459;
-	and.b64  	%rd492, %rd440, %rd491;
-	xor.b64  	%rd896, %rd492, %rd455;
-	not.b64 	%rd493, %rd440;
-	and.b64  	%rd494, %rd442, %rd493;
-	xor.b64  	%rd891, %rd459, %rd494;
-	not.b64 	%rd495, %rd447;
-	and.b64  	%rd496, %rd443, %rd495;
-	xor.b64  	%rd910, %rd496, %rd452;
-	not.b64 	%rd497, %rd443;
-	and.b64  	%rd498, %rd444, %rd497;
-	xor.b64  	%rd905, %rd498, %rd447;
-	not.b64 	%rd499, %rd444;
-	and.b64  	%rd500, %rd454, %rd499;
-	xor.b64  	%rd900, %rd500, %rd443;
-	not.b64 	%rd501, %rd454;
-	and.b64  	%rd502, %rd452, %rd501;
-	xor.b64  	%rd895, %rd502, %rd444;
-	not.b64 	%rd503, %rd452;
-	and.b64  	%rd504, %rd447, %rd503;
-	xor.b64  	%rd890, %rd454, %rd504;
-	not.b64 	%rd505, %rd449;
-	and.b64  	%rd506, %rd460, %rd505;
-	xor.b64  	%rd909, %rd506, %rd458;
-	not.b64 	%rd507, %rd460;
-	and.b64  	%rd508, %rd453, %rd507;
-	xor.b64  	%rd904, %rd508, %rd449;
-	not.b64 	%rd509, %rd453;
-	and.b64  	%rd510, %rd450, %rd509;
-	xor.b64  	%rd899, %rd510, %rd460;
-	not.b64 	%rd511, %rd450;
-	and.b64  	%rd512, %rd458, %rd511;
-	xor.b64  	%rd894, %rd512, %rd453;
-	not.b64 	%rd513, %rd458;
-	and.b64  	%rd514, %rd449, %rd513;
-	xor.b64  	%rd889, %rd450, %rd514;
-	ld.global.nc.u64 	%rd515, [%rd888];
-	xor.b64  	%rd913, %rd466, %rd515;
-	add.s64 	%rd888, %rd888, 8;
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd447, 27;
+	shr.b64 	%rhs, %rd447, 37;
+	add.u64 	%rd464, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd422, 41;
+	shr.b64 	%rhs, %rd422, 23;
+	add.u64 	%rd465, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd444, 56;
+	shr.b64 	%rhs, %rd444, 8;
+	add.u64 	%rd466, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd450, 8;
+	shr.b64 	%rhs, %rd450, 56;
+	add.u64 	%rd467, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd442, 25;
+	shr.b64 	%rhs, %rd442, 39;
+	add.u64 	%rd468, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd435, 43;
+	shr.b64 	%rhs, %rd435, 21;
+	add.u64 	%rd469, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd433, 62;
+	shr.b64 	%rhs, %rd433, 2;
+	add.u64 	%rd470, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd423, 18;
+	shr.b64 	%rhs, %rd423, 46;
+	add.u64 	%rd471, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd449, 39;
+	shr.b64 	%rhs, %rd449, 25;
+	add.u64 	%rd472, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd437, 61;
+	shr.b64 	%rhs, %rd437, 3;
+	add.u64 	%rd473, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd448, 20;
+	shr.b64 	%rhs, %rd448, 44;
+	add.u64 	%rd474, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd427, 44;
+	shr.b64 	%rhs, %rd427, 20;
+	add.u64 	%rd475, %lhs, %rhs;
+	}
+	not.b64 	%rd476, %rd475;
+	and.b64  	%rd477, %rd469, %rd476;
+	xor.b64  	%rd478, %rd477, %rd419;
+	not.b64 	%rd479, %rd469;
+	and.b64  	%rd480, %rd457, %rd479;
+	xor.b64  	%rd1025, %rd480, %rd475;
+	not.b64 	%rd481, %rd457;
+	and.b64  	%rd482, %rd463, %rd481;
+	xor.b64  	%rd1020, %rd482, %rd469;
+	not.b64 	%rd483, %rd463;
+	and.b64  	%rd484, %rd419, %rd483;
+	xor.b64  	%rd1015, %rd484, %rd457;
+	not.b64 	%rd485, %rd419;
+	and.b64  	%rd486, %rd475, %rd485;
+	xor.b64  	%rd1010, %rd463, %rd486;
+	not.b64 	%rd487, %rd474;
+	and.b64  	%rd488, %rd453, %rd487;
+	xor.b64  	%rd1029, %rd488, %rd458;
+	not.b64 	%rd489, %rd453;
+	and.b64  	%rd490, %rd460, %rd489;
+	xor.b64  	%rd1024, %rd490, %rd474;
+	not.b64 	%rd491, %rd460;
+	and.b64  	%rd492, %rd473, %rd491;
+	xor.b64  	%rd1019, %rd492, %rd453;
+	not.b64 	%rd493, %rd473;
+	and.b64  	%rd494, %rd458, %rd493;
+	xor.b64  	%rd1014, %rd494, %rd460;
+	not.b64 	%rd495, %rd458;
+	and.b64  	%rd496, %rd474, %rd495;
+	xor.b64  	%rd1009, %rd473, %rd496;
+	not.b64 	%rd497, %rd454;
+	and.b64  	%rd498, %rd468, %rd497;
+	xor.b64  	%rd1028, %rd498, %rd452;
+	not.b64 	%rd499, %rd468;
+	and.b64  	%rd500, %rd467, %rd499;
+	xor.b64  	%rd1023, %rd500, %rd454;
+	not.b64 	%rd501, %rd467;
+	and.b64  	%rd502, %rd471, %rd501;
+	xor.b64  	%rd1018, %rd502, %rd468;
+	not.b64 	%rd503, %rd471;
+	and.b64  	%rd504, %rd452, %rd503;
+	xor.b64  	%rd1013, %rd504, %rd467;
+	not.b64 	%rd505, %rd452;
+	and.b64  	%rd506, %rd454, %rd505;
+	xor.b64  	%rd1008, %rd471, %rd506;
+	not.b64 	%rd507, %rd459;
+	and.b64  	%rd508, %rd455, %rd507;
+	xor.b64  	%rd1027, %rd508, %rd464;
+	not.b64 	%rd509, %rd455;
+	and.b64  	%rd510, %rd456, %rd509;
+	xor.b64  	%rd1022, %rd510, %rd459;
+	not.b64 	%rd511, %rd456;
+	and.b64  	%rd512, %rd466, %rd511;
+	xor.b64  	%rd1017, %rd512, %rd455;
+	not.b64 	%rd513, %rd466;
+	and.b64  	%rd514, %rd464, %rd513;
+	xor.b64  	%rd1012, %rd514, %rd456;
+	not.b64 	%rd515, %rd464;
+	and.b64  	%rd516, %rd459, %rd515;
+	xor.b64  	%rd1007, %rd466, %rd516;
+	not.b64 	%rd517, %rd461;
+	and.b64  	%rd518, %rd472, %rd517;
+	xor.b64  	%rd1026, %rd518, %rd470;
+	not.b64 	%rd519, %rd472;
+	and.b64  	%rd520, %rd465, %rd519;
+	xor.b64  	%rd1021, %rd520, %rd461;
+	not.b64 	%rd521, %rd465;
+	and.b64  	%rd522, %rd462, %rd521;
+	xor.b64  	%rd1016, %rd522, %rd472;
+	not.b64 	%rd523, %rd462;
+	and.b64  	%rd524, %rd470, %rd523;
+	xor.b64  	%rd1011, %rd524, %rd465;
+	not.b64 	%rd525, %rd470;
+	and.b64  	%rd526, %rd461, %rd525;
+	xor.b64  	%rd1006, %rd462, %rd526;
+	ld.global.nc.u64 	%rd527, [%rd1005];
+	xor.b64  	%rd1030, %rd478, %rd527;
+	add.s64 	%rd1005, %rd1005, 8;
 	add.s32 	%r4413, %r4413, 1;
 	setp.ne.s32 	%p5, %r4413, 24;
 	@%p5 bra 	$L__BB0_9;
 
-	cvt.u16.u64 	%rs2, %rd913;
+	cvt.u16.u64 	%rs2, %rd1030;
 	and.b16  	%rs3, %rs2, 240;
-	shr.u64 	%rd538, %rd913, 8;
-	cvt.u32.u64 	%r4111, %rd538;
-	shr.u64 	%rd539, %rd913, 16;
-	cvt.u32.u64 	%r4112, %rd539;
-	shr.u64 	%rd540, %rd913, 24;
-	cvt.u32.u64 	%r4113, %rd540;
-	shr.u64 	%rd541, %rd913, 32;
-	cvt.u32.u64 	%r4114, %rd541;
-	shr.u64 	%rd542, %rd913, 40;
-	cvt.u32.u64 	%r4115, %rd542;
-	shr.u64 	%rd543, %rd913, 48;
-	cvt.u32.u64 	%r4116, %rd543;
-	shr.u64 	%rd544, %rd913, 56;
-	cvt.u32.u64 	%r4117, %rd544;
-	shr.u64 	%rd545, %rd908, 8;
-	cvt.u32.u64 	%r4118, %rd545;
-	shr.u64 	%rd546, %rd908, 16;
-	cvt.u32.u64 	%r4119, %rd546;
-	shr.u64 	%rd547, %rd908, 24;
-	cvt.u32.u64 	%r4120, %rd547;
-	shr.u64 	%rd548, %rd908, 32;
-	cvt.u32.u64 	%r4121, %rd548;
-	shr.u64 	%rd549, %rd908, 40;
-	cvt.u32.u64 	%r4122, %rd549;
-	shr.u64 	%rd550, %rd908, 48;
-	cvt.u32.u64 	%r4123, %rd550;
-	shr.u64 	%rd551, %rd908, 56;
-	cvt.u32.u64 	%r4124, %rd551;
-	shr.u64 	%rd552, %rd903, 8;
-	cvt.u32.u64 	%r4125, %rd552;
-	shr.u64 	%rd553, %rd903, 16;
-	cvt.u32.u64 	%r4126, %rd553;
-	shr.u64 	%rd554, %rd903, 24;
-	cvt.u32.u64 	%r4127, %rd554;
-	shr.u64 	%rd555, %rd903, 32;
-	cvt.u32.u64 	%r4128, %rd555;
-	shr.u64 	%rd556, %rd903, 40;
-	cvt.u32.u64 	%r4129, %rd556;
-	shr.u64 	%rd557, %rd903, 48;
-	cvt.u32.u64 	%r4130, %rd557;
-	shr.u64 	%rd558, %rd903, 56;
-	cvt.u32.u64 	%r4131, %rd558;
+	shr.u64 	%rd550, %rd1030, 8;
+	cvt.u32.u64 	%r4111, %rd550;
+	shr.u64 	%rd551, %rd1030, 16;
+	cvt.u32.u64 	%r4112, %rd551;
+	shr.u64 	%rd552, %rd1030, 24;
+	cvt.u32.u64 	%r4113, %rd552;
+	shr.u64 	%rd553, %rd1030, 32;
+	cvt.u32.u64 	%r4114, %rd553;
+	shr.u64 	%rd554, %rd1030, 40;
+	cvt.u32.u64 	%r4115, %rd554;
+	shr.u64 	%rd555, %rd1030, 48;
+	cvt.u32.u64 	%r4116, %rd555;
+	shr.u64 	%rd556, %rd1030, 56;
+	cvt.u32.u64 	%r4117, %rd556;
+	shr.u64 	%rd557, %rd1025, 8;
+	cvt.u32.u64 	%r4118, %rd557;
+	shr.u64 	%rd558, %rd1025, 16;
+	cvt.u32.u64 	%r4119, %rd558;
+	shr.u64 	%rd559, %rd1025, 24;
+	cvt.u32.u64 	%r4120, %rd559;
+	shr.u64 	%rd560, %rd1025, 32;
+	cvt.u32.u64 	%r4121, %rd560;
+	shr.u64 	%rd561, %rd1025, 40;
+	cvt.u32.u64 	%r4122, %rd561;
+	shr.u64 	%rd562, %rd1025, 48;
+	cvt.u32.u64 	%r4123, %rd562;
+	shr.u64 	%rd563, %rd1025, 56;
+	cvt.u32.u64 	%r4124, %rd563;
+	shr.u64 	%rd564, %rd1020, 8;
+	cvt.u32.u64 	%r4125, %rd564;
+	shr.u64 	%rd565, %rd1020, 16;
+	cvt.u32.u64 	%r4126, %rd565;
+	shr.u64 	%rd566, %rd1020, 24;
+	cvt.u32.u64 	%r4127, %rd566;
+	shr.u64 	%rd567, %rd1020, 32;
+	cvt.u32.u64 	%r4128, %rd567;
+	shr.u64 	%rd568, %rd1020, 40;
+	cvt.u32.u64 	%r4129, %rd568;
+	shr.u64 	%rd569, %rd1020, 48;
+	cvt.u32.u64 	%r4130, %rd569;
+	shr.u64 	%rd570, %rd1020, 56;
+	cvt.u32.u64 	%r4131, %rd570;
 	shr.u16 	%rs4, %rs3, 4;
-	cvt.u32.u64 	%r4132, %rd913;
+	cvt.u32.u64 	%r4132, %rd1030;
 	shr.u32 	%r4133, %r4132, 12;
 	cvt.u32.u16 	%r4134, %rs4;
 	and.b32  	%r4135, %r4132, 15;
@@ -895,12 +895,12 @@ $L__BB0_9:
 	shl.b32 	%r4148, %r4113, 24;
 	and.b32  	%r4149, %r4148, 251658240;
 	or.b32  	%r4052, %r4147, %r4149;
-	shr.u64 	%rd559, %rd913, 36;
-	cvt.u32.u64 	%r4150, %rd559;
+	shr.u64 	%rd571, %rd1030, 36;
+	cvt.u32.u64 	%r4150, %rd571;
 	and.b32  	%r4151, %r4150, 15;
 	and.b32  	%r4152, %r4114, 15;
-	shr.u64 	%rd560, %rd913, 44;
-	cvt.u32.u64 	%r4153, %rd560;
+	shr.u64 	%rd572, %rd1030, 44;
+	cvt.u32.u64 	%r4153, %rd572;
 	bfi.b32 	%r4154, %r4152, %r4151, 8, 4;
 	shl.b32 	%r4155, %r4153, 16;
 	and.b32  	%r4156, %r4155, 983040;
@@ -908,8 +908,8 @@ $L__BB0_9:
 	shl.b32 	%r4158, %r4115, 24;
 	and.b32  	%r4159, %r4158, 251658240;
 	or.b32  	%r4056, %r4157, %r4159;
-	shr.u64 	%rd561, %rd913, 52;
-	cvt.u32.u64 	%r4160, %rd561;
+	shr.u64 	%rd573, %rd1030, 52;
+	cvt.u32.u64 	%r4160, %rd573;
 	and.b32  	%r4161, %r4160, 15;
 	and.b32  	%r4162, %r4116, 15;
 	bfi.b32 	%r4163, %r4162, %r4161, 8, 4;
@@ -918,10 +918,10 @@ $L__BB0_9:
 	shl.b32 	%r4166, %r4117, 24;
 	and.b32  	%r4167, %r4166, 251658240;
 	or.b32  	%r4060, %r4165, %r4167;
-	cvt.u16.u64 	%rs5, %rd908;
+	cvt.u16.u64 	%rs5, %rd1025;
 	and.b16  	%rs6, %rs5, 240;
 	shr.u16 	%rs7, %rs6, 4;
-	cvt.u32.u64 	%r4168, %rd908;
+	cvt.u32.u64 	%r4168, %rd1025;
 	shr.u32 	%r4169, %r4168, 12;
 	cvt.u32.u16 	%r4170, %rs7;
 	and.b32  	%r4171, %r4168, 15;
@@ -941,12 +941,12 @@ $L__BB0_9:
 	shl.b32 	%r4184, %r4120, 24;
 	and.b32  	%r4185, %r4184, 251658240;
 	or.b32  	%r4068, %r4183, %r4185;
-	shr.u64 	%rd562, %rd908, 36;
-	cvt.u32.u64 	%r4186, %rd562;
+	shr.u64 	%rd574, %rd1025, 36;
+	cvt.u32.u64 	%r4186, %rd574;
 	and.b32  	%r4187, %r4186, 15;
 	and.b32  	%r4188, %r4121, 15;
-	shr.u64 	%rd563, %rd908, 44;
-	cvt.u32.u64 	%r4189, %rd563;
+	shr.u64 	%rd575, %rd1025, 44;
+	cvt.u32.u64 	%r4189, %rd575;
 	bfi.b32 	%r4190, %r4188, %r4187, 8, 4;
 	shl.b32 	%r4191, %r4189, 16;
 	and.b32  	%r4192, %r4191, 983040;
@@ -954,8 +954,8 @@ $L__BB0_9:
 	shl.b32 	%r4194, %r4122, 24;
 	and.b32  	%r4195, %r4194, 251658240;
 	or.b32  	%r4072, %r4193, %r4195;
-	shr.u64 	%rd564, %rd908, 52;
-	cvt.u32.u64 	%r4196, %rd564;
+	shr.u64 	%rd576, %rd1025, 52;
+	cvt.u32.u64 	%r4196, %rd576;
 	and.b32  	%r4197, %r4196, 15;
 	and.b32  	%r4198, %r4123, 15;
 	bfi.b32 	%r4199, %r4198, %r4197, 8, 4;
@@ -964,10 +964,10 @@ $L__BB0_9:
 	shl.b32 	%r4202, %r4124, 24;
 	and.b32  	%r4203, %r4202, 251658240;
 	or.b32  	%r4076, %r4201, %r4203;
-	cvt.u16.u64 	%rs8, %rd903;
+	cvt.u16.u64 	%rs8, %rd1020;
 	and.b16  	%rs9, %rs8, 240;
 	shr.u16 	%rs10, %rs9, 4;
-	cvt.u32.u64 	%r4204, %rd903;
+	cvt.u32.u64 	%r4204, %rd1020;
 	shr.u32 	%r4205, %r4204, 12;
 	cvt.u32.u16 	%r4206, %rs10;
 	and.b32  	%r4207, %r4204, 15;
@@ -987,12 +987,12 @@ $L__BB0_9:
 	shl.b32 	%r4220, %r4127, 24;
 	and.b32  	%r4221, %r4220, 251658240;
 	or.b32  	%r4084, %r4219, %r4221;
-	shr.u64 	%rd565, %rd903, 36;
-	cvt.u32.u64 	%r4222, %rd565;
+	shr.u64 	%rd577, %rd1020, 36;
+	cvt.u32.u64 	%r4222, %rd577;
 	and.b32  	%r4223, %r4222, 15;
 	and.b32  	%r4224, %r4128, 15;
-	shr.u64 	%rd566, %rd903, 44;
-	cvt.u32.u64 	%r4225, %rd566;
+	shr.u64 	%rd578, %rd1020, 44;
+	cvt.u32.u64 	%r4225, %rd578;
 	bfi.b32 	%r4226, %r4224, %r4223, 8, 4;
 	shl.b32 	%r4227, %r4225, 16;
 	and.b32  	%r4228, %r4227, 983040;
@@ -1000,8 +1000,8 @@ $L__BB0_9:
 	shl.b32 	%r4230, %r4129, 24;
 	and.b32  	%r4231, %r4230, 251658240;
 	or.b32  	%r4088, %r4229, %r4231;
-	shr.u64 	%rd567, %rd903, 52;
-	cvt.u32.u64 	%r4232, %rd567;
+	shr.u64 	%rd579, %rd1020, 52;
+	cvt.u32.u64 	%r4232, %rd579;
 	and.b32  	%r4233, %r4232, 15;
 	and.b32  	%r4234, %r4130, 15;
 	bfi.b32 	%r4235, %r4234, %r4233, 8, 4;
@@ -1010,12 +1010,12 @@ $L__BB0_9:
 	shl.b32 	%r4238, %r4131, 24;
 	and.b32  	%r4239, %r4238, 251658240;
 	or.b32  	%r4092, %r4237, %r4239;
-	cvt.u16.u64 	%rs11, %rd898;
+	cvt.u16.u64 	%rs11, %rd1015;
 	and.b16  	%rs12, %rs11, 240;
 	shr.u16 	%rs13, %rs12, 4;
-	shr.u64 	%rd568, %rd898, 8;
-	cvt.u32.u64 	%r4240, %rd568;
-	cvt.u32.u64 	%r4241, %rd898;
+	shr.u64 	%rd580, %rd1015, 8;
+	cvt.u32.u64 	%r4240, %rd580;
+	cvt.u32.u64 	%r4241, %rd1015;
 	shr.u32 	%r4242, %r4241, 12;
 	cvt.u32.u16 	%r4243, %rs13;
 	and.b32  	%r4244, %r4241, 15;
@@ -1026,29 +1026,29 @@ $L__BB0_9:
 	shl.b32 	%r4249, %r4240, 24;
 	and.b32  	%r4250, %r4249, 251658240;
 	or.b32  	%r4096, %r4248, %r4250;
-	shr.u64 	%rd569, %rd898, 16;
-	cvt.u32.u64 	%r4251, %rd569;
+	shr.u64 	%rd581, %rd1015, 16;
+	cvt.u32.u64 	%r4251, %rd581;
 	shr.u32 	%r4252, %r4241, 20;
 	and.b32  	%r4253, %r4252, 15;
 	and.b32  	%r4254, %r4251, 15;
-	shr.u64 	%rd570, %rd898, 24;
-	cvt.u32.u64 	%r4255, %rd570;
+	shr.u64 	%rd582, %rd1015, 24;
+	cvt.u32.u64 	%r4255, %rd582;
 	bfi.b32 	%r4256, %r4254, %r4253, 8, 4;
 	and.b32  	%r4257, %r4242, 983040;
 	or.b32  	%r4258, %r4256, %r4257;
 	shl.b32 	%r4259, %r4255, 24;
 	and.b32  	%r4260, %r4259, 251658240;
 	or.b32  	%r4100, %r4258, %r4260;
-	shr.u64 	%rd571, %rd898, 32;
-	cvt.u32.u64 	%r4261, %rd571;
-	shr.u64 	%rd572, %rd898, 36;
-	cvt.u32.u64 	%r4262, %rd572;
+	shr.u64 	%rd583, %rd1015, 32;
+	cvt.u32.u64 	%r4261, %rd583;
+	shr.u64 	%rd584, %rd1015, 36;
+	cvt.u32.u64 	%r4262, %rd584;
 	and.b32  	%r4263, %r4262, 15;
 	and.b32  	%r4264, %r4261, 15;
-	shr.u64 	%rd573, %rd898, 40;
-	cvt.u32.u64 	%r4265, %rd573;
-	shr.u64 	%rd574, %rd898, 44;
-	cvt.u32.u64 	%r4266, %rd574;
+	shr.u64 	%rd585, %rd1015, 40;
+	cvt.u32.u64 	%r4265, %rd585;
+	shr.u64 	%rd586, %rd1015, 44;
+	cvt.u32.u64 	%r4266, %rd586;
 	bfi.b32 	%r4267, %r4264, %r4263, 8, 4;
 	shl.b32 	%r4268, %r4266, 16;
 	and.b32  	%r4269, %r4268, 983040;
@@ -1056,14 +1056,14 @@ $L__BB0_9:
 	shl.b32 	%r4271, %r4265, 24;
 	and.b32  	%r4272, %r4271, 251658240;
 	or.b32  	%r4104, %r4270, %r4272;
-	shr.u64 	%rd575, %rd898, 48;
-	cvt.u32.u64 	%r4273, %rd575;
-	shr.u64 	%rd576, %rd898, 52;
-	cvt.u32.u64 	%r4274, %rd576;
+	shr.u64 	%rd587, %rd1015, 48;
+	cvt.u32.u64 	%r4273, %rd587;
+	shr.u64 	%rd588, %rd1015, 52;
+	cvt.u32.u64 	%r4274, %rd588;
 	and.b32  	%r4275, %r4274, 15;
 	and.b32  	%r4276, %r4273, 15;
-	shr.u64 	%rd577, %rd898, 56;
-	cvt.u32.u64 	%r4277, %rd577;
+	shr.u64 	%rd589, %rd1015, 56;
+	cvt.u32.u64 	%r4277, %rd589;
 	bfi.b32 	%r4278, %r4276, %r4275, 8, 4;
 	and.b32  	%r4279, %r4266, 983040;
 	or.b32  	%r4280, %r4278, %r4279;
@@ -1203,8 +1203,8 @@ $L__BB0_9:
 	and.b32  	%r4284, %r4283, 240;
 	shr.u32 	%r4285, %r138, 10;
 	or.b32  	%r4286, %r4285, %r4284;
-	cvt.u64.u32 	%rd578, %r4286;
-	xor.b64  	%rd579, %rd913, %rd578;
+	cvt.u64.u32 	%rd590, %r4286;
+	xor.b64  	%rd591, %rd1030, %rd590;
 	ld.const.u32 	%r143, [matrix+128];
 	// begin inline asm
 	dp4a.u32.u32 %r142, %r143, %r4048, %r4414;
@@ -1337,8 +1337,8 @@ $L__BB0_9:
 	and.b32  	%r4288, %r4287, 240;
 	shr.u32 	%r4289, %r266, 10;
 	or.b32  	%r4290, %r4289, %r4288;
-	cvt.u64.u32 	%rd580, %r4290;
-	xor.b64  	%rd581, %rd538, %rd580;
+	cvt.u64.u32 	%rd592, %r4290;
+	xor.b64  	%rd593, %rd550, %rd592;
 	ld.const.u32 	%r271, [matrix+256];
 	// begin inline asm
 	dp4a.u32.u32 %r270, %r271, %r4048, %r4414;
@@ -1471,8 +1471,8 @@ $L__BB0_9:
 	and.b32  	%r4292, %r4291, 240;
 	shr.u32 	%r4293, %r394, 10;
 	or.b32  	%r4294, %r4293, %r4292;
-	cvt.u64.u32 	%rd582, %r4294;
-	xor.b64  	%rd583, %rd539, %rd582;
+	cvt.u64.u32 	%rd594, %r4294;
+	xor.b64  	%rd595, %rd551, %rd594;
 	ld.const.u32 	%r399, [matrix+384];
 	// begin inline asm
 	dp4a.u32.u32 %r398, %r399, %r4048, %r4414;
@@ -1605,8 +1605,8 @@ $L__BB0_9:
 	and.b32  	%r4296, %r4295, 240;
 	shr.u32 	%r4297, %r522, 10;
 	or.b32  	%r4298, %r4297, %r4296;
-	cvt.u64.u32 	%rd584, %r4298;
-	xor.b64  	%rd585, %rd540, %rd584;
+	cvt.u64.u32 	%rd596, %r4298;
+	xor.b64  	%rd597, %rd552, %rd596;
 	ld.const.u32 	%r527, [matrix+512];
 	// begin inline asm
 	dp4a.u32.u32 %r526, %r527, %r4048, %r4414;
@@ -1739,8 +1739,8 @@ $L__BB0_9:
 	and.b32  	%r4300, %r4299, 240;
 	shr.u32 	%r4301, %r650, 10;
 	or.b32  	%r4302, %r4301, %r4300;
-	cvt.u64.u32 	%rd586, %r4302;
-	xor.b64  	%rd587, %rd541, %rd586;
+	cvt.u64.u32 	%rd598, %r4302;
+	xor.b64  	%rd599, %rd553, %rd598;
 	ld.const.u32 	%r655, [matrix+640];
 	// begin inline asm
 	dp4a.u32.u32 %r654, %r655, %r4048, %r4414;
@@ -1873,8 +1873,8 @@ $L__BB0_9:
 	and.b32  	%r4304, %r4303, 240;
 	shr.u32 	%r4305, %r778, 10;
 	or.b32  	%r4306, %r4305, %r4304;
-	cvt.u64.u32 	%rd588, %r4306;
-	xor.b64  	%rd589, %rd542, %rd588;
+	cvt.u64.u32 	%rd600, %r4306;
+	xor.b64  	%rd601, %rd554, %rd600;
 	ld.const.u32 	%r783, [matrix+768];
 	// begin inline asm
 	dp4a.u32.u32 %r782, %r783, %r4048, %r4414;
@@ -2007,8 +2007,8 @@ $L__BB0_9:
 	and.b32  	%r4308, %r4307, 240;
 	shr.u32 	%r4309, %r906, 10;
 	or.b32  	%r4310, %r4309, %r4308;
-	cvt.u64.u32 	%rd590, %r4310;
-	xor.b64  	%rd591, %rd543, %rd590;
+	cvt.u64.u32 	%rd602, %r4310;
+	xor.b64  	%rd603, %rd555, %rd602;
 	ld.const.u32 	%r911, [matrix+896];
 	// begin inline asm
 	dp4a.u32.u32 %r910, %r911, %r4048, %r4414;
@@ -2141,7 +2141,7 @@ $L__BB0_9:
 	and.b32  	%r4312, %r4311, 240;
 	shr.u32 	%r4313, %r1034, 10;
 	or.b32  	%r4314, %r4313, %r4312;
-	cvt.u64.u32 	%rd592, %r4314;
+	cvt.u64.u32 	%rd604, %r4314;
 	ld.const.u32 	%r1039, [matrix+1024];
 	// begin inline asm
 	dp4a.u32.u32 %r1038, %r1039, %r4048, %r4414;
@@ -2274,8 +2274,8 @@ $L__BB0_9:
 	and.b32  	%r4316, %r4315, 240;
 	shr.u32 	%r4317, %r1162, 10;
 	or.b32  	%r4318, %r4317, %r4316;
-	cvt.u64.u32 	%rd593, %r4318;
-	xor.b64  	%rd594, %rd908, %rd593;
+	cvt.u64.u32 	%rd605, %r4318;
+	xor.b64  	%rd606, %rd1025, %rd605;
 	ld.const.u32 	%r1167, [matrix+1152];
 	// begin inline asm
 	dp4a.u32.u32 %r1166, %r1167, %r4048, %r4414;
@@ -2408,8 +2408,8 @@ $L__BB0_9:
 	and.b32  	%r4320, %r4319, 240;
 	shr.u32 	%r4321, %r1290, 10;
 	or.b32  	%r4322, %r4321, %r4320;
-	cvt.u64.u32 	%rd595, %r4322;
-	xor.b64  	%rd596, %rd545, %rd595;
+	cvt.u64.u32 	%rd607, %r4322;
+	xor.b64  	%rd608, %rd557, %rd607;
 	ld.const.u32 	%r1295, [matrix+1280];
 	// begin inline asm
 	dp4a.u32.u32 %r1294, %r1295, %r4048, %r4414;
@@ -2542,8 +2542,8 @@ $L__BB0_9:
 	and.b32  	%r4324, %r4323, 240;
 	shr.u32 	%r4325, %r1418, 10;
 	or.b32  	%r4326, %r4325, %r4324;
-	cvt.u64.u32 	%rd597, %r4326;
-	xor.b64  	%rd598, %rd546, %rd597;
+	cvt.u64.u32 	%rd609, %r4326;
+	xor.b64  	%rd610, %rd558, %rd609;
 	ld.const.u32 	%r1423, [matrix+1408];
 	// begin inline asm
 	dp4a.u32.u32 %r1422, %r1423, %r4048, %r4414;
@@ -2676,8 +2676,8 @@ $L__BB0_9:
 	and.b32  	%r4328, %r4327, 240;
 	shr.u32 	%r4329, %r1546, 10;
 	or.b32  	%r4330, %r4329, %r4328;
-	cvt.u64.u32 	%rd599, %r4330;
-	xor.b64  	%rd600, %rd547, %rd599;
+	cvt.u64.u32 	%rd611, %r4330;
+	xor.b64  	%rd612, %rd559, %rd611;
 	ld.const.u32 	%r1551, [matrix+1536];
 	// begin inline asm
 	dp4a.u32.u32 %r1550, %r1551, %r4048, %r4414;
@@ -2810,8 +2810,8 @@ $L__BB0_9:
 	and.b32  	%r4332, %r4331, 240;
 	shr.u32 	%r4333, %r1674, 10;
 	or.b32  	%r4334, %r4333, %r4332;
-	cvt.u64.u32 	%rd601, %r4334;
-	xor.b64  	%rd602, %rd548, %rd601;
+	cvt.u64.u32 	%rd613, %r4334;
+	xor.b64  	%rd614, %rd560, %rd613;
 	ld.const.u32 	%r1679, [matrix+1664];
 	// begin inline asm
 	dp4a.u32.u32 %r1678, %r1679, %r4048, %r4414;
@@ -2944,8 +2944,8 @@ $L__BB0_9:
 	and.b32  	%r4336, %r4335, 240;
 	shr.u32 	%r4337, %r1802, 10;
 	or.b32  	%r4338, %r4337, %r4336;
-	cvt.u64.u32 	%rd603, %r4338;
-	xor.b64  	%rd604, %rd549, %rd603;
+	cvt.u64.u32 	%rd615, %r4338;
+	xor.b64  	%rd616, %rd561, %rd615;
 	ld.const.u32 	%r1807, [matrix+1792];
 	// begin inline asm
 	dp4a.u32.u32 %r1806, %r1807, %r4048, %r4414;
@@ -3078,8 +3078,8 @@ $L__BB0_9:
 	and.b32  	%r4340, %r4339, 240;
 	shr.u32 	%r4341, %r1930, 10;
 	or.b32  	%r4342, %r4341, %r4340;
-	cvt.u64.u32 	%rd605, %r4342;
-	xor.b64  	%rd606, %rd550, %rd605;
+	cvt.u64.u32 	%rd617, %r4342;
+	xor.b64  	%rd618, %rd562, %rd617;
 	ld.const.u32 	%r1935, [matrix+1920];
 	// begin inline asm
 	dp4a.u32.u32 %r1934, %r1935, %r4048, %r4414;
@@ -3212,7 +3212,7 @@ $L__BB0_9:
 	and.b32  	%r4344, %r4343, 240;
 	shr.u32 	%r4345, %r2058, 10;
 	or.b32  	%r4346, %r4345, %r4344;
-	cvt.u64.u32 	%rd607, %r4346;
+	cvt.u64.u32 	%rd619, %r4346;
 	ld.const.u32 	%r2063, [matrix+2048];
 	// begin inline asm
 	dp4a.u32.u32 %r2062, %r2063, %r4048, %r4414;
@@ -3345,8 +3345,8 @@ $L__BB0_9:
 	and.b32  	%r4348, %r4347, 240;
 	shr.u32 	%r4349, %r2186, 10;
 	or.b32  	%r4350, %r4349, %r4348;
-	cvt.u64.u32 	%rd608, %r4350;
-	xor.b64  	%rd609, %rd903, %rd608;
+	cvt.u64.u32 	%rd620, %r4350;
+	xor.b64  	%rd621, %rd1020, %rd620;
 	ld.const.u32 	%r2191, [matrix+2176];
 	// begin inline asm
 	dp4a.u32.u32 %r2190, %r2191, %r4048, %r4414;
@@ -3479,8 +3479,8 @@ $L__BB0_9:
 	and.b32  	%r4352, %r4351, 240;
 	shr.u32 	%r4353, %r2314, 10;
 	or.b32  	%r4354, %r4353, %r4352;
-	cvt.u64.u32 	%rd610, %r4354;
-	xor.b64  	%rd611, %rd552, %rd610;
+	cvt.u64.u32 	%rd622, %r4354;
+	xor.b64  	%rd623, %rd564, %rd622;
 	ld.const.u32 	%r2319, [matrix+2304];
 	// begin inline asm
 	dp4a.u32.u32 %r2318, %r2319, %r4048, %r4414;
@@ -3613,8 +3613,8 @@ $L__BB0_9:
 	and.b32  	%r4356, %r4355, 240;
 	shr.u32 	%r4357, %r2442, 10;
 	or.b32  	%r4358, %r4357, %r4356;
-	cvt.u64.u32 	%rd612, %r4358;
-	xor.b64  	%rd613, %rd553, %rd612;
+	cvt.u64.u32 	%rd624, %r4358;
+	xor.b64  	%rd625, %rd565, %rd624;
 	ld.const.u32 	%r2447, [matrix+2432];
 	// begin inline asm
 	dp4a.u32.u32 %r2446, %r2447, %r4048, %r4414;
@@ -3747,8 +3747,8 @@ $L__BB0_9:
 	and.b32  	%r4360, %r4359, 240;
 	shr.u32 	%r4361, %r2570, 10;
 	or.b32  	%r4362, %r4361, %r4360;
-	cvt.u64.u32 	%rd614, %r4362;
-	xor.b64  	%rd615, %rd554, %rd614;
+	cvt.u64.u32 	%rd626, %r4362;
+	xor.b64  	%rd627, %rd566, %rd626;
 	ld.const.u32 	%r2575, [matrix+2560];
 	// begin inline asm
 	dp4a.u32.u32 %r2574, %r2575, %r4048, %r4414;
@@ -3881,8 +3881,8 @@ $L__BB0_9:
 	and.b32  	%r4364, %r4363, 240;
 	shr.u32 	%r4365, %r2698, 10;
 	or.b32  	%r4366, %r4365, %r4364;
-	cvt.u64.u32 	%rd616, %r4366;
-	xor.b64  	%rd617, %rd555, %rd616;
+	cvt.u64.u32 	%rd628, %r4366;
+	xor.b64  	%rd629, %rd567, %rd628;
 	ld.const.u32 	%r2703, [matrix+2688];
 	// begin inline asm
 	dp4a.u32.u32 %r2702, %r2703, %r4048, %r4414;
@@ -4015,8 +4015,8 @@ $L__BB0_9:
 	and.b32  	%r4368, %r4367, 240;
 	shr.u32 	%r4369, %r2826, 10;
 	or.b32  	%r4370, %r4369, %r4368;
-	cvt.u64.u32 	%rd618, %r4370;
-	xor.b64  	%rd619, %rd556, %rd618;
+	cvt.u64.u32 	%rd630, %r4370;
+	xor.b64  	%rd631, %rd568, %rd630;
 	ld.const.u32 	%r2831, [matrix+2816];
 	// begin inline asm
 	dp4a.u32.u32 %r2830, %r2831, %r4048, %r4414;
@@ -4149,8 +4149,8 @@ $L__BB0_9:
 	and.b32  	%r4372, %r4371, 240;
 	shr.u32 	%r4373, %r2954, 10;
 	or.b32  	%r4374, %r4373, %r4372;
-	cvt.u64.u32 	%rd620, %r4374;
-	xor.b64  	%rd621, %rd557, %rd620;
+	cvt.u64.u32 	%rd632, %r4374;
+	xor.b64  	%rd633, %rd569, %rd632;
 	ld.const.u32 	%r2959, [matrix+2944];
 	// begin inline asm
 	dp4a.u32.u32 %r2958, %r2959, %r4048, %r4414;
@@ -4283,7 +4283,7 @@ $L__BB0_9:
 	and.b32  	%r4376, %r4375, 240;
 	shr.u32 	%r4377, %r3082, 10;
 	or.b32  	%r4378, %r4377, %r4376;
-	cvt.u64.u32 	%rd622, %r4378;
+	cvt.u64.u32 	%rd634, %r4378;
 	ld.const.u32 	%r3087, [matrix+3072];
 	// begin inline asm
 	dp4a.u32.u32 %r3086, %r3087, %r4048, %r4414;
@@ -4417,7 +4417,7 @@ $L__BB0_9:
 	shr.u32 	%r4381, %r3210, 10;
 	and.b32  	%r4382, %r4381, 255;
 	or.b32  	%r4383, %r4382, %r4380;
-	cvt.u64.u32 	%rd623, %r4383;
+	cvt.u64.u32 	%rd635, %r4383;
 	ld.const.u32 	%r3215, [matrix+3200];
 	// begin inline asm
 	dp4a.u32.u32 %r3214, %r3215, %r4048, %r4414;
@@ -4550,10 +4550,10 @@ $L__BB0_9:
 	and.b32  	%r4385, %r4384, 240;
 	shr.u32 	%r4386, %r3338, 10;
 	or.b32  	%r4387, %r4386, %r4385;
-	cvt.u64.u32 	%rd624, %r4387;
-	xor.b64  	%rd625, %rd568, %rd624;
-	and.b64  	%rd626, %rd898, 255;
-	xor.b64  	%rd627, %rd626, %rd623;
+	cvt.u64.u32 	%rd636, %r4387;
+	xor.b64  	%rd637, %rd580, %rd636;
+	and.b64  	%rd638, %rd1015, 255;
+	xor.b64  	%rd639, %rd638, %rd635;
 	ld.const.u32 	%r3343, [matrix+3328];
 	// begin inline asm
 	dp4a.u32.u32 %r3342, %r3343, %r4048, %r4414;
@@ -4686,8 +4686,8 @@ $L__BB0_9:
 	and.b32  	%r4389, %r4388, 240;
 	shr.u32 	%r4390, %r3466, 10;
 	or.b32  	%r4391, %r4390, %r4389;
-	cvt.u64.u32 	%rd628, %r4391;
-	xor.b64  	%rd629, %rd569, %rd628;
+	cvt.u64.u32 	%rd640, %r4391;
+	xor.b64  	%rd641, %rd581, %rd640;
 	ld.const.u32 	%r3471, [matrix+3456];
 	// begin inline asm
 	dp4a.u32.u32 %r3470, %r3471, %r4048, %r4414;
@@ -4820,8 +4820,8 @@ $L__BB0_9:
 	and.b32  	%r4393, %r4392, 240;
 	shr.u32 	%r4394, %r3594, 10;
 	or.b32  	%r4395, %r4394, %r4393;
-	cvt.u64.u32 	%rd630, %r4395;
-	xor.b64  	%rd631, %rd570, %rd630;
+	cvt.u64.u32 	%rd642, %r4395;
+	xor.b64  	%rd643, %rd582, %rd642;
 	ld.const.u32 	%r3599, [matrix+3584];
 	// begin inline asm
 	dp4a.u32.u32 %r3598, %r3599, %r4048, %r4414;
@@ -4954,8 +4954,8 @@ $L__BB0_9:
 	and.b32  	%r4397, %r4396, 240;
 	shr.u32 	%r4398, %r3722, 10;
 	or.b32  	%r4399, %r4398, %r4397;
-	cvt.u64.u32 	%rd632, %r4399;
-	xor.b64  	%rd633, %rd571, %rd632;
+	cvt.u64.u32 	%rd644, %r4399;
+	xor.b64  	%rd645, %rd583, %rd644;
 	ld.const.u32 	%r3727, [matrix+3712];
 	// begin inline asm
 	dp4a.u32.u32 %r3726, %r3727, %r4048, %r4414;
@@ -5088,8 +5088,8 @@ $L__BB0_9:
 	and.b32  	%r4401, %r4400, 240;
 	shr.u32 	%r4402, %r3850, 10;
 	or.b32  	%r4403, %r4402, %r4401;
-	cvt.u64.u32 	%rd634, %r4403;
-	xor.b64  	%rd635, %rd573, %rd634;
+	cvt.u64.u32 	%rd646, %r4403;
+	xor.b64  	%rd647, %rd585, %rd646;
 	ld.const.u32 	%r3855, [matrix+3840];
 	// begin inline asm
 	dp4a.u32.u32 %r3854, %r3855, %r4048, %r4414;
@@ -5222,8 +5222,8 @@ $L__BB0_9:
 	and.b32  	%r4405, %r4404, 240;
 	shr.u32 	%r4406, %r3978, 10;
 	or.b32  	%r4407, %r4406, %r4405;
-	cvt.u64.u32 	%rd636, %r4407;
-	xor.b64  	%rd637, %rd575, %rd636;
+	cvt.u64.u32 	%rd648, %r4407;
+	xor.b64  	%rd649, %rd587, %rd648;
 	ld.const.u32 	%r3983, [matrix+3968];
 	// begin inline asm
 	dp4a.u32.u32 %r3982, %r3983, %r4048, %r4414;
@@ -5356,502 +5356,614 @@ $L__BB0_9:
 	and.b32  	%r4409, %r4408, 240;
 	shr.u32 	%r4410, %r4106, 10;
 	or.b32  	%r4411, %r4410, %r4409;
-	cvt.u64.u32 	%rd638, %r4411;
-	shl.b64 	%rd639, %rd638, 56;
-	xor.b64  	%rd640, %rd544, %rd592;
-	shl.b64 	%rd641, %rd585, 24;
-	and.b64  	%rd642, %rd641, 4278190080;
-	shl.b64 	%rd643, %rd583, 16;
-	and.b64  	%rd644, %rd643, 16711680;
-	shl.b64 	%rd645, %rd581, 8;
-	and.b64  	%rd646, %rd645, 65280;
-	xor.b64  	%rd647, %rd551, %rd607;
-	shl.b64 	%rd648, %rd600, 24;
-	and.b64  	%rd649, %rd648, 4278190080;
-	shl.b64 	%rd650, %rd598, 16;
-	and.b64  	%rd651, %rd650, 16711680;
-	shl.b64 	%rd652, %rd596, 8;
-	and.b64  	%rd653, %rd652, 65280;
-	xor.b64  	%rd654, %rd558, %rd622;
-	shl.b64 	%rd655, %rd615, 24;
-	and.b64  	%rd656, %rd655, 4278190080;
-	shl.b64 	%rd657, %rd613, 16;
-	and.b64  	%rd658, %rd657, 16711680;
-	shl.b64 	%rd659, %rd611, 8;
-	and.b64  	%rd660, %rd659, 65280;
-	and.b64  	%rd661, %rd898, -72057594037927936;
-	xor.b64  	%rd662, %rd661, %rd639;
-	shl.b64 	%rd663, %rd640, 56;
-	shl.b64 	%rd664, %rd591, 48;
-	and.b64  	%rd665, %rd664, 71776119061217280;
-	or.b64  	%rd666, %rd663, %rd665;
-	shl.b64 	%rd667, %rd589, 40;
-	and.b64  	%rd668, %rd667, 280375465082880;
-	or.b64  	%rd669, %rd666, %rd668;
-	shl.b64 	%rd670, %rd587, 32;
-	and.b64  	%rd671, %rd670, 1095216660480;
-	or.b64  	%rd672, %rd669, %rd671;
-	or.b64  	%rd673, %rd672, %rd642;
-	or.b64  	%rd674, %rd673, %rd644;
-	and.b64  	%rd675, %rd579, 255;
-	or.b64  	%rd676, %rd674, %rd646;
-	or.b64  	%rd677, %rd676, %rd675;
-	xor.b64  	%rd180, %rd677, 4239941492252378377;
-	shl.b64 	%rd678, %rd647, 56;
-	shl.b64 	%rd679, %rd606, 48;
-	and.b64  	%rd680, %rd679, 71776119061217280;
+	cvt.u64.u32 	%rd650, %r4411;
+	shl.b64 	%rd651, %rd650, 56;
+	xor.b64  	%rd652, %rd556, %rd604;
+	shl.b64 	%rd653, %rd597, 24;
+	and.b64  	%rd654, %rd653, 4278190080;
+	shl.b64 	%rd655, %rd595, 16;
+	and.b64  	%rd656, %rd655, 16711680;
+	shl.b64 	%rd657, %rd593, 8;
+	and.b64  	%rd658, %rd657, 65280;
+	xor.b64  	%rd659, %rd563, %rd619;
+	shl.b64 	%rd660, %rd612, 24;
+	and.b64  	%rd661, %rd660, 4278190080;
+	shl.b64 	%rd662, %rd610, 16;
+	and.b64  	%rd663, %rd662, 16711680;
+	shl.b64 	%rd664, %rd608, 8;
+	and.b64  	%rd665, %rd664, 65280;
+	xor.b64  	%rd666, %rd570, %rd634;
+	shl.b64 	%rd667, %rd627, 24;
+	and.b64  	%rd668, %rd667, 4278190080;
+	shl.b64 	%rd669, %rd625, 16;
+	and.b64  	%rd670, %rd669, 16711680;
+	shl.b64 	%rd671, %rd623, 8;
+	and.b64  	%rd672, %rd671, 65280;
+	and.b64  	%rd673, %rd1015, -72057594037927936;
+	xor.b64  	%rd674, %rd673, %rd651;
+	shl.b64 	%rd675, %rd652, 56;
+	shl.b64 	%rd676, %rd603, 48;
+	and.b64  	%rd677, %rd676, 71776119061217280;
+	or.b64  	%rd678, %rd675, %rd677;
+	shl.b64 	%rd679, %rd601, 40;
+	and.b64  	%rd680, %rd679, 280375465082880;
 	or.b64  	%rd681, %rd678, %rd680;
-	shl.b64 	%rd682, %rd604, 40;
-	and.b64  	%rd683, %rd682, 280375465082880;
+	shl.b64 	%rd682, %rd599, 32;
+	and.b64  	%rd683, %rd682, 1095216660480;
 	or.b64  	%rd684, %rd681, %rd683;
-	shl.b64 	%rd685, %rd602, 32;
-	and.b64  	%rd686, %rd685, 1095216660480;
-	or.b64  	%rd687, %rd684, %rd686;
-	or.b64  	%rd688, %rd687, %rd649;
-	or.b64  	%rd689, %rd688, %rd651;
-	and.b64  	%rd690, %rd594, 255;
-	or.b64  	%rd691, %rd689, %rd653;
-	or.b64  	%rd692, %rd691, %rd690;
-	xor.b64  	%rd934, %rd692, 8746723911537738262;
-	shl.b64 	%rd693, %rd654, 56;
-	shl.b64 	%rd694, %rd621, 48;
-	and.b64  	%rd695, %rd694, 71776119061217280;
+	or.b64  	%rd685, %rd684, %rd654;
+	or.b64  	%rd686, %rd685, %rd656;
+	and.b64  	%rd687, %rd591, 255;
+	or.b64  	%rd688, %rd686, %rd658;
+	or.b64  	%rd689, %rd688, %rd687;
+	xor.b64  	%rd1056, %rd689, 4239941492252378377;
+	shl.b64 	%rd690, %rd659, 56;
+	shl.b64 	%rd691, %rd618, 48;
+	and.b64  	%rd692, %rd691, 71776119061217280;
+	or.b64  	%rd693, %rd690, %rd692;
+	shl.b64 	%rd694, %rd616, 40;
+	and.b64  	%rd695, %rd694, 280375465082880;
 	or.b64  	%rd696, %rd693, %rd695;
-	shl.b64 	%rd697, %rd619, 40;
-	and.b64  	%rd698, %rd697, 280375465082880;
+	shl.b64 	%rd697, %rd614, 32;
+	and.b64  	%rd698, %rd697, 1095216660480;
 	or.b64  	%rd699, %rd696, %rd698;
-	shl.b64 	%rd700, %rd617, 32;
-	and.b64  	%rd701, %rd700, 1095216660480;
-	or.b64  	%rd702, %rd699, %rd701;
-	or.b64  	%rd703, %rd702, %rd656;
-	or.b64  	%rd704, %rd703, %rd658;
-	and.b64  	%rd705, %rd609, 255;
-	or.b64  	%rd706, %rd704, %rd660;
-	or.b64  	%rd707, %rd706, %rd705;
-	xor.b64  	%rd929, %rd707, 8796936657246353646;
-	shl.b64 	%rd708, %rd637, 48;
-	and.b64  	%rd709, %rd708, 71776119061217280;
-	or.b64  	%rd710, %rd662, %rd709;
-	shl.b64 	%rd711, %rd635, 40;
-	and.b64  	%rd712, %rd711, 280375465082880;
-	or.b64  	%rd713, %rd710, %rd712;
-	shl.b64 	%rd714, %rd633, 32;
-	and.b64  	%rd715, %rd714, 1095216660480;
-	or.b64  	%rd716, %rd713, %rd715;
-	shl.b64 	%rd717, %rd631, 24;
-	and.b64  	%rd718, %rd717, 4278190080;
-	or.b64  	%rd719, %rd716, %rd718;
-	shl.b64 	%rd720, %rd629, 16;
-	and.b64  	%rd721, %rd720, 16711680;
-	shl.b64 	%rd722, %rd625, 8;
-	and.b64  	%rd723, %rd722, 65280;
-	or.b64  	%rd724, %rd719, %rd721;
-	or.b64  	%rd725, %rd724, %rd723;
-	or.b64  	%rd726, %rd725, %rd627;
-	xor.b64  	%rd924, %rd726, 1272090201925444760;
-	mov.u64 	%rd938, 8270816933120786537;
-	mov.u64 	%rd937, -850687345431043546;
-	mov.u64 	%rd936, 8596393687355028144;
-	mov.u64 	%rd935, -4073852189716399785;
-	mov.u64 	%rd933, -4539347866060507718;
-	mov.u64 	%rd932, -3233781605604422593;
-	mov.u64 	%rd931, 570094237299545110;
-	mov.u64 	%rd930, 5171152063242093102;
-	mov.u64 	%rd928, 6782861118970774626;
-	mov.u64 	%rd927, 7812475424661425213;
-	mov.u64 	%rd926, 9119540418498120711;
-	mov.u64 	%rd925, -7873636174015165430;
-	mov.u64 	%rd923, -9207053471590684088;
-	mov.u64 	%rd922, 3370482334374859748;
-	mov.u64 	%rd921, -1544774801229058759;
-	mov.u64 	%rd920, 6096431547456407061;
-	mov.u64 	%rd919, -1792185402154627366;
-	mov.u64 	%rd918, -6864424130110145268;
-	mov.u64 	%rd917, 5690099369266491460;
-	mov.u64 	%rd916, -5074726839974049192;
-	mov.u64 	%rd915, 1592359455985097269;
-	mov.u64 	%rd914, RC;
+	or.b64  	%rd700, %rd699, %rd661;
+	or.b64  	%rd701, %rd700, %rd663;
+	and.b64  	%rd702, %rd606, 255;
+	or.b64  	%rd703, %rd701, %rd665;
+	or.b64  	%rd704, %rd703, %rd702;
+	xor.b64  	%rd1051, %rd704, 8746723911537738262;
+	shl.b64 	%rd705, %rd666, 56;
+	shl.b64 	%rd706, %rd633, 48;
+	and.b64  	%rd707, %rd706, 71776119061217280;
+	or.b64  	%rd708, %rd705, %rd707;
+	shl.b64 	%rd709, %rd631, 40;
+	and.b64  	%rd710, %rd709, 280375465082880;
+	or.b64  	%rd711, %rd708, %rd710;
+	shl.b64 	%rd712, %rd629, 32;
+	and.b64  	%rd713, %rd712, 1095216660480;
+	or.b64  	%rd714, %rd711, %rd713;
+	or.b64  	%rd715, %rd714, %rd668;
+	or.b64  	%rd716, %rd715, %rd670;
+	and.b64  	%rd717, %rd621, 255;
+	or.b64  	%rd718, %rd716, %rd672;
+	or.b64  	%rd719, %rd718, %rd717;
+	xor.b64  	%rd1046, %rd719, 8796936657246353646;
+	shl.b64 	%rd720, %rd649, 48;
+	and.b64  	%rd721, %rd720, 71776119061217280;
+	or.b64  	%rd722, %rd674, %rd721;
+	shl.b64 	%rd723, %rd647, 40;
+	and.b64  	%rd724, %rd723, 280375465082880;
+	or.b64  	%rd725, %rd722, %rd724;
+	shl.b64 	%rd726, %rd645, 32;
+	and.b64  	%rd727, %rd726, 1095216660480;
+	or.b64  	%rd728, %rd725, %rd727;
+	shl.b64 	%rd729, %rd643, 24;
+	and.b64  	%rd730, %rd729, 4278190080;
+	or.b64  	%rd731, %rd728, %rd730;
+	shl.b64 	%rd732, %rd641, 16;
+	and.b64  	%rd733, %rd732, 16711680;
+	shl.b64 	%rd734, %rd637, 8;
+	and.b64  	%rd735, %rd734, 65280;
+	or.b64  	%rd736, %rd731, %rd733;
+	or.b64  	%rd737, %rd736, %rd735;
+	or.b64  	%rd738, %rd737, %rd639;
+	xor.b64  	%rd1041, %rd738, 1272090201925444760;
+	mov.u64 	%rd1055, 8270816933120786537;
+	mov.u64 	%rd1054, -850687345431043546;
+	mov.u64 	%rd1053, 8596393687355028144;
+	mov.u64 	%rd1052, -4073852189716399785;
+	mov.u64 	%rd1050, -4539347866060507718;
+	mov.u64 	%rd1049, -3233781605604422593;
+	mov.u64 	%rd1048, 570094237299545110;
+	mov.u64 	%rd1047, 5171152063242093102;
+	mov.u64 	%rd1045, 6782861118970774626;
+	mov.u64 	%rd1044, 7812475424661425213;
+	mov.u64 	%rd1043, 9119540418498120711;
+	mov.u64 	%rd1042, -7873636174015165430;
+	mov.u64 	%rd1040, -9207053471590684088;
+	mov.u64 	%rd1039, 3370482334374859748;
+	mov.u64 	%rd1038, -1544774801229058759;
+	mov.u64 	%rd1037, 6096431547456407061;
+	mov.u64 	%rd1036, -1792185402154627366;
+	mov.u64 	%rd1035, -6864424130110145268;
+	mov.u64 	%rd1034, 5690099369266491460;
+	mov.u64 	%rd1033, -5074726839974049192;
+	mov.u64 	%rd1032, 1592359455985097269;
+	mov.u64 	%rd1031, RC;
 
 $L__BB0_11:
-	xor.b64  	%rd727, %rd938, %rd180;
-	xor.b64  	%rd728, %rd727, %rd937;
-	xor.b64  	%rd729, %rd728, %rd936;
-	xor.b64  	%rd730, %rd729, %rd935;
-	xor.b64  	%rd731, %rd933, %rd934;
-	xor.b64  	%rd732, %rd731, %rd932;
-	xor.b64  	%rd733, %rd732, %rd931;
-	xor.b64  	%rd734, %rd733, %rd930;
-	xor.b64  	%rd735, %rd928, %rd929;
-	xor.b64  	%rd736, %rd735, %rd927;
-	xor.b64  	%rd737, %rd736, %rd926;
-	xor.b64  	%rd738, %rd737, %rd925;
-	xor.b64  	%rd739, %rd923, %rd924;
-	xor.b64  	%rd740, %rd739, %rd922;
-	xor.b64  	%rd741, %rd740, %rd921;
-	xor.b64  	%rd742, %rd741, %rd920;
-	xor.b64  	%rd743, %rd918, %rd919;
-	xor.b64  	%rd744, %rd743, %rd917;
-	xor.b64  	%rd745, %rd744, %rd916;
-	xor.b64  	%rd746, %rd745, %rd915;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd734, 1;
-	shr.b64 	%rhs, %rd734, 63;
-	add.u64 	%rd747, %lhs, %rhs;
-	}
-	xor.b64  	%rd748, %rd746, %rd747;
-	xor.b64  	%rd749, %rd748, %rd180;
-	xor.b64  	%rd750, %rd938, %rd748;
-	xor.b64  	%rd751, %rd937, %rd748;
-	xor.b64  	%rd752, %rd936, %rd748;
-	xor.b64  	%rd753, %rd935, %rd748;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd738, 1;
-	shr.b64 	%rhs, %rd738, 63;
-	add.u64 	%rd754, %lhs, %rhs;
-	}
-	xor.b64  	%rd755, %rd754, %rd730;
-	xor.b64  	%rd756, %rd934, %rd755;
-	xor.b64  	%rd757, %rd933, %rd755;
-	xor.b64  	%rd758, %rd932, %rd755;
-	xor.b64  	%rd759, %rd931, %rd755;
-	xor.b64  	%rd760, %rd930, %rd755;
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd742, 1;
-	shr.b64 	%rhs, %rd742, 63;
-	add.u64 	%rd761, %lhs, %rhs;
-	}
-	xor.b64  	%rd762, %rd761, %rd734;
-	xor.b64  	%rd763, %rd929, %rd762;
-	xor.b64  	%rd764, %rd928, %rd762;
-	xor.b64  	%rd765, %rd927, %rd762;
-	xor.b64  	%rd766, %rd926, %rd762;
-	xor.b64  	%rd767, %rd925, %rd762;
+	xor.b64  	%rd739, %rd1055, %rd1056;
+	xor.b64  	%rd740, %rd739, %rd1054;
+	xor.b64  	%rd741, %rd740, %rd1053;
+	xor.b64  	%rd742, %rd741, %rd1052;
+	xor.b64  	%rd743, %rd1050, %rd1051;
+	xor.b64  	%rd744, %rd743, %rd1049;
+	xor.b64  	%rd745, %rd744, %rd1048;
+	xor.b64  	%rd746, %rd745, %rd1047;
+	xor.b64  	%rd747, %rd1045, %rd1046;
+	xor.b64  	%rd748, %rd747, %rd1044;
+	xor.b64  	%rd749, %rd748, %rd1043;
+	xor.b64  	%rd750, %rd749, %rd1042;
+	xor.b64  	%rd751, %rd1040, %rd1041;
+	xor.b64  	%rd752, %rd751, %rd1039;
+	xor.b64  	%rd753, %rd752, %rd1038;
+	xor.b64  	%rd754, %rd753, %rd1037;
+	xor.b64  	%rd755, %rd1035, %rd1036;
+	xor.b64  	%rd756, %rd755, %rd1034;
+	xor.b64  	%rd757, %rd756, %rd1033;
+	xor.b64  	%rd758, %rd757, %rd1032;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
 	shl.b64 	%lhs, %rd746, 1;
 	shr.b64 	%rhs, %rd746, 63;
-	add.u64 	%rd768, %lhs, %rhs;
+	add.u64 	%rd759, %lhs, %rhs;
 	}
-	xor.b64  	%rd769, %rd768, %rd738;
-	xor.b64  	%rd770, %rd924, %rd769;
-	xor.b64  	%rd771, %rd923, %rd769;
-	xor.b64  	%rd772, %rd922, %rd769;
-	xor.b64  	%rd773, %rd921, %rd769;
-	xor.b64  	%rd774, %rd920, %rd769;
+	xor.b64  	%rd760, %rd758, %rd759;
+	xor.b64  	%rd761, %rd760, %rd1056;
+	xor.b64  	%rd762, %rd1055, %rd760;
+	xor.b64  	%rd763, %rd1054, %rd760;
+	xor.b64  	%rd764, %rd1053, %rd760;
+	xor.b64  	%rd765, %rd1052, %rd760;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd730, 1;
-	shr.b64 	%rhs, %rd730, 63;
-	add.u64 	%rd775, %lhs, %rhs;
+	shl.b64 	%lhs, %rd750, 1;
+	shr.b64 	%rhs, %rd750, 63;
+	add.u64 	%rd766, %lhs, %rhs;
 	}
-	xor.b64  	%rd776, %rd742, %rd775;
-	xor.b64  	%rd777, %rd919, %rd776;
-	xor.b64  	%rd778, %rd918, %rd776;
-	xor.b64  	%rd779, %rd917, %rd776;
-	xor.b64  	%rd780, %rd916, %rd776;
-	xor.b64  	%rd781, %rd915, %rd776;
+	xor.b64  	%rd767, %rd766, %rd742;
+	xor.b64  	%rd768, %rd1051, %rd767;
+	xor.b64  	%rd769, %rd1050, %rd767;
+	xor.b64  	%rd770, %rd1049, %rd767;
+	xor.b64  	%rd771, %rd1048, %rd767;
+	xor.b64  	%rd772, %rd1047, %rd767;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd756, 1;
-	shr.b64 	%rhs, %rd756, 63;
-	add.u64 	%rd782, %lhs, %rhs;
+	shl.b64 	%lhs, %rd754, 1;
+	shr.b64 	%rhs, %rd754, 63;
+	add.u64 	%rd773, %lhs, %rhs;
 	}
+	xor.b64  	%rd774, %rd773, %rd746;
+	xor.b64  	%rd775, %rd1046, %rd774;
+	xor.b64  	%rd776, %rd1045, %rd774;
+	xor.b64  	%rd777, %rd1044, %rd774;
+	xor.b64  	%rd778, %rd1043, %rd774;
+	xor.b64  	%rd779, %rd1042, %rd774;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd751, 3;
-	shr.b64 	%rhs, %rd751, 61;
-	add.u64 	%rd783, %lhs, %rhs;
+	shl.b64 	%lhs, %rd758, 1;
+	shr.b64 	%rhs, %rd758, 63;
+	add.u64 	%rd780, %lhs, %rhs;
 	}
+	xor.b64  	%rd781, %rd780, %rd750;
+	xor.b64  	%rd782, %rd1041, %rd781;
+	xor.b64  	%rd783, %rd1040, %rd781;
+	xor.b64  	%rd784, %rd1039, %rd781;
+	xor.b64  	%rd785, %rd1038, %rd781;
+	xor.b64  	%rd786, %rd1037, %rd781;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd764, 6;
-	shr.b64 	%rhs, %rd764, 58;
-	add.u64 	%rd784, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd758, 10;
-	shr.b64 	%rhs, %rd758, 54;
-	add.u64 	%rd785, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd766, 15;
-	shr.b64 	%rhs, %rd766, 49;
-	add.u64 	%rd786, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd773, 21;
-	shr.b64 	%rhs, %rd773, 43;
+	shl.b64 	%lhs, %rd742, 1;
+	shr.b64 	%rhs, %rd742, 63;
 	add.u64 	%rd787, %lhs, %rhs;
 	}
+	xor.b64  	%rd788, %rd754, %rd787;
+	xor.b64  	%rd789, %rd1036, %rd788;
+	xor.b64  	%rd790, %rd1035, %rd788;
+	xor.b64  	%rd791, %rd1034, %rd788;
+	xor.b64  	%rd792, %rd1033, %rd788;
+	xor.b64  	%rd793, %rd1032, %rd788;
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd770, 28;
-	shr.b64 	%rhs, %rd770, 36;
-	add.u64 	%rd788, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd750, 36;
-	shr.b64 	%rhs, %rd750, 28;
-	add.u64 	%rd789, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd759, 45;
-	shr.b64 	%rhs, %rd759, 19;
-	add.u64 	%rd790, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd771, 55;
-	shr.b64 	%rhs, %rd771, 9;
-	add.u64 	%rd791, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd760, 2;
-	shr.b64 	%rhs, %rd760, 62;
-	add.u64 	%rd792, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd781, 14;
-	shr.b64 	%rhs, %rd781, 50;
-	add.u64 	%rd793, %lhs, %rhs;
-	}
-	{
-	.reg .b64 %lhs;
-	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd777, 27;
-	shr.b64 	%rhs, %rd777, 37;
+	shl.b64 	%lhs, %rd768, 1;
+	shr.b64 	%rhs, %rd768, 63;
 	add.u64 	%rd794, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd752, 41;
-	shr.b64 	%rhs, %rd752, 23;
+	shl.b64 	%lhs, %rd763, 3;
+	shr.b64 	%rhs, %rd763, 61;
 	add.u64 	%rd795, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd774, 56;
-	shr.b64 	%rhs, %rd774, 8;
+	shl.b64 	%lhs, %rd776, 6;
+	shr.b64 	%rhs, %rd776, 58;
 	add.u64 	%rd796, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd780, 8;
-	shr.b64 	%rhs, %rd780, 56;
+	shl.b64 	%lhs, %rd770, 10;
+	shr.b64 	%rhs, %rd770, 54;
 	add.u64 	%rd797, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd772, 25;
-	shr.b64 	%rhs, %rd772, 39;
+	shl.b64 	%lhs, %rd778, 15;
+	shr.b64 	%rhs, %rd778, 49;
 	add.u64 	%rd798, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd765, 43;
-	shr.b64 	%rhs, %rd765, 21;
+	shl.b64 	%lhs, %rd785, 21;
+	shr.b64 	%rhs, %rd785, 43;
 	add.u64 	%rd799, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd763, 62;
-	shr.b64 	%rhs, %rd763, 2;
+	shl.b64 	%lhs, %rd782, 28;
+	shr.b64 	%rhs, %rd782, 36;
 	add.u64 	%rd800, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd753, 18;
-	shr.b64 	%rhs, %rd753, 46;
+	shl.b64 	%lhs, %rd762, 36;
+	shr.b64 	%rhs, %rd762, 28;
 	add.u64 	%rd801, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd779, 39;
-	shr.b64 	%rhs, %rd779, 25;
+	shl.b64 	%lhs, %rd771, 45;
+	shr.b64 	%rhs, %rd771, 19;
 	add.u64 	%rd802, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd767, 61;
-	shr.b64 	%rhs, %rd767, 3;
+	shl.b64 	%lhs, %rd783, 55;
+	shr.b64 	%rhs, %rd783, 9;
 	add.u64 	%rd803, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd778, 20;
-	shr.b64 	%rhs, %rd778, 44;
+	shl.b64 	%lhs, %rd772, 2;
+	shr.b64 	%rhs, %rd772, 62;
 	add.u64 	%rd804, %lhs, %rhs;
 	}
 	{
 	.reg .b64 %lhs;
 	.reg .b64 %rhs;
-	shl.b64 	%lhs, %rd757, 44;
-	shr.b64 	%rhs, %rd757, 20;
+	shl.b64 	%lhs, %rd793, 14;
+	shr.b64 	%rhs, %rd793, 50;
 	add.u64 	%rd805, %lhs, %rhs;
 	}
-	not.b64 	%rd806, %rd805;
-	and.b64  	%rd807, %rd799, %rd806;
-	xor.b64  	%rd808, %rd807, %rd749;
-	not.b64 	%rd809, %rd799;
-	and.b64  	%rd810, %rd787, %rd809;
-	xor.b64  	%rd934, %rd810, %rd805;
-	not.b64 	%rd811, %rd787;
-	and.b64  	%rd812, %rd793, %rd811;
-	xor.b64  	%rd929, %rd812, %rd799;
-	not.b64 	%rd813, %rd793;
-	and.b64  	%rd814, %rd749, %rd813;
-	xor.b64  	%rd924, %rd814, %rd787;
-	not.b64 	%rd815, %rd749;
-	and.b64  	%rd816, %rd805, %rd815;
-	xor.b64  	%rd919, %rd793, %rd816;
-	not.b64 	%rd817, %rd804;
-	and.b64  	%rd818, %rd783, %rd817;
-	xor.b64  	%rd938, %rd818, %rd788;
-	not.b64 	%rd819, %rd783;
-	and.b64  	%rd820, %rd790, %rd819;
-	xor.b64  	%rd933, %rd820, %rd804;
-	not.b64 	%rd821, %rd790;
-	and.b64  	%rd822, %rd803, %rd821;
-	xor.b64  	%rd928, %rd822, %rd783;
-	not.b64 	%rd823, %rd803;
-	and.b64  	%rd824, %rd788, %rd823;
-	xor.b64  	%rd923, %rd824, %rd790;
-	not.b64 	%rd825, %rd788;
-	and.b64  	%rd826, %rd804, %rd825;
-	xor.b64  	%rd918, %rd803, %rd826;
-	not.b64 	%rd827, %rd784;
-	and.b64  	%rd828, %rd798, %rd827;
-	xor.b64  	%rd937, %rd828, %rd782;
-	not.b64 	%rd829, %rd798;
-	and.b64  	%rd830, %rd797, %rd829;
-	xor.b64  	%rd932, %rd830, %rd784;
-	not.b64 	%rd831, %rd797;
-	and.b64  	%rd832, %rd801, %rd831;
-	xor.b64  	%rd927, %rd832, %rd798;
-	not.b64 	%rd833, %rd801;
-	and.b64  	%rd834, %rd782, %rd833;
-	xor.b64  	%rd922, %rd834, %rd797;
-	not.b64 	%rd835, %rd782;
-	and.b64  	%rd836, %rd784, %rd835;
-	xor.b64  	%rd917, %rd801, %rd836;
-	not.b64 	%rd837, %rd789;
-	and.b64  	%rd838, %rd785, %rd837;
-	xor.b64  	%rd936, %rd838, %rd794;
-	not.b64 	%rd839, %rd785;
-	and.b64  	%rd840, %rd786, %rd839;
-	xor.b64  	%rd931, %rd840, %rd789;
-	not.b64 	%rd841, %rd786;
-	and.b64  	%rd842, %rd796, %rd841;
-	xor.b64  	%rd926, %rd842, %rd785;
-	not.b64 	%rd843, %rd796;
-	and.b64  	%rd844, %rd794, %rd843;
-	xor.b64  	%rd921, %rd844, %rd786;
-	not.b64 	%rd845, %rd794;
-	and.b64  	%rd846, %rd789, %rd845;
-	xor.b64  	%rd916, %rd796, %rd846;
-	not.b64 	%rd847, %rd791;
-	and.b64  	%rd848, %rd802, %rd847;
-	xor.b64  	%rd935, %rd848, %rd800;
-	not.b64 	%rd849, %rd802;
-	and.b64  	%rd850, %rd795, %rd849;
-	xor.b64  	%rd930, %rd850, %rd791;
-	not.b64 	%rd851, %rd795;
-	and.b64  	%rd852, %rd792, %rd851;
-	xor.b64  	%rd925, %rd852, %rd802;
-	not.b64 	%rd853, %rd792;
-	and.b64  	%rd854, %rd800, %rd853;
-	xor.b64  	%rd920, %rd854, %rd795;
-	not.b64 	%rd855, %rd800;
-	and.b64  	%rd856, %rd791, %rd855;
-	xor.b64  	%rd915, %rd792, %rd856;
-	ld.global.nc.u64 	%rd857, [%rd914];
-	xor.b64  	%rd180, %rd808, %rd857;
-	add.s64 	%rd914, %rd914, 8;
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd789, 27;
+	shr.b64 	%rhs, %rd789, 37;
+	add.u64 	%rd806, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd764, 41;
+	shr.b64 	%rhs, %rd764, 23;
+	add.u64 	%rd807, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd786, 56;
+	shr.b64 	%rhs, %rd786, 8;
+	add.u64 	%rd808, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd792, 8;
+	shr.b64 	%rhs, %rd792, 56;
+	add.u64 	%rd809, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd784, 25;
+	shr.b64 	%rhs, %rd784, 39;
+	add.u64 	%rd810, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd777, 43;
+	shr.b64 	%rhs, %rd777, 21;
+	add.u64 	%rd811, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd775, 62;
+	shr.b64 	%rhs, %rd775, 2;
+	add.u64 	%rd812, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd765, 18;
+	shr.b64 	%rhs, %rd765, 46;
+	add.u64 	%rd813, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd791, 39;
+	shr.b64 	%rhs, %rd791, 25;
+	add.u64 	%rd814, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd779, 61;
+	shr.b64 	%rhs, %rd779, 3;
+	add.u64 	%rd815, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd790, 20;
+	shr.b64 	%rhs, %rd790, 44;
+	add.u64 	%rd816, %lhs, %rhs;
+	}
+	{
+	.reg .b64 %lhs;
+	.reg .b64 %rhs;
+	shl.b64 	%lhs, %rd769, 44;
+	shr.b64 	%rhs, %rd769, 20;
+	add.u64 	%rd817, %lhs, %rhs;
+	}
+	not.b64 	%rd818, %rd817;
+	and.b64  	%rd819, %rd811, %rd818;
+	xor.b64  	%rd820, %rd819, %rd761;
+	not.b64 	%rd821, %rd811;
+	and.b64  	%rd822, %rd799, %rd821;
+	xor.b64  	%rd1051, %rd822, %rd817;
+	not.b64 	%rd823, %rd799;
+	and.b64  	%rd824, %rd805, %rd823;
+	xor.b64  	%rd1046, %rd824, %rd811;
+	not.b64 	%rd825, %rd805;
+	and.b64  	%rd826, %rd761, %rd825;
+	xor.b64  	%rd1041, %rd826, %rd799;
+	not.b64 	%rd827, %rd761;
+	and.b64  	%rd828, %rd817, %rd827;
+	xor.b64  	%rd1036, %rd805, %rd828;
+	not.b64 	%rd829, %rd816;
+	and.b64  	%rd830, %rd795, %rd829;
+	xor.b64  	%rd1055, %rd830, %rd800;
+	not.b64 	%rd831, %rd795;
+	and.b64  	%rd832, %rd802, %rd831;
+	xor.b64  	%rd1050, %rd832, %rd816;
+	not.b64 	%rd833, %rd802;
+	and.b64  	%rd834, %rd815, %rd833;
+	xor.b64  	%rd1045, %rd834, %rd795;
+	not.b64 	%rd835, %rd815;
+	and.b64  	%rd836, %rd800, %rd835;
+	xor.b64  	%rd1040, %rd836, %rd802;
+	not.b64 	%rd837, %rd800;
+	and.b64  	%rd838, %rd816, %rd837;
+	xor.b64  	%rd1035, %rd815, %rd838;
+	not.b64 	%rd839, %rd796;
+	and.b64  	%rd840, %rd810, %rd839;
+	xor.b64  	%rd1054, %rd840, %rd794;
+	not.b64 	%rd841, %rd810;
+	and.b64  	%rd842, %rd809, %rd841;
+	xor.b64  	%rd1049, %rd842, %rd796;
+	not.b64 	%rd843, %rd809;
+	and.b64  	%rd844, %rd813, %rd843;
+	xor.b64  	%rd1044, %rd844, %rd810;
+	not.b64 	%rd845, %rd813;
+	and.b64  	%rd846, %rd794, %rd845;
+	xor.b64  	%rd1039, %rd846, %rd809;
+	not.b64 	%rd847, %rd794;
+	and.b64  	%rd848, %rd796, %rd847;
+	xor.b64  	%rd1034, %rd813, %rd848;
+	not.b64 	%rd849, %rd801;
+	and.b64  	%rd850, %rd797, %rd849;
+	xor.b64  	%rd1053, %rd850, %rd806;
+	not.b64 	%rd851, %rd797;
+	and.b64  	%rd852, %rd798, %rd851;
+	xor.b64  	%rd1048, %rd852, %rd801;
+	not.b64 	%rd853, %rd798;
+	and.b64  	%rd854, %rd808, %rd853;
+	xor.b64  	%rd1043, %rd854, %rd797;
+	not.b64 	%rd855, %rd808;
+	and.b64  	%rd856, %rd806, %rd855;
+	xor.b64  	%rd1038, %rd856, %rd798;
+	not.b64 	%rd857, %rd806;
+	and.b64  	%rd858, %rd801, %rd857;
+	xor.b64  	%rd1033, %rd808, %rd858;
+	not.b64 	%rd859, %rd803;
+	and.b64  	%rd860, %rd814, %rd859;
+	xor.b64  	%rd1052, %rd860, %rd812;
+	not.b64 	%rd861, %rd814;
+	and.b64  	%rd862, %rd807, %rd861;
+	xor.b64  	%rd1047, %rd862, %rd803;
+	not.b64 	%rd863, %rd807;
+	and.b64  	%rd864, %rd804, %rd863;
+	xor.b64  	%rd1042, %rd864, %rd814;
+	not.b64 	%rd865, %rd804;
+	and.b64  	%rd866, %rd812, %rd865;
+	xor.b64  	%rd1037, %rd866, %rd807;
+	not.b64 	%rd867, %rd812;
+	and.b64  	%rd868, %rd803, %rd867;
+	xor.b64  	%rd1032, %rd804, %rd868;
+	ld.global.nc.u64 	%rd869, [%rd1031];
+	xor.b64  	%rd1056, %rd820, %rd869;
+	add.s64 	%rd1031, %rd1031, 8;
 	add.s32 	%r4414, %r4414, 1;
 	setp.ne.s32 	%p6, %r4414, 24;
 	@%p6 bra 	$L__BB0_11;
 
-	ld.const.u64 	%rd182, [target+24];
-	setp.eq.s64 	%p7, %rd924, %rd182;
-	@%p7 bra 	$L__BB0_14;
-	bra.uni 	$L__BB0_13;
+	shr.u64 	%rd182, %rd1051, 8;
+	shr.u64 	%rd183, %rd1051, 16;
+	shr.u64 	%rd184, %rd1051, 24;
+	shr.u64 	%rd185, %rd1051, 32;
+	shr.u64 	%rd186, %rd1051, 40;
+	shr.u64 	%rd187, %rd1051, 48;
+	and.b64  	%rd188, %rd1051, -72057594037927936;
+	shr.u64 	%rd189, %rd1046, 8;
+	shr.u64 	%rd190, %rd1046, 16;
+	shr.u64 	%rd191, %rd1046, 24;
+	shr.u64 	%rd192, %rd1046, 32;
+	shr.u64 	%rd193, %rd1046, 40;
+	shr.u64 	%rd194, %rd1046, 48;
+	and.b64  	%rd195, %rd1046, -72057594037927936;
+	ld.const.u64 	%rd196, [target+24];
+	setp.lt.u64 	%p7, %rd1041, %rd196;
+	@%p7 bra 	$L__BB0_21;
 
-$L__BB0_14:
-	ld.const.u64 	%rd183, [target+16];
-	setp.eq.s64 	%p9, %rd929, %rd183;
-	@%p9 bra 	$L__BB0_16;
-	bra.uni 	$L__BB0_15;
+	setp.ne.s64 	%p8, %rd1041, %rd196;
+	@%p8 bra 	$L__BB0_15;
 
-$L__BB0_16:
-	ld.const.u64 	%rd184, [target+8];
-	setp.eq.s64 	%p11, %rd934, %rd184;
-	@%p11 bra 	$L__BB0_18;
-	bra.uni 	$L__BB0_17;
-
-$L__BB0_18:
-	ld.const.u64 	%rd858, [target];
-	setp.ge.u64 	%p13, %rd180, %rd858;
-	@%p13 bra 	$L__BB0_20;
-	bra.uni 	$L__BB0_19;
-
-$L__BB0_13:
-	setp.lt.u64 	%p8, %rd924, %rd182;
-	@%p8 bra 	$L__BB0_19;
-	bra.uni 	$L__BB0_20;
-
-$L__BB0_19:
-	mov.u64 	%rd859, 0;
-	atom.global.cas.b64 	%rd860, [%rd2], %rd859, %rd7;
-
-$L__BB0_20:
-	ret;
+	shl.b64 	%rd870, %rd194, 48;
+	and.b64  	%rd871, %rd870, 71776119061217280;
+	or.b64  	%rd872, %rd195, %rd871;
+	shl.b64 	%rd873, %rd193, 40;
+	and.b64  	%rd874, %rd873, 280375465082880;
+	or.b64  	%rd875, %rd872, %rd874;
+	shl.b64 	%rd876, %rd192, 32;
+	and.b64  	%rd877, %rd876, 1095216660480;
+	or.b64  	%rd878, %rd875, %rd877;
+	shl.b64 	%rd879, %rd191, 24;
+	and.b64  	%rd880, %rd879, 4278190080;
+	or.b64  	%rd881, %rd878, %rd880;
+	shl.b64 	%rd882, %rd190, 16;
+	and.b64  	%rd883, %rd882, 16711680;
+	shl.b64 	%rd884, %rd189, 8;
+	and.b64  	%rd885, %rd884, 65280;
+	or.b64  	%rd886, %rd881, %rd883;
+	or.b64  	%rd887, %rd886, %rd885;
+	and.b64  	%rd888, %rd1046, 255;
+	or.b64  	%rd889, %rd887, %rd888;
+	ld.const.u64 	%rd890, [target+16];
+	setp.lt.u64 	%p9, %rd889, %rd890;
+	@%p9 bra 	$L__BB0_21;
 
 $L__BB0_15:
-	setp.lt.u64 	%p10, %rd929, %rd183;
-	@%p10 bra 	$L__BB0_19;
-	bra.uni 	$L__BB0_20;
+	@%p8 bra 	$L__BB0_18;
 
-$L__BB0_17:
-	setp.lt.u64 	%p12, %rd934, %rd184;
-	@%p12 bra 	$L__BB0_19;
-	bra.uni 	$L__BB0_20;
+	shl.b64 	%rd891, %rd194, 48;
+	and.b64  	%rd892, %rd891, 71776119061217280;
+	or.b64  	%rd893, %rd195, %rd892;
+	shl.b64 	%rd894, %rd193, 40;
+	and.b64  	%rd895, %rd894, 280375465082880;
+	or.b64  	%rd896, %rd893, %rd895;
+	shl.b64 	%rd897, %rd192, 32;
+	and.b64  	%rd898, %rd897, 1095216660480;
+	or.b64  	%rd899, %rd896, %rd898;
+	shl.b64 	%rd900, %rd191, 24;
+	and.b64  	%rd901, %rd900, 4278190080;
+	or.b64  	%rd902, %rd899, %rd901;
+	shl.b64 	%rd903, %rd190, 16;
+	and.b64  	%rd904, %rd903, 16711680;
+	shl.b64 	%rd905, %rd189, 8;
+	and.b64  	%rd906, %rd905, 65280;
+	or.b64  	%rd907, %rd902, %rd904;
+	or.b64  	%rd908, %rd907, %rd906;
+	and.b64  	%rd909, %rd1046, 255;
+	or.b64  	%rd910, %rd908, %rd909;
+	ld.const.u64 	%rd911, [target+16];
+	setp.ne.s64 	%p11, %rd910, %rd911;
+	@%p11 bra 	$L__BB0_18;
+
+	shl.b64 	%rd912, %rd187, 48;
+	and.b64  	%rd913, %rd912, 71776119061217280;
+	or.b64  	%rd914, %rd188, %rd913;
+	shl.b64 	%rd915, %rd186, 40;
+	and.b64  	%rd916, %rd915, 280375465082880;
+	or.b64  	%rd917, %rd914, %rd916;
+	shl.b64 	%rd918, %rd185, 32;
+	and.b64  	%rd919, %rd918, 1095216660480;
+	or.b64  	%rd920, %rd917, %rd919;
+	shl.b64 	%rd921, %rd184, 24;
+	and.b64  	%rd922, %rd921, 4278190080;
+	or.b64  	%rd923, %rd920, %rd922;
+	shl.b64 	%rd924, %rd183, 16;
+	and.b64  	%rd925, %rd924, 16711680;
+	shl.b64 	%rd926, %rd182, 8;
+	and.b64  	%rd927, %rd926, 65280;
+	or.b64  	%rd928, %rd923, %rd925;
+	or.b64  	%rd929, %rd928, %rd927;
+	and.b64  	%rd930, %rd1051, 255;
+	or.b64  	%rd931, %rd929, %rd930;
+	ld.const.u64 	%rd932, [target+8];
+	setp.lt.u64 	%p12, %rd931, %rd932;
+	@%p12 bra 	$L__BB0_21;
+
+$L__BB0_18:
+	@%p8 bra 	$L__BB0_22;
+
+	shl.b64 	%rd933, %rd194, 48;
+	and.b64  	%rd934, %rd933, 71776119061217280;
+	or.b64  	%rd935, %rd195, %rd934;
+	shl.b64 	%rd936, %rd193, 40;
+	and.b64  	%rd937, %rd936, 280375465082880;
+	or.b64  	%rd938, %rd935, %rd937;
+	shl.b64 	%rd939, %rd192, 32;
+	and.b64  	%rd940, %rd939, 1095216660480;
+	or.b64  	%rd941, %rd938, %rd940;
+	shl.b64 	%rd942, %rd191, 24;
+	and.b64  	%rd943, %rd942, 4278190080;
+	or.b64  	%rd944, %rd941, %rd943;
+	shl.b64 	%rd945, %rd190, 16;
+	and.b64  	%rd946, %rd945, 16711680;
+	shl.b64 	%rd947, %rd189, 8;
+	and.b64  	%rd948, %rd947, 65280;
+	or.b64  	%rd949, %rd944, %rd946;
+	or.b64  	%rd950, %rd949, %rd948;
+	and.b64  	%rd951, %rd1046, 255;
+	or.b64  	%rd952, %rd950, %rd951;
+	ld.const.u64 	%rd953, [target+16];
+	setp.ne.s64 	%p14, %rd952, %rd953;
+	@%p14 bra 	$L__BB0_22;
+
+	shl.b64 	%rd954, %rd187, 48;
+	and.b64  	%rd955, %rd954, 71776119061217280;
+	or.b64  	%rd956, %rd188, %rd955;
+	shl.b64 	%rd957, %rd186, 40;
+	and.b64  	%rd958, %rd957, 280375465082880;
+	or.b64  	%rd959, %rd956, %rd958;
+	shl.b64 	%rd960, %rd185, 32;
+	and.b64  	%rd961, %rd960, 1095216660480;
+	or.b64  	%rd962, %rd959, %rd961;
+	shl.b64 	%rd963, %rd184, 24;
+	and.b64  	%rd964, %rd963, 4278190080;
+	or.b64  	%rd965, %rd962, %rd964;
+	shl.b64 	%rd966, %rd183, 16;
+	and.b64  	%rd967, %rd966, 16711680;
+	shl.b64 	%rd968, %rd182, 8;
+	and.b64  	%rd969, %rd968, 65280;
+	or.b64  	%rd970, %rd965, %rd967;
+	or.b64  	%rd971, %rd970, %rd969;
+	and.b64  	%rd972, %rd1051, 255;
+	or.b64  	%rd973, %rd971, %rd972;
+	ld.const.u64 	%rd974, [target+8];
+	setp.ne.s64 	%p15, %rd973, %rd974;
+	ld.const.u64 	%rd975, [target];
+	setp.ge.u64 	%p16, %rd1056, %rd975;
+	or.pred  	%p17, %p15, %p16;
+	@%p17 bra 	$L__BB0_22;
+
+$L__BB0_21:
+	mov.u64 	%rd976, 0;
+	atom.global.cas.b64 	%rd977, [%rd2], %rd976, %rd7;
+
+$L__BB0_22:
+	ret;
 
 }
 

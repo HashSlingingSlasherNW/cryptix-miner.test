@@ -3,6 +3,8 @@
 #include "keccak-tiny.c"
 #include "xoshiro256starstar.c"
 
+
+
 typedef uint8_t Hash[32];
 
 typedef union _uint256_t {
@@ -28,6 +30,7 @@ __constant__ static const uint8_t powP[Plen] = { 0x3d, 0xd8, 0xf6, 0xa1, 0x0d, 0
 __constant__ static const uint8_t heavyP[Plen] = { 0x09, 0x85, 0x24, 0xb2, 0x52, 0x4c, 0xd7, 0x3a, 0x16, 0x42, 0x9f, 0x2f, 0x0e, 0x9b, 0x62, 0x79, 0xee, 0xf8, 0xc7, 0x16, 0x48, 0xff, 0x14, 0x7a, 0x98, 0x64, 0x05, 0x80, 0x4c, 0x5f, 0xa7, 0x11, 0xda, 0xce, 0xee, 0x44, 0xdf, 0xe0, 0x20, 0xe7, 0x69, 0x40, 0xf3, 0x14, 0x2e, 0xd8, 0xc7, 0x72, 0xba, 0x35, 0x89, 0x93, 0x2a, 0xff, 0x00, 0xc1, 0x62, 0xc4, 0x0f, 0x25, 0x40, 0x90, 0x21, 0x5e, 0x48, 0x6a, 0xcf, 0x0d, 0xa6, 0xf9, 0x39, 0x80, 0x0c, 0x3d, 0x2a, 0x79, 0x9f, 0xaa, 0xbc, 0xa0, 0x26, 0xa2, 0xa9, 0xd0, 0x5d, 0xc0, 0x31, 0xf4, 0x3f, 0x8c, 0xc1, 0x54, 0xc3, 0x4c, 0x1f, 0xd3, 0x3d, 0xcc, 0x69, 0xa7, 0x01, 0x7d, 0x6b, 0x6c, 0xe4, 0x93, 0x24, 0x56, 0xd3, 0x5b, 0xc6, 0x2e, 0x44, 0xb0, 0xcd, 0x99, 0x3a, 0x4b, 0xf7, 0x4e, 0xb0, 0xf2, 0x34, 0x54, 0x83, 0x86, 0x4c, 0x77, 0x16, 0x94, 0xbc, 0x36, 0xb0, 0x61, 0xe9, 0x07, 0x07, 0xcc, 0x65, 0x77, 0xb1, 0x1d, 0x8f, 0x7e, 0x39, 0x6d, 0xc4, 0xba, 0x80, 0xdb, 0x8f, 0xea, 0x58, 0xca, 0x34, 0x7b, 0xd3, 0xf2, 0x92, 0xb9, 0x57, 0xb9, 0x81, 0x84, 0x04, 0xc5, 0x76, 0xc7, 0x2e, 0xc2, 0x12, 0x51, 0x67, 0x9f, 0xc3, 0x47, 0x0a, 0x0c, 0x29, 0xb5, 0x9d, 0x39, 0xbb, 0x92, 0x15, 0xc6, 0x9f, 0x2f, 0x31, 0xe0, 0x9a, 0x54, 0x35, 0xda, 0xb9, 0x10, 0x7d, 0x32, 0x19, 0x16 };
 
 __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_vec2[32], uint32_t *ret) {
+    // We assume each 32 bits have four values: A0 B0 C0 D0
     unsigned int res = 0;
     #if __CUDA_ARCH__ < 610
     char4 *a4 = (char4*)packed_vec1;
@@ -44,81 +47,74 @@ __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_ve
         res += a4[i].w*b4[i].w;
         #endif
     }
+
     *ret = res;
 }
 
+
 extern "C" {
 
-__global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
-    int nonceId = threadIdx.x + blockIdx.x*blockDim.x;
-    if (nonceId < nonces_len) {
-        if (nonceId == 0) *final_nonce = 0;
-        
-        uint64_t nonce;
-        switch (random_type) {
-            case RANDOM_LEAN:
-                nonce = ((uint64_t *)states)[0] ^ nonceId;
-                break;
-            case RANDOM_XOSHIRO:
-            default:
-                nonce = xoshiro256_next(((ulonglong4 *)states) + nonceId);
-                break;
-        }
-        nonce = (nonce & nonce_mask) | nonce_fixed;
 
-        // header
-        uint8_t input[80];
-        memcpy(input, hash_header, HASH_HEADER_SIZE);
+    __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
+        // assuming header_len is 72
+        int nonceId = threadIdx.x + blockIdx.x*blockDim.x;
+        if (nonceId < nonces_len) {
+            if (nonceId == 0) *final_nonce = 0;
+            uint64_t nonce;
+            switch (random_type) {
+                case RANDOM_LEAN:
+                    nonce = ((uint64_t *)states)[0] ^ nonceId;
+                    break;
+                case RANDOM_XOSHIRO:
+                default:
+                    nonce = xoshiro256_next(((ulonglong4 *)states) + nonceId);
+                    break;
+            }
+            nonce = (nonce & nonce_mask) | nonce_fixed;
+            // header
+            uint8_t input[80];
+            memcpy(input, hash_header, HASH_HEADER_SIZE);
+            // data
+            // TODO: check endianity?
+            uint256_t hash_;
+            memcpy(input +  HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
+            hash(powP, hash_.hash, input);
 
-        // Set up the first nonce and calculate the first hash
-        uint256_t hash_;
-        memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
-        hash(powP, hash_.hash, input);
+            //assert((rowId != 0) || (hashId != 0) );
+            uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
+            #pragma unroll
+            for (int i=0; i<QUARTER_MATRIX_SIZE; i++) {
+                packed_hash[i] = make_uchar4(
+                    (hash_.hash[2*i] & 0xF0) >> 4 ,
+                    (hash_.hash[2*i] & 0x0F),
+                    (hash_.hash[2*i+1] & 0xF0) >> 4,
+                    (hash_.hash[2*i+1] & 0x0F)
+                );
+            }
+            uint32_t product1, product2;
+            #pragma unroll
+            for (int rowId=0; rowId<HALF_MATRIX_SIZE; rowId++){
 
-        // Perform the second hash (double hash, like in Rust code)
-        uint256_t second_hash = hash_; // Copy the result from the first hash
-        hash(powP, second_hash.hash, second_hash.hash); // Second hash on the result of the first hash
-
-        // Pack the result of the second hash
-        uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
-        #pragma unroll
-        for (int i = 0; i < QUARTER_MATRIX_SIZE; i++) {
-            packed_hash[i] = make_uchar4(
-                (second_hash.hash[2 * i] & 0xF0) >> 4,
-                (second_hash.hash[2 * i] & 0x0F),
-                (second_hash.hash[2 * i + 1] & 0xF0) >> 4,
-                (second_hash.hash[2 * i + 1] & 0x0F)
-            );
-        }
-
-        uint32_t product1, product2;
-        #pragma unroll
-        for (int rowId = 0; rowId < HALF_MATRIX_SIZE; rowId++) {
-            amul4bit((uint32_t *)(matrix[(2 * rowId)]), (uint32_t *)(packed_hash), &product1);
-            amul4bit((uint32_t *)(matrix[(2 * rowId + 1)]), (uint32_t *)(packed_hash), &product2);
-            product1 >>= 6;
-            product1 &= 0xF0;
-            product2 >>= 10;
-
-            #if __CUDA_ARCH__ < 500 || __CUDA_ARCH__ > 700
-            second_hash.hash[rowId] = second_hash.hash[rowId] ^ ((uint8_t)(product1) | (uint8_t)(product2));
-            #else
-            uint32_t lop_temp = second_hash.hash[rowId];
-            asm("lop3.b32" " %0, %1, %2, %3, 0x56;" : "=r" (lop_temp) : "r" (product1), "r" (product2), "r" (lop_temp));
-            second_hash.hash[rowId] = lop_temp;
-            #endif
-        }
-
-        // Perform the final hash with the second hash result
-        memset(input, 0, 80);
-        memcpy(input, second_hash.hash, 32);
-        hash(heavyP, second_hash.hash, input); // Final hash after the second double spin
-
-        // Compare with the target and update final_nonce if condition is met
-        if (LT_U256(second_hash, target)) {
-            atomicCAS((unsigned long long int*) final_nonce, 0, (unsigned long long int) nonce);
+                amul4bit((uint32_t *)(matrix[(2*rowId)]), (uint32_t *)(packed_hash), &product1);
+                amul4bit((uint32_t *)(matrix[(2*rowId+1)]), (uint32_t *)(packed_hash), &product2);
+                product1 >>= 6;
+                product1 &= 0xF0;
+                product2 >>= 10;
+                #if __CUDA_ARCH__ < 500 || __CUDA_ARCH__ > 700
+                hash_.hash[rowId] = hash_.hash[rowId] ^ ((uint8_t)(product1) | (uint8_t)(product2));
+                #else
+                uint32_t lop_temp = hash_.hash[rowId];
+                asm("lop3.b32" " %0, %1, %2, %3, 0x56;": "=r" (lop_temp): "r" (product1), "r" (product2), "r" (lop_temp));
+                hash_.hash[rowId] = lop_temp;
+                #endif
+            }
+            memset(input, 0, 80);
+            memcpy(input, hash_.hash, 32);
+            hash(heavyP, hash_.hash, input);
+            if (LT_U256(hash_, target)){
+                atomicCAS((unsigned long long int*) final_nonce, 0, (unsigned long long int) nonce);
+            }
         }
     }
-}
 
 }
