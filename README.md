@@ -2,7 +2,7 @@
 
 
 # Cryptix-miner CPU & GPU
-Supports CPU & GPU + Stratum
+Supports CPU & GPU + HTTP
 ![cryptix-miner](https://github.com/user-attachments/assets/912d2770-8b90-4e43-bdc2-101799c47e3f)
 
 ### Supports:
