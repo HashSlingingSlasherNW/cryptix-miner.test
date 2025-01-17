@@ -8,7 +8,8 @@ Supports CPU & GPU + HTTP
 ### Supports:
 - Local Mining on Node via 127.0.0.1
 - HTTP Mining on Node via Webaddress
-- Stratum Mining on Pool not supported now
+- Stratum Mining on Pool
+
 
 ## Installation
 If you have difficulties with our miner, you can also use this bridge with an external mining software:
@@ -98,6 +99,11 @@ This will run the miner on all the available CPU (2 Threads) and GPU devcies.
 This will run the miner on the CPU (4 Threads) without CUDA GPU.
 
 `./cryptix-miner --mining-address cryptix:XXXXX --threads 4 --cuda-disable`
+
+
+Connect a Pool:
+
+`-s --mining-address cryptix:XXXXX stratum+tcp://stratum.cryptix-network.org:13095 --threads 4 `
 
 
 ## Discord
