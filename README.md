@@ -107,7 +107,8 @@ Connect a Pool:
 
 
 ## Discord
-Join Discord: [Cryptix Discord](https://discord.gg/SxXCXHFFeA)
+
+Join our discord server using the following link: [https://discord.cryptix-network.org/](https://discord.cryptix-network.org/)
 
 # Devfund
 
