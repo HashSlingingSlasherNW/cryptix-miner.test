@@ -75,6 +75,7 @@ time = { version = "0.3", features = ["formatting"] }
 [dev-dependencies]
 sha3 = "0.10"
 
+
 [workspace]
 members = ["plugins/*"]
 default-members = [".", "plugins/cuda", "plugins/opencl"]
