@@ -50,6 +50,7 @@ nix = "0.25"
 hex = "0.4"
 semver = "1.0"
 time = { version = "0.3", features = ["formatting", "macros"] }
+sha3 = "0.10"
 
 [features]
 default = ["parking_lot"]
@@ -72,7 +73,7 @@ cc = "1"
 time = { version = "0.3", features = ["formatting"] }
 
 [dev-dependencies]
-sha3 = { git = "https://github.com/elichai/hashes", branch = "cSHAKE" }
+sha3 = "0.10"
 
 [workspace]
 members = ["plugins/*"]

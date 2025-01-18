@@ -134,25 +134,22 @@ impl State {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.finalize_with_nonce(self.nonce);
     
-        // Umwandlung des berechneten Hashs in Bytes
         let hash_bytes: [u8; 32] = hash.to_le_bytes();
     
-        // Einen zweiten SHA-3-256-Hash auf den ersten anwenden
         let mut sha3_hasher = Sha3_256::new();
         sha3_hasher.update(&hash_bytes);
         let sha3_hash = sha3_hasher.finalize();
     
-        // Den zweiten SHA-3-256-Hash in Uint256 umwandeln
-        let sha3_hash_bytes: [u8; 32] = sha3_hash.into();  // Umwandlung von GenericArray<u8, 32> zu [u8; 32]
+
+        let sha3_hash_bytes: [u8; 32] = sha3_hash.into();  
     
-        // Den zweiten SHA-3-256-Hash an `heavy_hash` übergeben, als Uint256
         self.matrix.heavy_hash(Uint256::from_le_bytes(sha3_hash_bytes))
     }
     
 
     #[inline(always)]
-    pub fn check_pow(&self, nonce: u64) -> bool {
-        let pow = self.calculate_pow(nonce);
+    pub fn check_pow(&self) -> bool {
+        let pow = self.calculate_pow();
         // The pow hash must be less or equal than the claimed target.
         pow <= self.target
     }
