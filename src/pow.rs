@@ -128,45 +128,21 @@ impl State {
         })
     }
 
-    #[inline(always)]
-    // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-    pub fn calculate_pow(&self) -> Uint256 {
-        // Hash the initial state (PRE_POW_HASH || TIME || 32 zero byte padding)
-        let hash = self.hasher.finalize_with_nonce(self.nonce);
-        
-        // Convert hash to bytes (similar to the original code)
+    #[inline]
+    #[must_use]
+    /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
+    pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
         let hash_bytes: [u8; 32] = *hash.as_bytes();
-    
-        // Hash the previous hash with SHA3_256
+
         let mut sha3_hasher = Sha3_256::new();
         sha3_hasher.update(hash_bytes);
         let sha3_hash = sha3_hasher.finalize();
         let sha3_hash_bytes: [u8; 32] = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
-    
-        // Apply heavy hash matrix to final hash (similar to original code)
+
         let final_hash = self.matrix.heavy_hash(cryptix_hashes::Hash::from(sha3_hash_bytes));
-    
-        // Return the final hash as Uint256
+
         Uint256::from_le_bytes(final_hash.as_bytes())
-    }
-    
-
-    #[inline(always)]
-    // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-    pub fn calculate_pow(&self) -> Uint256 {
-        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
-        let hash = self.hasher.clone().finalize_with_nonce(nonce);
-
-        self.matrix.heavy_hash(hash)
-    }
-
-    
-
-    #[inline(always)]
-    pub fn check_pow(&self, nonce: u64) -> bool {
-        let pow = self.calculate_pow(nonce);
-        // The pow hash must be less or equal than the claimed target.
-        pow <= self.target
     }
 
     #[inline(always)]
