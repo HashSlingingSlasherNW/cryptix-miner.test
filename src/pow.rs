@@ -128,22 +128,27 @@ impl State {
         })
     }
 
-    #[inline]
-    #[must_use]
-    /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-    pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        let hash = self.hasher.clone().finalize_with_nonce(nonce);
-        let hash_bytes: [u8; 32] = *hash.as_bytes();
-
+    #[inline(always)]
+    // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
+    pub fn calculate_pow(&self) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.finalize_with_nonce(self.nonce);
+    
+        // Umwandlung des berechneten Hashs in Bytes
+        let hash_bytes: [u8; 32] = hash.to_le_bytes();
+    
+        // Einen zweiten SHA-3-256-Hash auf den ersten anwenden
         let mut sha3_hasher = Sha3_256::new();
-        sha3_hasher.update(hash_bytes);
+        sha3_hasher.update(&hash_bytes);
         let sha3_hash = sha3_hasher.finalize();
-        let sha3_hash_bytes: [u8; 32] = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
-
-        let final_hash = self.matrix.heavy_hash(cryptix_hashes::Hash::from(sha3_hash_bytes));
-
-        Uint256::from_le_bytes(final_hash.as_bytes())
+    
+        // Den zweiten SHA-3-256-Hash in Uint256 umwandeln
+        let sha3_hash_bytes: [u8; 32] = sha3_hash.into();  // Umwandlung von GenericArray<u8, 32> zu [u8; 32]
+    
+        // Den zweiten SHA-3-256-Hash an `heavy_hash` übergeben, als Uint256
+        self.matrix.heavy_hash(Uint256::from_le_bytes(sha3_hash_bytes))
     }
+    
 
     #[inline(always)]
     pub fn check_pow(&self, nonce: u64) -> bool {
