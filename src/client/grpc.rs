@@ -83,6 +83,12 @@ impl CryptixdHandler {
         send_channel.send(GetInfoRequestMessage {}.into()).await?;
         let stream = client.message_stream(ReceiverStream::new(recv)).await?.into_inner();
         let (block_channel, block_handle) = Self::create_block_channel(send_channel.clone());
+
+        let block_template_ctr = match block_template_ctr {
+            Some(ctr) => ctr,
+            None => Arc::new(AtomicU16::new((thread_rng().next_u64() % 10_000u64) as u16)),
+        };
+
         Ok(Box::new(Self {
             client,
             stream,
@@ -91,12 +97,13 @@ impl CryptixdHandler {
             mine_when_not_synced,
             devfund_address: None,
             devfund_percent: 0,
-            block_template_ctr: block_template_ctr
-                .unwrap_or_else(|| Arc::new(AtomicU16::new((thread_rng().next_u64() % 10_000u64) as u16))),
+            block_template_ctr,  
             block_channel,
             block_handle,
         }))
     }
+
+
 
     fn create_block_channel(send_channel: Sender<CryptixdMessage>) -> (Sender<BlockSeed>, BlockHandle) {
         // CryptixdMessage::submit_block(block)
