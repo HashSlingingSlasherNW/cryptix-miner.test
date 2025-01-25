@@ -8,7 +8,7 @@
 
 // update the state with given number of rounds
 
-void sha3_keccakf(uint64_t st[25])
+__host__ __device__ void sha3_keccakf(uint64_t st[25])
 {
     // constants
     const uint64_t keccakf_rndc[24] = {
@@ -100,7 +100,7 @@ void sha3_keccakf(uint64_t st[25])
 
 // Initialize the context for SHA3
 
-int sha3_init(sha3_ctx_t *c, int mdlen)
+__host__ __device__ int sha3_init(sha3_ctx_t *c, int mdlen)
 {
     int i;
 
@@ -115,7 +115,7 @@ int sha3_init(sha3_ctx_t *c, int mdlen)
 
 // update state with more data
 
-int sha3_update(sha3_ctx_t *c, const void *data, size_t len)
+__host__ __device__ int sha3_update(sha3_ctx_t *c, const void *data, size_t len)
 {
     size_t i;
     int j;
@@ -135,7 +135,7 @@ int sha3_update(sha3_ctx_t *c, const void *data, size_t len)
 
 // finalize and output a hash
 
-int sha3_final(void *md, sha3_ctx_t *c)
+__host__ __device__ int sha3_final(void *md, sha3_ctx_t *c)
 {
     int i;
 
@@ -152,7 +152,7 @@ int sha3_final(void *md, sha3_ctx_t *c)
 
 // compute a SHA-3 hash (md) of given byte length from "in"
 
-void *sha3(const void *in, size_t inlen, void *md, int mdlen)
+__host__ __device__ void *sha3(const void *in, size_t inlen, void *md, int mdlen)
 {
     sha3_ctx_t sha3;
 
@@ -165,7 +165,7 @@ void *sha3(const void *in, size_t inlen, void *md, int mdlen)
 
 // SHAKE128 and SHAKE256 extensible-output functionality
 
-void shake_xof(sha3_ctx_t *c)
+__host__ __device__ void shake_xof(sha3_ctx_t *c)
 {
     c->st.b[c->pt] ^= 0x1F;
     c->st.b[c->rsiz - 1] ^= 0x80;
@@ -173,7 +173,7 @@ void shake_xof(sha3_ctx_t *c)
     c->pt = 0;
 }
 
-void shake_out(sha3_ctx_t *c, void *out, size_t len)
+__host__ __device__ void shake_out(sha3_ctx_t *c, void *out, size_t len)
 {
     size_t i;
     int j;

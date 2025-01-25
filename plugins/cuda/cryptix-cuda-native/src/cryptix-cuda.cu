@@ -60,73 +60,72 @@ __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_ve
 
 extern "C" {
 
-    __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce, uint8_t *d_sha3_hash) {
-        int nonceId = threadIdx.x + blockIdx.x * blockDim.x;
-        if (nonceId < nonces_len) {
-            if (nonceId == 0) *final_nonce = 0;
-            uint64_t nonce;
-            switch (random_type) {
-                case RANDOM_LEAN:
-                    nonce = ((uint64_t *)states)[0] ^ nonceId;
-                    break;
-                case RANDOM_XOSHIRO:
-                default:
-                    nonce = xoshiro256_next(((ulonglong4 *)states) + nonceId);
-                    break;
-            }
-            nonce = (nonce & nonce_mask) | nonce_fixed;
-    
-            uint8_t input[80];
-            memcpy(input, hash_header, HASH_HEADER_SIZE);
-    
-            uint256_t hash_;
-            memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
-            hash(powP, hash_.hash, input);
-    
-            uint8_t sha3_hash[32];
-            memcpy(sha3_hash, d_sha3_hash, 32 * sizeof(uint8_t)); 
-    
-            uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
-            #pragma unroll
-            for (int i = 0; i < QUARTER_MATRIX_SIZE; i++) {
-                packed_hash[i] = make_uchar4(
-                    (sha3_hash[2 * i] & 0xF0) >> 4,
-                    (sha3_hash[2 * i] & 0x0F),
-                    (sha3_hash[2 * i + 1] & 0xF0) >> 4,
-                    (sha3_hash[2 * i + 1] & 0x0F)
-                );
-            }
-    
-            uint32_t product1, product2;
-            uint8_t product[32] = {0};
-            #pragma unroll
-            for (int rowId = 0; rowId < HALF_MATRIX_SIZE; rowId++) {
-                amul4bit((uint32_t *)(matrix[(2 * rowId)]), (uint32_t *)(packed_hash), &product1);
-                amul4bit((uint32_t *)(matrix[(2 * rowId + 1)]), (uint32_t *)(packed_hash), &product2);
-    
-                uint8_t a_nibble = ((product1 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product1 >> 8) & 0xF));
-                uint8_t b_nibble = ((product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF));
-    
-                product[rowId] = (a_nibble << 4) | b_nibble;
-            }
-    
-            for (int i = 0; i < 32; i++) {
-                product[i] ^= sha3_hash[i];
-            }
-    
-            for (int i = 0; i < 32; i++) {
-                product[i] ^= final_x[i];
-            }
-    
-            memset(input, 0, 80);
-            memcpy(input, product, 32);
-            hash(heavyP, hash_.hash, input);
-    
-            if (LT_U256(hash_, target)) {
-                atomicCAS((unsigned long long int*)final_nonce, 0, (unsigned long long int)nonce);
-            }
+__global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
+    int nonceId = threadIdx.x + blockIdx.x * blockDim.x;
+    if (nonceId < nonces_len) {
+        if (nonceId == 0) *final_nonce = 0;
+        uint64_t nonce;
+        switch (random_type) {
+            case RANDOM_LEAN:
+                nonce = ((uint64_t *)states)[0] ^ nonceId;
+                break;
+            case RANDOM_XOSHIRO:
+            default:
+                nonce = xoshiro256_next(((ulonglong4 *)states) + nonceId);
+                break;
+        }
+        nonce = (nonce & nonce_mask) | nonce_fixed;
+
+        uint8_t input[80];
+        memcpy(input, hash_header, HASH_HEADER_SIZE);
+
+        uint256_t hash_;
+        memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
+        hash(powP, hash_.hash, input);
+
+        uint8_t sha3_hash[32];
+        sha3(hash_.hash, 32, sha3_hash, 32);
+
+        uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
+        #pragma unroll
+        for (int i = 0; i < QUARTER_MATRIX_SIZE; i++) {
+            packed_hash[i] = make_uchar4(
+                (sha3_hash[2 * i] & 0xF0) >> 4,
+                (sha3_hash[2 * i] & 0x0F),
+                (sha3_hash[2 * i + 1] & 0xF0) >> 4,
+                (sha3_hash[2 * i + 1] & 0x0F)
+            );
+        }
+
+        uint32_t product1, product2;
+        uint8_t product[32] = {0};
+        #pragma unroll
+        for (int rowId = 0; rowId < HALF_MATRIX_SIZE; rowId++) {
+            amul4bit((uint32_t *)(matrix[(2 * rowId)]), (uint32_t *)(packed_hash), &product1);
+            amul4bit((uint32_t *)(matrix[(2 * rowId + 1)]), (uint32_t *)(packed_hash), &product2);
+
+            uint8_t a_nibble = ((product1 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product1 >> 8) & 0xF));
+            uint8_t b_nibble = ((product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF));
+
+            product[rowId] = (a_nibble << 4) | b_nibble;
+        }
+
+        for (int i = 0; i < 32; i++) {
+            product[i] ^= sha3_hash[i];
+        }
+
+        for (int i = 0; i < 32; i++) {
+            product[i] ^= final_x[i];
+        }
+
+        memset(input, 0, 80);
+        memcpy(input, product, 32);
+        hash(heavyP, hash_.hash, input);
+
+        if (LT_U256(hash_, target)) {
+            atomicCAS((unsigned long long int*)final_nonce, 0, (unsigned long long int)nonce);
         }
     }
-    
+}
 
 }
