@@ -1,3 +1,6 @@
+// OpenCL was not tested now and its a rar first Version
+// I will fix it later
+
 // Catering for different flavors
 #pragma OPENCL EXTENSION cl_amd_media_ops : enable
 
