@@ -164,103 +164,66 @@ STATIC inline void keccakf(void *state) {
 /******** The FIPS202-defined functions. ********/
 
 /*** Some helper macros. ***/
+
 // OpenCL
 
 #define P keccakf
 #define Plen 200
 
-constant const ulong powP[25] = { 0x113cff0da1f6d83dUL, 0x29bf8855b7027e3cUL, 0x1e5f2e720efb44d2UL, 0x1ba5a4a3f59869a0UL, 0x7b2fafca875e2d65UL, 0x4aef61d629dce246UL, 0x183a981ead415b10UL, 0x776bf60c789bc29cUL, 0xf8ebf13388663140UL, 0x2e651c3c43285ff0UL, 0x0f96070540f14a0aUL, 0x44e367875b299152UL, 0xec70f1a425b13715UL, 0xe6c85d8f82e9da89UL, 0xb21a601f85b4b223UL, 0x3485549064a36a46UL, 0x0f06dd1c7a2f851aUL, 0xc1a2021d563bb142UL, 0xba1de5e4451668e4UL, 0xd102574105095f8dUL, 0x89ca4e849bcecf4aUL, 0x48b09427a8742edbUL, 0xb1fcce9ce78b5272UL, 0x5d1129cf82afa5bcUL, 0x02b97c786f824383UL };
-constant const ulong heavyP[25] = { 0x3ad74c52b2248509UL, 0x79629b0e2f9f4216UL, 0x7a14ff4816c7f8eeUL, 0x11a75f4c80056498UL, 0xe720e0df44eecedaUL, 0x72c7d82e14f34069UL, 0xc100ff2a938935baUL, 0x5e219040250fc462UL, 0x8039f9a60dcf6a48UL, 0xa0bcaa9f792a3d0cUL, 0xf431c05dd0a9a226UL, 0xd31f4cc354c18c3fUL, 0x6c6b7d01a769cc3dUL, 0x2ec65bd3562493e4UL, 0x4ef74b3a99cdb044UL, 0x774c86835434f2b0UL, 0x07e961b036bc9416UL, 0x7e8f1db17765cc07UL, 0xea8fdb80bac46d39UL, 0xb992f2d37b34ca58UL, 0xc776c5048481b957UL, 0x47c39f675112c22eUL, 0x92bb399db5290c0aUL, 0x549ae0312f9fc615UL, 0x1619327d10b9da35UL };
+// Konstanten für das Hashing
+constant const ulong powP[25] = { 0x113cff0da1f6d83dUL, 0x29bf8855b7027e3cUL, 0x1e5f2e720efb44d2UL, 
+                                  0x1ba5a4a3f59869a0UL, 0x7b2fafca875e2d65UL, 0x4aef61d629dce246UL, 
+                                  0x183a981ead415b10UL, 0x776bf60c789bc29cUL, 0xf8ebf13388663140UL, 
+                                  0x2e651c3c43285ff0UL, 0x0f96070540f14a0aUL, 0x44e367875b299152UL, 
+                                  0xec70f1a425b13715UL, 0xe6c85d8f82e9da89UL, 0xb21a601f85b4b223UL, 
+                                  0x3485549064a36a46UL, 0x0f06dd1c7a2f851aUL, 0xc1a2021d563bb142UL, 
+                                  0xba1de5e4451668e4UL, 0xd102574105095f8dUL, 0x89ca4e849bcecf4aUL, 
+                                  0x48b09427a8742edbUL, 0xb1fcce9ce78b5272UL, 0x5d1129cf82afa5bcUL, 
+                                  0x02b97c786f824383UL };
 
-constant const uint64_t final_x[4] = {
-    0x3FC2F2E2D1558192UL,   // 0x3F, 0xC2, 0xF2, 0xE2, 0xD1, 0x55, 0x81, 0x92
-    0xA06BF53F5A7032B4UL,   // 0xA0, 0x6B, 0xF5, 0x3F, 0x5A, 0x70, 0x32, 0xB4
-    0xE484E4CB8173E7E0UL,   // 0xE4, 0x84, 0xE4, 0xCB, 0x81, 0x73, 0xE7, 0xE0
-    0xD27F8C55AD8C608FUL    // 0xD2, 0x7F, 0x8C, 0x55, 0xAD, 0x8C, 0x60, 0x8F
-};
+constant const ulong heavyP[25] = { 0x3ad74c52b2248509UL, 0x79629b0e2f9f4216UL, 0x7a14ff4816c7f8eeUL, 
+                                  0x11a75f4c80056498UL, 0xe720e0df44eecedaUL, 0x72c7d82e14f34069UL, 
+                                  0xc100ff2a938935baUL, 0x5e219040250fc462UL, 0x8039f9a60dcf6a48UL, 
+                                  0xa0bcaa9f792a3d0cUL, 0xf431c05dd0a9a226UL, 0xd31f4cc354c18c3fUL, 
+                                  0x6c6b7d01a769cc3dUL, 0x2ec65bd3562493e4UL, 0x4ef74b3a99cdb044UL, 
+                                  0x774c86835434f2b0UL, 0x07e961b036bc9416UL, 0x7e8f1db17765cc07UL, 
+                                  0xea8fdb80bac46d39UL, 0xb992f2d37b34ca58UL, 0xc776c5048481b957UL, 
+                                  0x47c39f675112c22eUL, 0x92bb399db5290c0aUL, 0x549ae0312f9fc615UL, 
+                                  0x1619327d10b9da35UL };
 
-/** The sponge-based hash construction. **/
-STATIC inline void hash(constant const ulong *initP, const ulong* in, ulong4* out) {
-  private ulong a[25];
-  // Xor in the last block.
-  #pragma unroll
-  for (size_t i = 0; i < 10; i++) a[i] = initP[i] ^ in[i];
-  #pragma unroll
-  for (size_t i = 10; i < 25; i++) a[i] = initP[i];
-  // Apply P
-  P(a);
-  // Squeeze output.
-  *out = ((ulong4 *)(a))[0];
-}
-
-/* RANDOM NUMBER GENERATOR BASED ON MWC64X                          */
-/* http://cas.ee.ic.ac.uk/people/dt10/research/rngs-gpu-mwc64x.html */
-
-/*  Written in 2018 by David Blackman and Sebastiano Vigna (vigna@acm.org)
-
-To the extent possible under law, the author has dedicated all copyright
-and related and neighboring rights to this software to the public domain
-worldwide. This software is distributed without any warranty.
-
-See <http://creativecommons.org/publicdomain/zero/1.0/>. */
+constant const uint64_t final_x[4] = { 0x3FC2F2E2D1558192UL, 0xA06BF53F5A7032B4UL, 
+                                       0xE484E4CB8173E7E0UL, 0xD27F8C55AD8C608FUL };
 
 
-/* This is xoshiro256** 1.0, one of our all-purpose, rock-solid
-   generators. It has excellent (sub-ns) speed, a state (256 bits) that is
-   large enough for any parallel application, and it passes all tests we
-   are aware of.
-
-   For generating just floating-point numbers, xoshiro256+ is even faster.
-
-   The state must be seeded so that it is not everywhere zero. If you have
-   a 64-bit seed, we suggest to seed a splitmix64 generator and use its
-   output to fill s. */
-
+// Helper functions
 inline uint64_t rotl(const uint64_t x, int k) {
-	return (x << k) | (x >> (64 - k));
+    return (x << k) | (x >> (64 - k));
 }
 
 inline uint64_t xoshiro256_next(global ulong4 *s) {
-	const uint64_t result = rotl(s->y * 5, 7) * 9;
+    const uint64_t result = rotl(s->y * 5, 7) * 9;
+    const uint64_t t = s->y << 17;
 
-	const uint64_t t = s->y << 17;
+    s->z ^= s->x;
+    s->w ^= s->y;
+    s->y ^= s->z;
+    s->x ^= s->w;
 
-	s->z ^= s->x;
-	s->w ^= s->y;
-	s->y ^= s->z;
-	s->x ^= s->w;
+    s->z ^= t;
+    s->w = rotl(s->w, 45);
 
-	s->z ^= t;
-
-	s->w = rotl(s->w, 45);
-
-	return result;
+    return result;
 }
-/* KERNEL CODE */
 
-#ifdef cl_khr_int64_base_atomics
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics: enable
-#endif
-typedef union _Hash {
-  ulong4 hash;
-  uchar bytes[32];
-} Hash;
-
-#define BLOCKDIM 1024
-#define MATRIX_SIZE 64
-#define HALF_MATRIX_SIZE 32
-#define QUARTER_MATRIX_SIZE 16
-#define HASH_HEADER_SIZE 72
-
-#define RANDOM_TYPE_LEAN 0
-#define RANDOM_TYPE_XOSHIRO 1
-
+// Helper macro for 256-bit comparison
 #define LT_U256(X,Y) (X.w != Y->w ? X.w < Y->w : X.z != Y->z ? X.z < Y->z : X.y != Y->y ? X.y < Y->y : X.x < Y->x)
 
-#ifndef cl_khr_int64_base_atomics
-global int lock = false;
-#endif
+typedef union _Hash {
+    ulong4 hash;
+    uchar bytes[32];
+} Hash;
 
+// Main kernel function
 kernel void heavy_hash(
     const ulong local_size,
     const ulong nonce_mask,
@@ -274,38 +237,40 @@ kernel void heavy_hash(
     volatile global ulong4 *final_hash
 ) {
     int nonceId = get_global_id(0);
-
     private uint64_t nonce;
-    switch (random_type){
-      case RANDOM_TYPE_LEAN:
-        nonce = (((__global uint64_t *)random_state)[0]) ^ nonceId;
-        break;
-      case RANDOM_TYPE_XOSHIRO:
-      default:
-        nonce = xoshiro256_next(((global ulong4 *)random_state) + nonceId);
-    }
-    nonce = (nonce & nonce_mask) | nonce_fixed;
 
+    switch (random_type) {
+        case RANDOM_TYPE_LEAN:
+            nonce = (((__global uint64_t *)random_state)[0]) ^ nonceId;
+            break;
+        case RANDOM_TYPE_XOSHIRO:
+        default:
+            nonce = xoshiro256_next(((global ulong4 *)random_state) + nonceId);
+    }
+
+    nonce = (nonce & nonce_mask) | nonce_fixed;
     int64_t buffer[10];
 
-    // header
+    // Header
     #pragma unroll
-    for(int i=0; i<9; i++) buffer[i] = hash_header[i];
-    // data
+    for (int i = 0; i < 9; i++) buffer[i] = hash_header[i];
+
+    // Data
     buffer[9] = nonce;
 
     Hash hash_, hash2_;
     hash(powP, (const ulong*)buffer, &hash_.hash);
-  
+
     uint32_t product1, product2;
-    for (int rowId=0; rowId<32; rowId++){
-        amul4bit(matrix + 64*rowId, hash_.bytes, &product1);
-        amul4bit(matrix + 64*rowId+32, hash_.bytes, &product2);
+    for (int rowId = 0; rowId < 32; rowId++) {
+        amul4bit(matrix + 64 * rowId, hash_.bytes, &product1);
+        amul4bit(matrix + 64 * rowId + 32, hash_.bytes, &product2);
         product1 >>= 10;
         product2 >>= 10;
         hash2_.bytes[rowId] = hash_.bytes[rowId] ^ ((uint8_t)((product1 << 4) | (uint8_t)(product2)));
     }
 
+    // Check hash
     if (LT_U256(hash_.hash, target)) {
         #ifdef cl_khr_int64_base_atomics
         atom_cmpxchg(final_nonce, 0, nonce);
