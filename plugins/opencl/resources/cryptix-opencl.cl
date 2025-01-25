@@ -164,13 +164,20 @@ STATIC inline void keccakf(void *state) {
 /******** The FIPS202-defined functions. ********/
 
 /*** Some helper macros. ***/
-
+// OpenCL
 
 #define P keccakf
 #define Plen 200
 
 constant const ulong powP[25] = { 0x113cff0da1f6d83dUL, 0x29bf8855b7027e3cUL, 0x1e5f2e720efb44d2UL, 0x1ba5a4a3f59869a0UL, 0x7b2fafca875e2d65UL, 0x4aef61d629dce246UL, 0x183a981ead415b10UL, 0x776bf60c789bc29cUL, 0xf8ebf13388663140UL, 0x2e651c3c43285ff0UL, 0x0f96070540f14a0aUL, 0x44e367875b299152UL, 0xec70f1a425b13715UL, 0xe6c85d8f82e9da89UL, 0xb21a601f85b4b223UL, 0x3485549064a36a46UL, 0x0f06dd1c7a2f851aUL, 0xc1a2021d563bb142UL, 0xba1de5e4451668e4UL, 0xd102574105095f8dUL, 0x89ca4e849bcecf4aUL, 0x48b09427a8742edbUL, 0xb1fcce9ce78b5272UL, 0x5d1129cf82afa5bcUL, 0x02b97c786f824383UL };
 constant const ulong heavyP[25] = { 0x3ad74c52b2248509UL, 0x79629b0e2f9f4216UL, 0x7a14ff4816c7f8eeUL, 0x11a75f4c80056498UL, 0xe720e0df44eecedaUL, 0x72c7d82e14f34069UL, 0xc100ff2a938935baUL, 0x5e219040250fc462UL, 0x8039f9a60dcf6a48UL, 0xa0bcaa9f792a3d0cUL, 0xf431c05dd0a9a226UL, 0xd31f4cc354c18c3fUL, 0x6c6b7d01a769cc3dUL, 0x2ec65bd3562493e4UL, 0x4ef74b3a99cdb044UL, 0x774c86835434f2b0UL, 0x07e961b036bc9416UL, 0x7e8f1db17765cc07UL, 0xea8fdb80bac46d39UL, 0xb992f2d37b34ca58UL, 0xc776c5048481b957UL, 0x47c39f675112c22eUL, 0x92bb399db5290c0aUL, 0x549ae0312f9fc615UL, 0x1619327d10b9da35UL };
+
+constant const uint64_t final_x[4] = {
+    0x3FC2F2E2D1558192UL,   // 0x3F, 0xC2, 0xF2, 0xE2, 0xD1, 0x55, 0x81, 0x92
+    0xA06BF53F5A7032B4UL,   // 0xA0, 0x6B, 0xF5, 0x3F, 0x5A, 0x70, 0x32, 0xB4
+    0xE484E4CB8173E7E0UL,   // 0xE4, 0x84, 0xE4, 0xCB, 0x81, 0x73, 0xE7, 0xE0
+    0xD27F8C55AD8C608FUL    // 0xD2, 0x7F, 0x8C, 0x55, 0xAD, 0x8C, 0x60, 0x8F
+};
 
 /** The sponge-based hash construction. **/
 STATIC inline void hash(constant const ulong *initP, const ulong* in, ulong4* out) {
@@ -254,64 +261,6 @@ typedef union _Hash {
 global int lock = false;
 #endif
 
-#if defined(NVIDIA_CUDA) && (__COMPUTE_MAJOR__ > 6 || (__COMPUTE_MAJOR__ == 6 && __COMPUTE_MINOR__ >= 1))
-#define amul4bit(X,Y,Z) _amul4bit((constant uint32_t*)(X), (private uint32_t*)(Y), (uint32_t *)(Z))
-void STATIC inline _amul4bit(__constant uint32_t packed_vec1[32], uint32_t packed_vec2[32], uint32_t *ret) {
-    // We assume each 32 bits have four values: A0 B0 C0 D0
-    uint32_t res = 0;
-    #pragma unroll
-    for (int i=0; i<QUARTER_MATRIX_SIZE; i++) {
-        asm("dp4a.u32.u32" " %0, %1, %2, %3;": "=r" (res): "r" (packed_vec1[i]), "r" (packed_vec2[i]), "r" (res));
-    }
-    *ret = res;
-}
-#elif (defined(OFFLINE) && (defined(__gfx906__) || defined(__gfx908__))) || defined(__gfx1011__) || defined(__gfx1012__) || defined(__gfx1030__) || defined(__gfx1031__) || defined(__gfx1032__) || defined(__gfx1034__)
-#define amul4bit(X,Y,Z) _amul4bit((constant uint32_t*)(X), (private uint32_t*)(Y), (uint32_t *)(Z))
-void STATIC inline _amul4bit(__constant uint32_t packed_vec1[32], uint32_t packed_vec2[32], uint32_t *ret) {
-    // We assume each 32 bits have four values: A0 B0 C0 D0
-    uint32_t res = 0;
-#if defined(__FORCE_AMD_V_DOT8_U32_U4__)
-    for (int i=0; i<8; i++) {
-        __asm__("v_dot8_u32_u4" " %0, %1, %2, %3;": "=v" (res): "r" (packed_vec1[i]), "r" (packed_vec2[i]), "v" (res));
-    }
-#else
-    for (int i=0; i<QUARTER_MATRIX_SIZE; i++) {
-        __asm__("v_dot4_u32_u8" " %0, %1, %2, %3;": "=v" (res): "r" (packed_vec1[i]), "r" (packed_vec2[i]), "v" (res));
-    }
-#endif
-    *ret = res;
-}
-#else
-#define amul4bit(X,Y,Z) _amul4bit((constant uchar4*)(X), (private uchar4*)(Y), (uint32_t *)(Z))
-void STATIC inline _amul4bit(__constant uchar4 packed_vec1[32], uchar4 packed_vec2[32], uint32_t *ret) {
-    // We assume each 32 bits have four values: A0 B0 C0 D0
-#if __FORCE_AMD_V_DOT8_U32_U4__ == 1
-    uint32_t res = 0;
-    __constant uchar4 *a4 = packed_vec1;
-    uchar4 *b4 = packed_vec2;
-    for (int i=0; i<8; i++) {
-        res += ((a4[i].x>>0)&0xf)*((b4[i].x>>0)&0xf);
-        res += ((a4[i].x>>4)&0xf)*((b4[i].x>>4)&0xf);
-        res += ((a4[i].y>>0)&0xf)*((b4[i].y>>0)&0xf);
-        res += ((a4[i].y>>4)&0xf)*((b4[i].y>>4)&0xf);
-        res += ((a4[i].z>>0)&0xf)*((b4[i].z>>0)&0xf);
-        res += ((a4[i].z>>4)&0xf)*((b4[i].z>>4)&0xf);
-        res += ((a4[i].w>>0)&0xf)*((b4[i].w>>0)&0xf);
-        res += ((a4[i].w>>4)&0xf)*((b4[i].w>>4)&0xf);
-    }
-    *ret = res;
-#else
-    ushort4 res = 0;
-    for (int i=0; i<QUARTER_MATRIX_SIZE; i++) {
-        res += convert_ushort4(packed_vec1[i])*convert_ushort4(packed_vec2[i]);
-    }
-    res.s01 = res.s01 + res.s23;
-    *ret = res.s0 + res.s1;
-#endif
-}
-#endif
-#define SWAP4( x ) as_uint( as_uchar4( x ).wzyx )
-
 kernel void heavy_hash(
     const ulong local_size,
     const ulong nonce_mask,
@@ -324,22 +273,11 @@ kernel void heavy_hash(
     volatile global uint64_t *final_nonce,
     volatile global ulong4 *final_hash
 ) {
-    #if defined(PAL)
-    int nonceId = get_group_id(0)*local_size + get_local_id(0);
-    #else
     int nonceId = get_global_id(0);
-    #endif
-
-    #ifndef cl_khr_int64_base_atomics
-    if (nonceId == 0)
-       lock = 0;
-    work_group_barrier(CLK_GLOBAL_MEM_FENCE);
-    #endif
 
     private uint64_t nonce;
     switch (random_type){
       case RANDOM_TYPE_LEAN:
-        // nonce = ((uint64_t *)random_state)[0] + nonceId;
         nonce = (((__global uint64_t *)random_state)[0]) ^ nonceId;
         break;
       case RANDOM_TYPE_XOSHIRO:
@@ -358,58 +296,23 @@ kernel void heavy_hash(
 
     Hash hash_, hash2_;
     hash(powP, (const ulong*)buffer, &hash_.hash);
-    #if __FORCE_AMD_V_DOT8_U32_U4__ == 1
-    #else
-    private uchar hash_part[64];
-    #if defined(NVIDIA_CUDA)
-    #pragma unroll
-    #endif
-    for (int i=0; i<32; i++) {
-         hash_part[2*i] = (hash_.bytes[i] & 0xF0) >> 4;
-         hash_part[2*i+1] = hash_.bytes[i] & 0x0F;
-    }
-    #endif
-
+  
     uint32_t product1, product2;
-    #if defined(NVIDIA_CUDA) || defined(__FORCE_AMD_V_DOT8_U32_U4__)
-    #pragma unroll
-    #endif
     for (int rowId=0; rowId<32; rowId++){
-    #if __FORCE_AMD_V_DOT8_U32_U4__ == 1
         amul4bit(matrix + 64*rowId, hash_.bytes, &product1);
         amul4bit(matrix + 64*rowId+32, hash_.bytes, &product2);
-    #else
-        amul4bit(matrix + 128*rowId, hash_part, &product1);
-        amul4bit(matrix + 128*rowId+64, hash_part, &product2);
-    #endif
         product1 >>= 10;
         product2 >>= 10;
-//        hash2_.bytes[rowId] = hash_.bytes[rowId] ^ bitselect(product1, product2, 0x0000000FU);
         hash2_.bytes[rowId] = hash_.bytes[rowId] ^ ((uint8_t)((product1 << 4) | (uint8_t)(product2)));
     }
-    buffer[0] = hash2_.hash.x;
-    buffer[1] = hash2_.hash.y;
-    buffer[2] = hash2_.hash.z;
-    buffer[3] = hash2_.hash.w;
-    #pragma unroll
-    for(int i=4; i<10; i++) buffer[i] = 0;
 
-    hash(heavyP, (const ulong*)buffer, &hash_.hash);
-
-    if (LT_U256(hash_.hash, target)){
-        //printf("%lu: %lu < %lu: %d %d\n", nonce, ((uint64_t *)hash_)[3], target[3], ((uint64_t *)hash_)[3] < target[3], LT_U256((uint64_t *)hash_, target));
+    if (LT_U256(hash_.hash, target)) {
         #ifdef cl_khr_int64_base_atomics
         atom_cmpxchg(final_nonce, 0, nonce);
         #else
         if (!atom_cmpxchg(&lock, 0, 1)) {
             *final_nonce = nonce;
-            //for(int i=0;i<4;i++) final_hash[i] = ((uint64_t volatile *)hash_)[i];
         }
         #endif
     }
-    /*if (nonceId==1) {
-        //printf("%lu: %lu < %lu: %d %d\n", nonce, ((uint64_t *)hash2_)[3], target[3], ((uint64_t *)hash_)[3] < target[3]);
-        *final_nonce = nonce;
-        for(int i=0;i<4;i++) final_hash[i] = ((uint64_t volatile *)hash_)[i];
-    }*/
 }
