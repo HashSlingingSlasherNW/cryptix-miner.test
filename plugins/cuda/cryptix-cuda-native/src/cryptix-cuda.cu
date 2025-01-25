@@ -83,9 +83,10 @@ __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed
         memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
         hash(powP, hash_.hash, input);
 
-        // Führe SHA-3 Hash aus
+        
+
         uint8_t sha3_hash[32];
-        sha3(hash_.hash, 32, sha3_hash);
+        cudaMemcpy(d_sha3_hash, sha3_hash, 32, cudaMemcpyHostToDevice); 
 
         uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
         #pragma unroll
