@@ -85,7 +85,7 @@ __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed
 
         // Führe SHA-3 Hash aus
         uint8_t sha3_hash[32];
-        sha3_256(hash_.hash, 32, sha3_hash);
+        sha3(hash_.hash, 32, sha3_hash);
 
         uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
         #pragma unroll
