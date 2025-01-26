@@ -8,7 +8,6 @@ Supports CPU & GPU + HTTP
 ### Supports:
 - Local Mining on Node via 127.0.0.1
 - HTTP Mining on Node via Webaddress
-- Stratum Mining on Pool
 
 
 ## Installation
