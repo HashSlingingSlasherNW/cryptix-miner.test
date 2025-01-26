@@ -313,32 +313,19 @@ impl StratumHandler {
                             self.block_template_ctr
                                 .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| Some((v + 1) % 10_000))
                                 .unwrap();
-                            info!("Received block notification: id = {}, header_hash = {:?}, timestamp = {}", id, header_hash, timestamp);
-                        
-                            info!("Process block id: {}, header_hash: {:?}", id, header_hash);
-                            let result = miner.process_block(Some(PartialBlock {
-                                id,
-                                header_hash,
-                                timestamp,
-                                nonce: 0,
-                                target: self.target_pool,
-                                nonce_mask: self.nonce_mask,
-                                nonce_fixed: self.nonce_fixed,
-                                hash: None,
-                            })).await;
-                        
-                            match result {
-                                Ok(_) => {
-                                    info!("block processing completed.");
-                                    Ok(())  
-                                },
-                                Err(e) => {
-                                    error!("Error in block processing: {:?}", e);
-                                    Err(e)  
-                                }
-                            }
+                            miner
+                                .process_block(Some(PartialBlock {
+                                    id,
+                                    header_hash,
+                                    timestamp,
+                                    nonce: 0,
+                                    target: self.target_pool,
+                                    nonce_mask: self.nonce_mask,
+                                    nonce_fixed: self.nonce_fixed,
+                                    hash: None,
+                                }))
+                                .await
                         }
-                                            
                         _ => Err(format!("Unexpected stratum message: {:?}", msg).into()),
                     },
                     _ => Err(format!("Inconsistent stratum message: {:?}", msg).into()),

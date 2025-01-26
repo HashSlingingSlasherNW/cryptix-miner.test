@@ -19,7 +19,7 @@ use std::ffi::c_void;
 use std::ptr;
 use std::sync::Arc;
 
-static BINARY_DIR: Dir = include_dir!("./plugins/opencl/resources/bin/");
+// static BINARY_DIR: Dir = include_dir!("./plugins/opencl/resources/bin/");
 static PROGRAM_SOURCE: &str = include_str!("../resources/cryptix-opencl.cl");
 
 pub struct OpenCLGPUWorker {
