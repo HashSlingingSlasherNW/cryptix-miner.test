@@ -1,6 +1,3 @@
-## GPU Mining not activate now, coming soon
-
-
 # Cryptix-miner CPU & GPU
 Supports CPU & GPU + HTTP + Stratum Pool
 ![cryptix-miner](https://github.com/user-attachments/assets/912d2770-8b90-4e43-bdc2-101799c47e3f)
@@ -10,6 +7,8 @@ Supports CPU & GPU + HTTP + Stratum Pool
 - HTTP Mining on Node via Webaddress
 - Mining on Stratum Pools
 - No Support now for Stratum Bridge
+- Supports NVIDIA / CUDA
+- No Support now for AMD / OPENCL
 
 
 ## Installation
