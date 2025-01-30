@@ -50,23 +50,34 @@ To start mining, you need to run [cryptixd](https://github.com/cryptix-network/r
 
 # Hive OS
  Steps to Fix HiveOS Compatibility for Cryptix CPU & GPU Miner:
+ 
 
  Update HiveOS to the Latest Beta Release
+ 
 
  Run the Following Commands in the Terminal:
+ 
 
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+
 sudo dpkg -i cuda-keyring_1.1-1_all.deb
+
 sudo apt-get update
+
 sudo apt-get -y install cuda-toolkit-12-6
+
 
 :three: Install the Required Drivers:
 
+
 sudo apt-get install -y nvidia-open
+
 sudo apt-get install -y cuda-drivers
 
 
+
 This method has been tested successfully.
+
 
 # Arguments
 Help:
