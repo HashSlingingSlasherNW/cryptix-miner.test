@@ -67,7 +67,7 @@ sudo apt-get update
 sudo apt-get -y install cuda-toolkit-12-6
 
 
-:three: Install the Required Drivers:
+ Install the Required Drivers:
 
 
 sudo apt-get install -y nvidia-open
