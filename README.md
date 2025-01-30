@@ -1,13 +1,14 @@
-## GPU Mining not activate now, coming soon
-
-
 # Cryptix-miner CPU & GPU
-Supports CPU & GPU + HTTP
+Supports CPU & GPU + HTTP + Stratum Pool
 ![cryptix-miner](https://github.com/user-attachments/assets/912d2770-8b90-4e43-bdc2-101799c47e3f)
 
 ### Supports:
 - Local Mining on Node via 127.0.0.1
 - HTTP Mining on Node via Webaddress
+- Mining on Stratum Pools
+- No Support now for Stratum Bridge
+- Supports NVIDIA / CUDA
+- No Support now for AMD / OPENCL
 
 
 ## Installation
@@ -47,7 +48,38 @@ To remove a plugin, you simply remove the corresponding `dll`/`so` for the direc
 # Usage
 To start mining, you need to run [cryptixd](https://github.com/cryptix-network/rusty-cryptix) and have an address to send the rewards to.
 
+# Hive OS
+ Steps to Fix HiveOS Compatibility for Cryptix CPU & GPU Miner:
+ 
 
+ Update HiveOS to the Latest Beta Release
+ 
+
+ Run the Following Commands in the Terminal:
+ 
+
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+
+sudo apt-get update
+
+sudo apt-get -y install cuda-toolkit-12-6
+
+
+ Install the Required Drivers:
+
+
+sudo apt-get install -y nvidia-open
+
+sudo apt-get install -y cuda-drivers
+
+
+
+This method has been tested successfully.
+
+
+# Arguments
 Help:
 ```
 cryptix-miner 
