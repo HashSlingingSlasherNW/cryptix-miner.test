@@ -89,13 +89,13 @@ __kernel void heavy_hash(__global uint64_t *states, uint64_t nonce_mask, uint64_
                 break;
             case RANDOM_XOSHIRO:
             default:
-                nonce = states[nonceId] * 0x9E3779B97F4A7C15ULL; // Xoshiro256-ähnliche PRNG
+                nonce = states[nonceId] * 0x9E3779B97F4A7C15ULL; // Xoshiro256
                 break;
         }
         nonce = (nonce & nonce_mask) | nonce_fixed;
 
         uint8_t input[80] = {0};
-        memcpy(input, &nonce, sizeof(uint64_t)); // Endianheit beachten
+        memcpy(input, &nonce, sizeof(uint64_t)); 
 
         uint256_t hash_;
         hash(powP, hash_.hash, input);
