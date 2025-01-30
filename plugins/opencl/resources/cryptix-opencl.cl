@@ -50,7 +50,7 @@ typedef union {
     uint8_t hash[32];
 } uint256_t;
 
-// Vergleich von 256-Bit Zahlen
+//  256-Bit
 #define LT_U256(X, Y) (X.number[3] != Y.number[3] ? X.number[3] < Y.number[3] : \
                        X.number[2] != Y.number[2] ? X.number[2] < Y.number[2] : \
                        X.number[1] != Y.number[1] ? X.number[1] < Y.number[1] : \
