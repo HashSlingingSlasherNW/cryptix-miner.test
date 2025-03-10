@@ -187,7 +187,7 @@ impl State {
     }
 
     #[inline(always)]
-    // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE //
+    // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         let mut hash_bytes: [u8; 32] = hash.to_le_bytes();
