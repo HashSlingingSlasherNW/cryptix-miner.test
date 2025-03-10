@@ -173,7 +173,6 @@ impl State {
         }
     }
     
-
     // Bitwise manipulations on data
     fn bit_manipulations(data: &mut [u8; 32]) {
         for i in 0..32 {
