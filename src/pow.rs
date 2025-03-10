@@ -20,6 +20,7 @@ mod heavy_hash;
 mod keccak;
 mod xoshiro;
 use sha3::{Sha3_256, Digest};
+use blake3;
 
 #[derive(Clone, Debug)]
 pub enum BlockSeed {
