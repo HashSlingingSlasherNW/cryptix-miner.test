@@ -155,7 +155,7 @@ impl State {
             .try_into()
             .unwrap();
         let value = u32::from_le_bytes(slice);
-        (value % 3 + 1) as usize // Runden zwischen 1 und 3
+        (value % 3 + 1) as usize // Rounds between 1 and 3
     }
 
     // Calculate SHA3 rounds based on input
@@ -164,21 +164,7 @@ impl State {
             .try_into()
             .unwrap();
         let value = u32::from_le_bytes(slice);
-        (value % 3 + 1) as usize
-    }
-
-    // Calculate Blake3 rounds based on input
-    fn calculate_b3_rounds(input: [u8; 32]) -> Result<usize, String> {
-        let slice = &input[B3_ROUND_OFFSET..B3_ROUND_OFFSET + ROUND_RANGE_SIZE];
-        let value = u32::from_le_bytes(slice.try_into().map_err(|_| "Failed to convert slice to u32".to_string())?);
-        Ok((value % 3 + 1) as usize) // Runden zwischen 1 und 3
-    }
-    
-     // Calculate SHA3 rounds based on input
-    fn calculate_sha3_rounds(input: [u8; 32]) -> Result<usize, String> {
-        let slice = &input[SHA3_ROUND_OFFSET..SHA3_ROUND_OFFSET + ROUND_RANGE_SIZE];
-        let value = u32::from_le_bytes(slice.try_into().map_err(|_| "Failed to convert slice to u32".to_string())?);
-        Ok((value % 3 + 1) as usize) // Runden zwischen 1 und 3
+        (value % 3 + 1) as usize // Rounds between 1 and 3
     }
     
 
