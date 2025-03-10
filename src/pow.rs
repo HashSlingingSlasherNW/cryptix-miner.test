@@ -22,6 +22,11 @@ mod xoshiro;
 use sha3::{Sha3_256, Digest};
 use blake3;
 
+// Constants for the offsets
+const SHA3_ROUND_OFFSET: usize = 8;
+const B3_ROUND_OFFSET: usize = 4;
+const ROUND_RANGE_SIZE: usize = 4;
+
 #[derive(Clone, Debug)]
 pub enum BlockSeed {
     FullBlock(Box<RpcBlock>),
@@ -130,20 +135,106 @@ impl State {
         })
     }
 
+    // SHA3-256 Hash Function
+    fn sha3_hash(input: [u8; 32]) -> Result<[u8; 32], String> {
+        let mut sha3_hasher = Sha3_256::new();
+        sha3_hasher.update(&input);
+        let hash = sha3_hasher.finalize();
+        Ok(hash.into())
+    }
+
+    // Blake3 Hash Function
+    fn blake3_hash(input: [u8; 32]) -> Result<[u8; 32], String> {
+        let hash = blake3::hash(&input);
+        Ok(hash.into()) 
+    }
+
+    // Calculate Blake3 rounds based on input
+    fn calculate_b3_rounds(input: [u8; 32]) -> Result<usize, String> {
+        let slice = &input[B3_ROUND_OFFSET..B3_ROUND_OFFSET + ROUND_RANGE_SIZE];
+
+        if slice.len() == ROUND_RANGE_SIZE {
+            let value = u32::from_le_bytes(slice.try_into().map_err(|_| "Failed to convert slice to u32".to_string())?);
+            Ok((value % 3 + 1) as usize) // Rounds between 1 and 3
+        } else {
+            Err("Input slice for Blake3 rounds is invalid".to_string())
+        }
+    }
+
+    // Calculate SHA3 rounds based on input
+    fn calculate_sha3_rounds(input: [u8; 32]) -> Result<usize, String> {
+        let slice = &input[SHA3_ROUND_OFFSET..SHA3_ROUND_OFFSET + ROUND_RANGE_SIZE];
+
+        if slice.len() == ROUND_RANGE_SIZE {
+            let value = u32::from_le_bytes(slice.try_into().map_err(|_| "Failed to convert slice to u32".to_string())?);
+            Ok((value % 3 + 1) as usize) // Rounds between 1 and 3
+        } else {
+            Err("Input slice for SHA3 rounds is invalid".to_string())
+        }
+    }
+
+    // Bitwise manipulations on data
+    fn bit_manipulations(data: &mut [u8; 32]) {
+        for i in 0..32 {
+            data[i] ^= data[(i + 1) % 32]; // XOR with the next byte (circularly)
+            data[i] = data[i].rotate_left(3); // Rotate left by 3 bits
+            data[i] ^= i as u8; // XOR with the index value (removed unnecessary parentheses)
+        }
+    }
+
+    // Mix SHA3 and Blake3 hashes by XORing their bytes.
+    fn byte_mixing(sha3_hash: &[u8; 32], b3_hash: &[u8; 32]) -> [u8; 32] {
+        let mut temp_buf = [0u8; 32];
+        for i in 0..32 {
+            temp_buf[i] = sha3_hash[i] ^ b3_hash[i]; // XOR byte by byte
+        }
+        temp_buf
+    }
+
     #[inline(always)]
     // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
-        let hash_bytes: [u8; 32] = hash.to_le_bytes();
-
-        let mut sha3_hasher = Sha3_256::new();
-        sha3_hasher.update(hash_bytes);
-        let sha3_hash = sha3_hasher.finalize();
-        let sha3_hash_bytes: [u8; 32] = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
-
-        self.matrix.heavy_hash(Hash::from_le_bytes(sha3_hash_bytes))
+        let mut hash_bytes: [u8; 32] = hash.to_le_bytes();
+    
+        // Complex manipulation based on the nonce
+        for i in 0..32 {
+            // XOR the byte with the nonce, adding an index-based offset
+            hash_bytes[i] ^= (nonce as u8).wrapping_add(i as u8);
+            
+            // Apply a 4-bit left rotation to further mix the byte
+            hash_bytes[i] = hash_bytes[i].rotate_left(4);
+        }
+    
+        // Calculate the number of rounds for both Blake3 and SHA3
+        let b3_rounds = State::calculate_b3_rounds(hash_bytes).unwrap_or(1);
+        let sha3_rounds = State::calculate_sha3_rounds(hash_bytes).unwrap_or(1);
+    
+        let b3_hash: [u8; 32];
+        let sha3_hash: [u8; 32];
+        let m_hash: [u8; 32];
+    
+        // Perform Blake3 rounds with bitwise manipulations
+        for _ in 0..b3_rounds {
+            hash_bytes = Self::blake3_hash(hash_bytes).unwrap_or([0; 32]); // Apply Blake3 hash
+            Self::bit_manipulations(&mut hash_bytes); // Apply additional bit manipulations
+        }
+        b3_hash = hash_bytes; // Store Blake3 result
+    
+        // Perform SHA3 rounds with bitwise manipulations
+        let mut sha3_bytes = b3_hash; // Start from the Blake3 result
+        for _ in 0..sha3_rounds {
+            sha3_bytes = Self::sha3_hash(sha3_bytes).unwrap_or([0; 32]); // Apply SHA3 hash
+            Self::bit_manipulations(&mut sha3_bytes); // Apply additional bit manipulations
+        }
+        sha3_hash = sha3_bytes; // Store SHA3 result
+    
+        // Mix the results from SHA3 and Blake3 to combine the outputs
+        m_hash = Self::byte_mixing(&sha3_hash, &b3_hash);
+    
+        self.matrix.heavy_hash(Hash::from_le_bytes(m_hash))
     }
-
+    
     #[inline(always)]
     pub fn check_pow(&self, nonce: u64) -> bool {
         let pow = self.calculate_pow(nonce);
