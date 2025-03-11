@@ -102,8 +102,6 @@ impl Matrix {
         rank
     }
 
-
-
     // Dynamic S-Box based on hash
     fn generate_sbox(block_hash: [u8; 32]) -> [u8; 32] {
         let mut output = [0u8; 32];
