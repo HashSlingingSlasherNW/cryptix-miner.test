@@ -199,13 +199,13 @@ impl State {
     
         // **Branches for Byte Manipulation**
         for i in 0..32 {
-            match (hash_bytes[i] ^ (self.nonce as u8)) % 6 {
+            match (hash_bytes[i] ^ (nonce as u8)) % 6 {
                 0 => hash_bytes[i] = hash_bytes[i].wrapping_add(13),
                 1 => hash_bytes[i] = hash_bytes[i].rotate_left(3),
                 2 => hash_bytes[i] ^= 0x5A,
                 3 => hash_bytes[i] = hash_bytes[i].wrapping_mul(17),
                 4 => hash_bytes[i] = hash_bytes[i].wrapping_sub(29),
-                5 => hash_bytes[i] = hash_bytes[i].wrapping_add(0xAA ^ self.nonce as u8),
+                5 => hash_bytes[i] = hash_bytes[i].wrapping_add(0xAA ^ nonce as u8),
                 _ => unreachable!(),
             }
         }
