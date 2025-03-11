@@ -198,7 +198,7 @@ impl Matrix {
         // Fill the 'memory' vector with random values ​​using 'fill_memory'
         Self::fill_memory(&seed, &mut memory);
 
-         // XOR von memory mit product
+         // XOR memory product
         for i in 0..32 {
             product[i] ^= memory[i];
         }
