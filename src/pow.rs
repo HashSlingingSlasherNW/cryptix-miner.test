@@ -176,21 +176,37 @@ impl State {
     // Bitwise manipulations on data
     fn bit_manipulations(data: &mut [u8; 32]) {
         for i in 0..32 {
+            // Non-linear manipulations with pseudo random patterns
             data[i] ^= data[(i + 1) % 32]; // XOR with the next byte
-            data[i] = data[i].rotate_left(3); // Rotate left by 3 bits
-            data[i] ^= i as u8; // XOR with the index value
+            data[i] = data[i].rotate_left(5); // Rotate 5 bits to the left
+            data[i] ^= (i * 31) as u8; // XOR with the index multiplied by a prime number
+            data[i] = data[i].wrapping_add(0xAC); // Add a constant value
         }
     }
 
-    // Mix SHA3 and Blake3 hashes by XORing their bytes.
     fn byte_mixing(sha3_hash: &[u8; 32], b3_hash: &[u8; 32]) -> [u8; 32] {
         let mut temp_buf = [0u8; 32];
         for i in 0..32 {
-            temp_buf[i] = sha3_hash[i] ^ b3_hash[i]; // XOR byte by byte
+
+            let a = sha3_hash[i];
+            let b = b3_hash[i];
+            
+            // bitwise AND and OR
+            let and_result = a & b;
+            let or_result = a | b;
+            
+            // bitwise rotation and shift
+            let rotated = or_result.rotate_left(5);  // Rotate left by 5 bits
+            let shifted = and_result.wrapping_shl(3);  // Shift left by 3 bits
+            
+            // Combine the results
+            let mixed = rotated ^ shifted;  // XOR the results
+            
+            temp_buf[i] = mixed;  // Store the result in the temporary buffer
         }
         temp_buf
     }
-
+    
     #[inline(always)]
     // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
@@ -216,7 +232,7 @@ impl State {
         let b3_rounds = State::calculate_b3_rounds(hash_bytes).unwrap_or(1);
         let sha3_rounds = State::calculate_sha3_rounds(hash_bytes).unwrap_or(1);
 
-        let extra_rounds = (hash_bytes[0] % 7) as usize;  // Dynamic rounds
+        let extra_rounds = (hash_bytes[0] % 4) as usize;  // Dynamic rounds
 
         let sha3_hash: [u8; 32];
         let b3_hash: [u8; 32];
