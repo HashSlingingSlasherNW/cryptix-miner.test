@@ -98,7 +98,7 @@ impl Matrix {
         rank
     }
 
-    const FINAL_X: [u8; 32] = [
+    const FINAL_CRYPTIX: [u8; 32] = [
         0x3F, 0xC2, 0xF2, 0xE2,
         0xD1, 0x55, 0x81, 0x92,
         0xA0, 0x6B, 0xF5, 0x3F,
@@ -142,34 +142,40 @@ impl Matrix {
         // XOR the product with the original hash
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
-            // **Memory-Hard**
-            let mut memory_table = vec![0u8; 8192];  // 8 KB Test
-            let mut index: usize = 0;
+        // **Memory-Hard**
+        let mut memory_table = vec![0u8; 16384];  // 16 KB Test
+        let mut index: usize = 0;
 
-            for i in 0..32 {
-                let mut sum = 0u16;
-                for j in 0..64 {
-                    sum += nibbles[j] as u16 * self.0[2 * i][j] as u16;
-                }
-
-                // non-linear memory accesses
-                for _ in 0..6 { 
-                    index = (index.wrapping_add(i * 257)) % memory_table.len();  // PR Index
-                    index = index ^ memory_table[index % memory_table.len()] as usize * 13; // XOR with values ​​from memory
-                    index = (index * 41 + i * 73) % memory_table.len();  // Disruption of the sequence
-
-                    memory_table[index] ^= (sum & 0xFF) as u8;
-                }
+        // Repeat calculations and manipulations on memory
+        for i in 0..32 {
+            let mut sum = 0u16;
+            for j in 0..64 {
+                sum += nibbles[j] as u16 * self.0[2 * i][j] as u16;
             }
 
-            // Using the memory table to calculate the hash
-            for i in 0..32 {
-                product[i] ^= memory_table[(product[i] as usize * 47 + i) % memory_table.len()];
+            // ** non-linear memory accesses:**
+            for _ in 0..4 { 
+
+                index = (index + (i * 257)) % memory_table.len();  // Base increment
+                index ^= memory_table[index % memory_table.len()] as usize * 19; // XOR with current value
+                index = (index * 73 + i * 41) % memory_table.len(); // Further manipulations
+
+                // Index paths
+                let shifted = (index.wrapping_add(i * 13)) % memory_table.len();
+                memory_table[shifted] ^= (sum & 0xFF) as u8;
             }
+        }
+
+        // Calculate the final memory-hash result
+        for i in 0..32 {
+            // non-linear memory accesses
+            let shift_val = (product[i] as usize * 47 + i) % memory_table.len();
+            product[i] ^= memory_table[shift_val];
+        }
 
         // final xor
         for i in 0..32 {
-            product[i] ^= Self::FINAL_X[i];
+            product[i] ^= Self::FINAL_CRYPTIX[i];
         }
     
         // Return the calculated hash
