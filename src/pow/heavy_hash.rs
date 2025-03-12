@@ -2,10 +2,6 @@ use crate::pow::{hasher::HeavyHasher, xoshiro::XoShiRo256PlusPlus};
 use crate::Hash;
 use std::mem::MaybeUninit;
 
-
-const H_MEM: usize = 4 * 1024 * 1024; // Memory size 4MB
-const H_MEM_U32: usize = H_MEM / 4; // Memory size in u32 elements
-
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Matrix(pub [[u16; 64]; 64]);
 
@@ -102,43 +98,6 @@ impl Matrix {
         rank
     }
 
-    fn xorshift32(state: &mut u32) -> u32 {
-        let mut x = *state;
-        x ^= x << 13;
-        x ^= x >> 17;
-        x ^= x << 5;
-        *state = x;
-        x
-    }
-    
-    fn fill_memory(seed: &[u8; 32], memory: &mut Vec<u8>) {
-        assert!(memory.len() % 4 == 0, "Memory length must be a multiple of 4 bytes");
-    
-        // Derive initial state using all 32 bytes
-        let mut state = 0u32;
-        for i in (0..32).step_by(4) {
-            let chunk = u32::from_le_bytes([
-                seed[i],
-                seed[i + 1],
-                seed[i + 2],
-                seed[i + 3],
-            ]);
-            state ^= chunk; // XOR each 4-byte chunk into the state
-        }
-    
-        let num_elements = H_MEM_U32;
-    
-        // Fill memory with u32 values as bytes
-        for i in 0..num_elements {
-            let value = Self::xorshift32(&mut state);
-            let offset = i * 4;
-            memory[offset]     = (value & 0xFF) as u8;
-            memory[offset + 1] = ((value >> 8) & 0xFF) as u8;
-            memory[offset + 2] = ((value >> 16) & 0xFF) as u8;
-            memory[offset + 3] = ((value >> 24) & 0xFF) as u8;
-        }
-    }
-
     const FINAL_X: [u8; 32] = [
         0x3F, 0xC2, 0xF2, 0xE2,
         0xD1, 0x55, 0x81, 0x92,
@@ -183,26 +142,36 @@ impl Matrix {
         // XOR the product with the original hash
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
+            // **Memory-Hard**
+            let mut memory_table = vec![0u8; 8192];  // 8 KB Test
+            let mut index: usize = 0;
+
+            for i in 0..32 {
+                let mut sum = 0u16;
+                for j in 0..64 {
+                    sum += nibbles[j] as u16 * self.0[2 * i][j] as u16;
+                }
+
+                // non-linear memory accesses
+                for _ in 0..6 { 
+                    index = (index.wrapping_add(i * 257)) % memory_table.len();  // PR Index
+                    index = index ^ memory_table[index % memory_table.len()] as usize * 13; // XOR with values ​​from memory
+                    index = (index * 41 + i * 73) % memory_table.len();  // Disruption of the sequence
+
+                    memory_table[index] ^= (sum & 0xFF) as u8;
+                }
+            }
+
+            // Using the memory table to calculate the hash
+            for i in 0..32 {
+                product[i] ^= memory_table[(product[i] as usize * 47 + i) % memory_table.len()];
+            }
+
         // final xor
         for i in 0..32 {
             product[i] ^= Self::FINAL_X[i];
         }
-
-        // Initialize a 32-byte seed value
-        let seed: [u8; 32] = hash.to_le_bytes();
-
-        // Create the vector 'memory' with the size 'H_MEM'
-        let mut memory: Vec<u8> = vec![0; H_MEM];
-   
-
-        // Fill the 'memory' vector with random values ​​using 'fill_memory'
-        Self::fill_memory(&seed, &mut memory);
-
-         // XOR memory product
-        for i in 0..32 {
-            product[i] ^= memory[i];
-        }
-
+    
         // Return the calculated hash
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }
