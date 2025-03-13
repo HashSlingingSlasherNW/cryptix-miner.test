@@ -98,6 +98,7 @@ impl Matrix {
         rank
     }
 
+    // Const Final Cryptix
     const FINAL_CRYPTIX: [u8; 32] = [
         0xE4, 0x7F, 0x3F, 0x73, 
         0xB4, 0xF2, 0xD2, 0x8C, 
@@ -109,6 +110,7 @@ impl Matrix {
         0x32, 0x81, 0xE4, 0x92,
     ];    
 
+    // Non linear sbox
     pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
         let mut result = input;
     
@@ -123,6 +125,7 @@ impl Matrix {
         result
     }
 
+    // Heavy Hash
     pub fn heavy_hash(&self, hash: Hash) -> Hash {
         // Convert the hash to its byte representation
         let hash_bytes = hash.to_le_bytes();
