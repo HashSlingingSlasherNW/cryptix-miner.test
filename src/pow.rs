@@ -218,7 +218,7 @@ impl State {
         let mut hash_bytes: [u8; 32] = hash.to_le_bytes();
 
         // **Branches for Byte Manipulation**
-        for i in 0..16 {
+        for i in 0..32 {
             let condition = (hash_bytes[i] ^ (nonce as u8)) % 6; // 6 Cases
             match condition {
                 0 => {
