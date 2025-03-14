@@ -110,7 +110,6 @@ impl Matrix {
         0x32, 0x81, 0xE4, 0x92,
     ];    
 
-
     // Anti-ASIC cache
     pub fn anti_asic_cache(product: &mut [u8; 32]) {
         const CACHE_SIZE: usize = 4096;  // 4 KB
@@ -129,11 +128,11 @@ impl Matrix {
         for _ in 0..8 { 
             for i in 0..32 {
                 // XOR for destructive cache effect
-                index = (index.rotate_left(5) ^ product[i] as usize * 17) % CACHE_SIZE;
+                index = (index.rotate_left(5) ^ (product[i] as usize).wrapping_mul(17)) % CACHE_SIZE;
                 cache[index] ^= product[i]; 
                 
                 // Unpredictable index mapping
-                let safe_index = (index * 7) % CACHE_SIZE;
+                let safe_index = ((index * 7) % CACHE_SIZE).min(CACHE_SIZE - 1);
                 index = (index.wrapping_add(product[i] as usize * 23) ^ cache[safe_index] as usize) % CACHE_SIZE;
                 cache[index] ^= product[(i + 11) % 32];
 
@@ -148,8 +147,6 @@ impl Matrix {
             let shift_val = (product[i] as usize * 47 + i) % CACHE_SIZE;
             product[i] ^= cache[shift_val];
         }
-
-
         
     }
 
@@ -161,9 +158,6 @@ impl Matrix {
         result = result.wrapping_mul(key);          // Multiply by the key
         result = (result >> 3) | (result << 5);    // Bitwise permutation (rotation)
         result ^= 0x5A;                             // XOR
-    
-        // Modulo operation
-        result = result & 0xFF;  
     
         result
     }
@@ -203,7 +197,7 @@ impl Matrix {
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
         // **Memory-Hard**
-        let mut memory_table = vec![0u8; 1024 * 16]; // 16 KB
+        let mut memory_table: [u8; 16 * 1024] = [0; 16 * 1024]; // 16 KB
         let mut index: usize = 0;
 
         // Repeat calculations and manipulations on memory
@@ -246,7 +240,7 @@ impl Matrix {
             for i in 0..256 { 
                 let mut value = i as u8;
                 value = Self::generate_non_linear_sbox(value, hash_bytes[i % hash_bytes.len()]);
-                value ^= (value << 4) | (value >> 2); 
+                value ^= value.rotate_left(4) | value.rotate_right(2);
                 sbox[i] = value;
             }
         }
