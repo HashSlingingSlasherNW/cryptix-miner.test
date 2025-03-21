@@ -110,46 +110,6 @@ impl Matrix {
         0x32, 0x81, 0xE4, 0x92,
     ];    
 
-    // Anti-ASIC cache
-    pub fn anti_asic_cache(product: &mut [u8; 32]) {
-        const CACHE_SIZE: usize = 4096;  // 4 KB
-        let mut cache = [0u8; CACHE_SIZE];
-
-        let mut index: usize = 0;
-
-        // Cache initialization
-        let mut hash_value = 0u8;
-        for i in 0..CACHE_SIZE { 
-            // Combine product values with cache indices
-            hash_value = (product[i % 32] ^ i as u8).wrapping_add(hash_value);
-            cache[i] = hash_value;  // starting pattern
-        }
-        
-        for _ in 0..8 { 
-            for i in 0..32 {
-                // XOR for destructive cache effect
-                index = (index.rotate_left(5) ^ (product[i] as usize).wrapping_mul(17)) % CACHE_SIZE;
-                cache[index] ^= product[i]; 
-                
-                // Unpredictable index mapping
-                let safe_index = ((index * 7) % CACHE_SIZE).min(CACHE_SIZE - 1);
-                index = (index.wrapping_add(product[i] as usize * 23) ^ cache[safe_index] as usize) % CACHE_SIZE;
-                cache[index] ^= product[(i + 11) % 32];
-
-                // Data-Dependent Memory Access
-                let dynamic_offset = ((cache[index] as usize * 37) ^ (product[i] as usize * 19)) % CACHE_SIZE;
-                cache[dynamic_offset] ^= product[(i + 3) % 32];
-            }
-        }
-
-        // Link cache values ​​back to product
-        for i in 0..32{
-            let shift_val = (product[i] as usize * 47 + i) % CACHE_SIZE;
-            product[i] ^= cache[shift_val];
-        }
-        
-    }
-
     // Non linear sbox
     pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
         let mut result = input;
@@ -228,9 +188,6 @@ impl Matrix {
         for i in 0..32 {
             product[i] ^= Self::FINAL_CRYPTIX[i];
         }
-
-        // **Anti-ASIC Cache **
-        Self::anti_asic_cache(&mut product);
 
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
