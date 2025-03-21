@@ -3,6 +3,7 @@
 #include "keccak-tiny.c"
 #include "xoshiro256starstar.c"
 #include "sha3.c"
+#include "blake3.c"
 
 typedef uint8_t Hash[32];
 
