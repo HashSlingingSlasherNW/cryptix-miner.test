@@ -111,6 +111,8 @@ extern "C" {
             }
             nonce = (nonce & nonce_mask) | nonce_fixed;
 
+            // Lib
+
             uint8_t input[80];
             memcpy(input, hash_header, HASH_HEADER_SIZE);
 
@@ -120,6 +122,9 @@ extern "C" {
 
             uint8_t sha3_hash[32];
             sha3(hash_.hash, 32, sha3_hash, 32);
+
+
+            // Matrix
 
             uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
             #pragma unroll
