@@ -98,15 +98,71 @@ impl Matrix {
         rank
     }
 
+
+    /* 
+    // ### Cryptixhash v3
+
+    // generate_non_linear_sbox method
+    pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
+        let mut result = input;
+
+        // Calculate the inverse in GF(2^8)
+        result = Self::gf_invert(result);
+
+        // Affine transformation (left rotation, XOR with constant 0x63)
+        result = Self::affine_transform(result);
+
+        // XOR with the key for additional diffusion
+        result ^= key;
+
+        result
+    }
+
+    // Inverse calculation and affine transformation
+    fn gf_invert(value: u8) -> u8 {
+        if value == 0 {
+            return 0; // The inverse of 0 is 0
+        }
+
+        let mut t = 0u8;
+        let r: u16 = 0x11b; // The irreducible polynomial as u16
+        let mut v = value;
+        let mut u: u16 = 1; // 1 in GF(2^8)
+
+        // Extended Euclidean algorithm
+        for _ in 0..8 {
+            if v & 1 == 1 {
+                t ^= u as u8; // Cast the result as u8
+            }
+
+            v >>= 1;
+            u = (u << 1) ^ (if v & 0x80 != 0 { r } else { 0 });
+
+            if u & 0x100 != 0 {
+                u ^= 0x11b; // XOR with irreducible polynomial
+            }
+        }
+
+        t
+    }
+
+    // Affine Transformation (left rotation + XOR with constant 0x63)
+    fn affine_transform(value: u8) -> u8 {
+        let mut result = value;
+        result = result.rotate_left(4) ^ result; // Left rotation + XOR with itself (for diffusion)
+        result ^= 0x63; // XOR with a constant (similar to AES)
+        result
+    } */
+
     // Non linear sbox
     pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
         let mut result = input;
-    
-        // A combination of multiplication and bitwise permutation
+
+        // Combination of multiplication and bitwise permutation
         result = result.wrapping_mul(key);          // Multiply by the key
-        result = (result >> 3) | (result << 5);    // Bitwise permutation (rotation)
-        result ^= 0x5A;                             // XOR
-    
+        result = (result >> 3) | (result << 5);    // Bitwise permutation (Rotation)
+        result ^= 0x5A;                             //XOR with 0x5A
+
         result
     }
 
@@ -140,21 +196,31 @@ impl Matrix {
             product[i] = ((a_nibble << 4) | b_nibble) as u8;
         }
     
-        // XOR the product with the original hash
+        // XOR the product with the original hash   
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
 
+        // Use the bytes of the hash to fill the S-box
+        for i in 0..256 {
+            sbox[i] = hash_bytes[i % hash_bytes.len()];
+        }
+
         // Calculate S-Box with the product value and hash values
         for _ in 0..6 {  
+            let mut temp_sbox = sbox;
+            
             for i in 0..256 { 
-                let mut value = sbox[i];  
-                value = Self::generate_non_linear_sbox(value, hash_bytes[i % hash_bytes.len()] ^ product[i % product.len()]);
-                value ^= value.rotate_left(4) | value.rotate_right(2);
-                sbox[i] ^= value;  
-                sbox.swap(i, (value as usize) % 256);  
+                let mut value = temp_sbox[i];  // Get the current value from the S-Box
+                
+                value = Self::generate_non_linear_sbox(value, hash_bytes[i % hash_bytes.len()] ^ product[i % product.len()]); // Generate a non-linear S-Box value using hash and product
+                value ^= value.rotate_left(4) | value.rotate_right(2); // Bitwise rotations (left by 4 bits, right by 2 bits) and XOR
+                temp_sbox[i] = value; // Store the modified value in the temporary S-Box
             }
+
+            // At the end of the round, update the S-Box with the new values
+            sbox = temp_sbox;
         }
 
         // Apply S-Box to the product with XOR
@@ -205,7 +271,7 @@ impl Matrix {
             }
         }
 
-        // Return the final result 
+        //Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }
 }
@@ -435,9 +501,10 @@ mod benches {
     }
 }
 
-
         /*
-        // Memory Hard Function
+        // ### Cryptixhash v3
+
+        // Memory Hard Function - Inline Code
         let mut memory_table: [u8; 16 * 1024] = [0; 16 * 1024]; // 16 KB
         let nonce = hash.to_le_bytes();
         
@@ -473,5 +540,4 @@ mod benches {
             let shift_val = (product[i] as usize * 47 + i) % memory_table.len();
             product[i] ^= memory_table[shift_val];
         }
-
          */
