@@ -529,7 +529,7 @@ mod benches {
                 index ^= (memory_table[(index * 7 + i) % memory_table.len()] as usize * 19) ^ ((i * 53) % 13);
                 index = (index * 73 + i * 41) % memory_table.len(); 
                 
-                // Index-Pfade
+                // Index-Path
                 let shifted = (index.wrapping_add(i * 13)) % memory_table.len();
                 memory_table[shifted] ^= (sum & 0xFF) as u8;
             }
