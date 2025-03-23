@@ -101,18 +101,18 @@ impl Matrix {
     // Non linear sbox
     pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
         let mut result = input;
-
+    
         // A combination of multiplication and bitwise permutation
         result = result.wrapping_mul(key);          // Multiply by the key
         result = (result >> 3) | (result << 5);    // Bitwise permutation (rotation)
         result ^= 0x5A;                             // XOR
-
+    
         result
     }
 
     pub fn heavy_hash(&self, hash: Hash) -> Hash {
         // Convert the hash to its byte representation
-        let mut hash_bytes = hash.to_le_bytes();
+        let hash_bytes = hash.to_le_bytes();
            
         // Create an array containing the nibbles (4-bit halves of the bytes)
         let mut nibbles = [0u8; 64];
@@ -149,29 +149,30 @@ impl Matrix {
         // Calculate S-Box with the product value and hash values
         for _ in 0..6 {  
             for i in 0..256 { 
-                let mut value = i as u8;
-                value = Self::generate_non_linear_sbox(value, hash_bytes[i % hash_bytes.len()]);
+                let mut value = sbox[i];  
+                value = Self::generate_non_linear_sbox(value, hash_bytes[i % hash_bytes.len()] ^ product[i % product.len()]);
                 value ^= value.rotate_left(4) | value.rotate_right(2);
-                sbox[i] = value;
+                sbox[i] ^= value;  
+                sbox.swap(i, (value as usize) % 256);  
             }
         }
 
-        // Apply S-Box to the product
+        // Apply S-Box to the product with XOR
         for i in 0..32 {
-            product[i] = sbox[product[i] as usize];
+            product[i] ^= sbox[product[i] as usize]; 
         }
 
-        // **Branches for Byte Manipulation on `product` (not `hash_bytes`)**
+        // **Branches for Byte Manipulation
         for i in 0..32 {
             // Nonce from s-box product
             let cryptix_nonce = product[0] as u64; 
 
-            // Use the result of the S-Box (product[i]) in the condition
-            let condition = (product[i] ^ (hash_bytes[i % hash_bytes.len()] ^ cryptix_nonce as u8)) % 6; // Use nonce properly
+            // Use the result of the S-Box (product[i])
+            let condition = (product[i] ^ (hash_bytes[i % hash_bytes.len()] ^ cryptix_nonce as u8)) % 6; // Use nonce
 
             match condition {
                 0 => {
-                    // Manipulate the `product` result in this branch (not `hash_bytes`)
+                    // Manipulate the `product` result in this branch
                     product[i] = product[i].wrapping_add(13);  // Add 13
                     product[i] = product[i].rotate_left(3);    // Rotate left by 3 bits
                 },
@@ -204,7 +205,7 @@ impl Matrix {
             }
         }
 
-        // Return the final result using modified hash_bytes instead of product
+        // Return the final result 
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }
 }
