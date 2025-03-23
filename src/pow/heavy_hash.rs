@@ -112,8 +112,8 @@ impl Matrix {
 
     pub fn heavy_hash(&self, hash: Hash) -> Hash {
         // Convert the hash to its byte representation
-        let hash_bytes = hash.to_le_bytes();
-    
+        let mut hash_bytes = hash.to_le_bytes();
+           
         // Create an array containing the nibbles (4-bit halves of the bytes)
         let mut nibbles = [0u8; 64];
         for (i, &byte) in hash_bytes.iter().enumerate() {
@@ -143,49 +143,9 @@ impl Matrix {
         // XOR the product with the original hash
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
-        /*
-        // Memory Hard Function
-        let mut memory_table: [u8; 16 * 1024] = [0; 16 * 1024]; // 16 KB
-        let nonce = hash.to_le_bytes();
-        
-        // **Fill the memory with the nonce**
-        for i in 0..memory_table.len() {
-            memory_table[i] = nonce[i % nonce.len()];  
-        }
-        
-        let mut index: usize = 0;
-        
-        // Repeat the calculations and manipulations in memory
-        for i in 0..32 {
-            let mut sum = 0u16;
-        
-             // Memory on product
-            for j in 0..32 {
-                sum += product[j] as u16 * self.0[2 * i][j % self.0[2 * i].len()] as u16;
-            }
-        
-            // **non-linear memory accesses**
-            for _ in 0..12 { 
-                index ^= (memory_table[(index * 7 + i) % memory_table.len()] as usize * 19) ^ ((i * 53) % 13);
-                index = (index * 73 + i * 41) % memory_table.len(); 
-                
-                // Index-Pfade
-                let shifted = (index.wrapping_add(i * 13)) % memory_table.len();
-                memory_table[shifted] ^= (sum & 0xFF) as u8;
-            }
-        }
-        
-        // Final hash result in memory
-        for i in 0..32 {
-            let shift_val = (product[i] as usize * 47 + i) % memory_table.len();
-            product[i] ^= memory_table[shift_val];
-        }
-
-         */
-
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
-    
+
         // Calculate S-Box with the product value and hash values
         for _ in 0..6 {  
             for i in 0..256 { 
@@ -195,13 +155,56 @@ impl Matrix {
                 sbox[i] = value;
             }
         }
-    
+
         // Apply S-Box to the product
         for i in 0..32 {
             product[i] = sbox[product[i] as usize];
         }
-    
-        // Return the final result without XOR with `FINAL_CRYPTIX`
+
+        // **Branches for Byte Manipulation on `product` (not `hash_bytes`)**
+        for i in 0..32 {
+            // Nonce from s-box product
+            let cryptix_nonce = product[0] as u64; 
+
+            // Use the result of the S-Box (product[i]) in the condition
+            let condition = (product[i] ^ (hash_bytes[i % hash_bytes.len()] ^ cryptix_nonce as u8)) % 6; // Use nonce properly
+
+            match condition {
+                0 => {
+                    // Manipulate the `product` result in this branch (not `hash_bytes`)
+                    product[i] = product[i].wrapping_add(13);  // Add 13
+                    product[i] = product[i].rotate_left(3);    // Rotate left by 3 bits
+                },
+                1 => {
+                    // Manipulate the `product` result in this branch
+                    product[i] = product[i].wrapping_sub(7);   // Subtract 7
+                    product[i] = product[i].rotate_left(5);    // Rotate left by 5 bits
+                },
+                2 => {
+                    // Manipulate the `product` result in this branch
+                    product[i] ^= 0x5A;                       // XOR with 0x5A
+                    product[i] = product[i].wrapping_add(0xAC); // Add 0xAC
+                },
+                3 => {
+                    // Manipulate the `product` result in this branch
+                    product[i] = product[i].wrapping_mul(17);   // Multiply by 17
+                    product[i] ^= 0xAA;                        // XOR with 0xAA
+                },
+                4 => {
+                    // Manipulate the `product` result in this branch
+                    product[i] = product[i].wrapping_sub(29);   // Subtract 29
+                    product[i] = product[i].rotate_left(1);     // Rotate left by 1 bit
+                },
+                5 => {
+                    // Manipulate the `product` result in this branch
+                    product[i] = product[i].wrapping_add(0xAA ^ cryptix_nonce as u8); // Add XOR of 0xAA and nonce
+                    product[i] ^= 0x45;                        // XOR with 0x45
+                },
+                _ => unreachable!(), // Should never happen
+            }
+        }
+
+        // Return the final result using modified hash_bytes instead of product
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }
 }
@@ -430,3 +433,44 @@ mod benches {
         });
     }
 }
+
+
+        /*
+        // Memory Hard Function
+        let mut memory_table: [u8; 16 * 1024] = [0; 16 * 1024]; // 16 KB
+        let nonce = hash.to_le_bytes();
+        
+        // **Fill the memory with the nonce**
+        for i in 0..memory_table.len() {
+            memory_table[i] = nonce[i % nonce.len()];  
+        }
+        
+        let mut index: usize = 0;
+        
+        // Repeat the calculations and manipulations in memory
+        for i in 0..32 {
+            let mut sum = 0u16;
+        
+             // Memory on product
+            for j in 0..32 {
+                sum += product[j] as u16 * self.0[2 * i][j % self.0[2 * i].len()] as u16;
+            }
+        
+            // **non-linear memory accesses**
+            for _ in 0..12 { 
+                index ^= (memory_table[(index * 7 + i) % memory_table.len()] as usize * 19) ^ ((i * 53) % 13);
+                index = (index * 73 + i * 41) % memory_table.len(); 
+                
+                // Index-Pfade
+                let shifted = (index.wrapping_add(i * 13)) % memory_table.len();
+                memory_table[shifted] ^= (sum & 0xFF) as u8;
+            }
+        }
+        
+        // Final hash result in memory
+        for i in 0..32 {
+            let shift_val = (product[i] as usize * 47 + i) % memory_table.len();
+            product[i] ^= memory_table[shift_val];
+        }
+
+         */
