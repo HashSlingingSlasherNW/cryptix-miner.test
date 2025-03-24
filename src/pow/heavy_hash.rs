@@ -228,14 +228,12 @@ impl Matrix {
             product[i] ^= sbox[product[i] as usize]; 
         }
 
-        // **Branches for Byte Manipulation
+        // **Branches for Byte Manipulation**
         for i in 0..32 {
             // Nonce from s-box product
-            let cryptix_nonce = product[0] as u64; 
-
-            // Use the result of the S-Box (product[i])
-            let condition = (product[i] ^ (hash_bytes[i % hash_bytes.len()] ^ cryptix_nonce as u8)) % 6; // Use nonce
-
+            let cryptix_nonce = product[i];
+            let condition = (product[i] ^ (hash_bytes[i % hash_bytes.len()] ^ cryptix_nonce)) % 6;
+            
             match condition {
                 0 => {
                     // Manipulate the `product` result in this branch

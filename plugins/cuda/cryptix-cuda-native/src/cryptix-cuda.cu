@@ -57,68 +57,21 @@ __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_ve
     *ret = res;
 }
 
-// non linear Sbox
 __device__ __inline__ uint8_t generate_non_linear_sbox(uint8_t input, uint8_t key) {
     uint8_t result = input;
-
-    uint16_t temp = (uint16_t)result * (uint16_t)key;
-    result = (uint8_t)temp;
-    result = ((result >> 3) | (result << 5)) & 0xFF;  // Bitwise rotation (circular shift)
-    result ^= 0x5A;  // XOR with constant
-
+    result = result * key;  
+    result = (result >> 3) | (result << 5);  
+    result ^= 0x5A;  
     return result;
 }
 
-// Rotate left
 __device__ __inline__ uint8_t rotate_left(uint8_t value, int shift) {
-    return (value << shift) | (value >> (8 - shift)); // Rotate left by shift positions
+    return (value << shift) | (value >> (8 - shift));
 }
 
-// Rotate right
 __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
-    return (value >> shift) | (value << (8 - shift)); // Rotate right by shift positions
+    return (value >> shift) | (value << (8 - shift));
 }
-
-// SHA3-256 Hash Function
-__device__ void sha3_hash(uint8_t input[32], uint8_t output[32]) {
-    sha3_256(output, input, 32);
-}
-
-// BLAKE3 Hash Function
-__device__ void blake3_hash(uint8_t input[32], uint8_t output[32]) {
-    blake3(input, output);
-}
-
-// Calculate BLAKE3 rounds based on input
-__device__ int calculate_b3_rounds(const uint8_t input[32]) {
-    uint32_t value;
-    memcpy(&value, &input[B3_ROUND_OFFSET], ROUND_RANGE_SIZE);
-    return (value % 5 + 1); // Returns rounds between 1 and 5
-}
-
-// Calculate SHA3 rounds based on input
-__device__ int calculate_sha3_rounds(const uint8_t input[32]) {
-    uint32_t value;
-    memcpy(&value, &input[SHA3_ROUND_OFFSET], ROUND_RANGE_SIZE);
-    return (value % 4 + 1); // Returns rounds between 1 and 4
-}
-
-// Byte Mixing
-__device__ void byte_mixing(uint8_t sha3_hash[32], uint8_t b3_hash[32], uint8_t output[32]) {
-    for (int i = 0; i < 32; i++) {
-        uint8_t a = sha3_hash[i];
-        uint8_t b = b3_hash[i];
-
-        uint8_t and_result = a & b;
-        uint8_t or_result = a | b;
-
-        uint8_t rotated = __byte_perm(or_result, or_result, 0x1234); // CUDA rotation
-        uint8_t shifted = and_result << 3;
-
-        output[i] = rotated ^ shifted;
-    }
-}
-
 
 extern "C" {
     __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
@@ -145,48 +98,9 @@ extern "C" {
             hash(powP, hash_.hash, input);
 
             uint8_t sha3_hash[32];
-            // sha3(hash_.hash, 32, sha3_hash, 32);
+            sha3(hash_.hash, 32, sha3_hash, 32);
 
-            sha3(hash_.hash, sha3_hash);
-
-            int b3_rounds = calculate_b3_rounds(sha3_hash);
-            int sha3_rounds = calculate_sha3_rounds(sha3_hash);
-    
-            int extra_rounds = sha3_hash[0] % 6;
-    
-            uint8_t b3_hash[32];
-            uint8_t mixed_hash[32];
-    
-            // Dynamic Number of Rounds for Blake3
-            for (int i = 0; i < (b3_rounds + extra_rounds); i++) {
-                blake3_hash(sha3_hash, b3_hash);
-    
-                if (b3_hash[5] % 2 == 0) {
-                    b3_hash[10] ^= 0xAA;
-                } else {
-                    b3_hash[15] += 23;
-                }
-            }
-    
-            // Dynamic Number of Rounds for SHA3
-            for (int i = 0; i < (sha3_rounds + extra_rounds); i++) {
-                sha3_hash(b3_hash, sha3_hash);
-    
-                if (sha3_hash[3] % 3 == 0) {
-                    sha3_hash[20] ^= 0x55;
-                } else if (sha3_hash[7] % 5 == 0) {
-                    sha3_hash[25] = __byte_perm(sha3_hash[25], sha3_hash[25], 0x1234);
-                }
-            }
-    
-            byte_mixing(sha3_hash, b3_hash, mixed_hash);
-
-
-
-
-
-
-            // ### Matrix
+            // **Matrix Transformation**
             uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};
             #pragma unroll
             for (int i = 0; i < QUARTER_MATRIX_SIZE; i++) {
@@ -198,7 +112,6 @@ extern "C" {
                 );
             }
 
-            // Nibbles
             uint32_t product1, product2;
             uint8_t product[32] = {0};
             #pragma unroll
@@ -216,22 +129,61 @@ extern "C" {
                 product[i] ^= sha3_hash[i];
             }
 
-            // # Memory Hard here
-
-            // **Non-linear S-box**
-            uint8_t sbox[256] = {0};
-            for (int iter = 0; iter < 6; iter++) {
-                for (int i = 0; i < 256; i++) {
-                    uint8_t value = i;
-                    value = generate_non_linear_sbox(value, sha3_hash[i % 32]);
-                    value ^= rotate_left(value, 4) | rotate_right(value, 2);  
-                    sbox[i] = value;
-                }
+            // **Non-Linear S-Box**
+            uint8_t sbox[256];
+            for (int i = 0; i < 256; i++) {
+                sbox[i] = sha3_hash[i % 32];  
             }
 
-            // Apply the S-Box to the product
+            for (int iter = 0; iter < 6; iter++) {
+                uint8_t temp_sbox[256];
+                for (int i = 0; i < 256; i++) {
+                    uint8_t value = sbox[i];
+                    value = generate_non_linear_sbox(value, sha3_hash[i % 32] ^ product[i % 32]);
+                    value ^= rotate_left(value, 4) | rotate_right(value, 2);
+                    temp_sbox[i] = value;
+                }
+                memcpy(sbox, temp_sbox, 256);
+            }
+
+            // **Apply S-Box**
             for (int i = 0; i < 32; i++) {
-                product[i] = sbox[product[i]];
+                product[i] ^= sbox[product[i]];
+            }
+
+            //Branches
+            for (int i = 0; i < 32; i++) {
+                uint8_t cryptix_nonce = product[i];
+                uint8_t condition = ((product[i] ^ sha3_hash[i % 32]) ^ cryptix_nonce) % 6;  
+                
+                switch (condition) {
+                    case 0:
+                        product[i] = (product[i] + 13) % 256;
+                        product[i] = rotate_left(product[i], 3);
+                        break;
+                    case 1:
+                        product[i] = (product[i] - 7) % 256; 
+                        product[i] = rotate_left(product[i], 5);
+                        break;
+                    case 2:
+                        product[i] ^= 0x5A;
+                        product[i] = (product[i] + 0xAC) % 256; 
+                        break;
+                    case 3:
+                        product[i] = (product[i] * 17) % 256;  
+                        product[i] ^= 0xAA;
+                        break;
+                    case 4:
+                        product[i] = (product[i] - 29) % 256;  
+                        product[i] = rotate_left(product[i], 1);
+                        break;
+                    case 5:
+                        product[i] = (product[i] + (0xAA ^ cryptix_nonce)) % 256;  
+                        product[i] ^= 0x45;
+                        break;
+                    default:
+                        break;
+                }
             }
 
             memset(input, 0, 80);
@@ -244,3 +196,6 @@ extern "C" {
         }
     }
 }
+
+
+
