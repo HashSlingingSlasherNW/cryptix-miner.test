@@ -73,7 +73,6 @@ __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
     return (value >> shift) | (value << (8 - shift));
 }
 
-
 extern "C" {
     __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
         int nonceId = threadIdx.x + blockIdx.x * blockDim.x;

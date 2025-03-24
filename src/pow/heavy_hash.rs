@@ -155,7 +155,6 @@ impl Matrix {
         result
     } */
 
-
     // Non linear sbox
     pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
         let mut result = input;
