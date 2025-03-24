@@ -154,32 +154,116 @@ extern "C" {
             //Branches
             for (int i = 0; i < 32; i++) {
                 uint8_t cryptix_nonce = product[i];
-                uint8_t condition = ((product[i] ^ sha3_hash[i % 32]) ^ cryptix_nonce) % 6;  
-                
+                uint8_t condition = ((product[i] ^ sha3_hash[i % 32]) ^ cryptix_nonce) % 9; // 9 cases
+
                 switch (condition) {
                     case 0:
+                        // Main case 0
                         product[i] = (product[i] + 13) % 256;
-                        product[i] = rotate_left(product[i], 3);
+                        product[i] = rotate_left(product[i], 3);  // Rotate left by 3 bits
+        
+                        // Nested logic in case 0
+                        if (product[i] > 100) {
+                            product[i] = (product[i] + 0x20) % 256;  // Add 0x20 if greater than 100
+                        } else {
+                            product[i] = (product[i] - 0x10) % 256;  // Subtract 0x10 if not
+                        }
                         break;
                     case 1:
+                        // Main case 1
                         product[i] = (product[i] - 7) % 256; 
-                        product[i] = rotate_left(product[i], 5);
+                        product[i] = rotate_left(product[i], 5);  // Rotate left by 5 bits
+        
+                        // Nested logic in case 1
+                        if (product[i] % 2 == 0) {
+                            product[i] = (product[i] + 0x11) % 256;  // Add 0x11 if even
+                        } else {
+                            product[i] = (product[i] - 0x05) % 256;  // Subtract 0x05 if odd
+                        }
                         break;
                     case 2:
-                        product[i] ^= 0x5A;
-                        product[i] = (product[i] + 0xAC) % 256; 
+                        // Main case 2
+                        product[i] ^= 0x5A;                       // XOR with 0x5A
+                        product[i] = (product[i] + 0xAC) % 256;   // Add 0xAC
+        
+                        // Nested logic in case 2
+                        if (product[i] > 0x50) {
+                            product[i] = (product[i] * 2) % 256;   // Multiply by 2 if greater than 0x50
+                        } else {
+                            product[i] = (product[i] / 3) % 256;   // Divide by 3 if not
+                        }
                         break;
                     case 3:
-                        product[i] = (product[i] * 17) % 256;  
-                        product[i] ^= 0xAA;
+                        // Main case 3
+                        product[i] = (product[i] * 17) % 256;   // Multiply by 17
+                        product[i] ^= 0xAA;                      // XOR with 0xAA
+        
+                        // Nested logic in case 3
+                        if (product[i] % 4 == 0) {
+                            product[i] = rotate_left(product[i], 4);  // Rotate left by 4 bits if divisible by 4
+                        } else {
+                            product[i] = rotate_right(product[i], 2); // Rotate right by 2 bits if not
+                        }
                         break;
                     case 4:
-                        product[i] = (product[i] - 29) % 256;  
-                        product[i] = rotate_left(product[i], 1);
+                        // Main case 4
+                        product[i] = (product[i] - 29) % 256;  // Subtract 29
+                        product[i] = rotate_left(product[i], 1); // Rotate left by 1 bit
+        
+                        // Nested logic in case 4
+                        if (product[i] < 50) {
+                            product[i] = (product[i] + 0x55) % 256;  // Add 0x55 if less than 50
+                        } else {
+                            product[i] = (product[i] - 0x22) % 256;  // Subtract 0x22 if not
+                        }
                         break;
                     case 5:
-                        product[i] = (product[i] + (0xAA ^ cryptix_nonce)) % 256;  
-                        product[i] ^= 0x45;
+                        // Main case 5
+                        product[i] = (product[i] + (0xAA ^ cryptix_nonce)) % 256; // Add XOR of 0xAA and nonce
+                        product[i] ^= 0x45;  // XOR with 0x45
+        
+                        // Nested logic in case 5
+                        if (product[i] & 0x0F == 0) {
+                            product[i] = rotate_left(product[i], 6);  // Rotate left by 6 bits if lower nibble is 0
+                        } else {
+                            product[i] = rotate_right(product[i], 3); // Rotate right by 3 bits if not
+                        }
+                        break;
+                    case 6:
+                        // Main case 6
+                        product[i] = (product[i] + 0x33) % 256;  // Add 0x33
+                        product[i] = rotate_right(product[i], 4); // Rotate right by 4 bits
+        
+                        // Nested logic in case 6
+                        if (product[i] < 0x80) {
+                            product[i] = (product[i] - 0x22) % 256;  // Subtract 0x22 if less than 0x80
+                        } else {
+                            product[i] = (product[i] + 0x44) % 256;  // Add 0x44 if not
+                        }
+                        break;
+                    case 7:
+                        // Main case 7
+                        product[i] = (product[i] * 3) % 256;    // Multiply by 3
+                        product[i] = rotate_left(product[i], 2); // Rotate left by 2 bits
+        
+                        // Nested logic in case 7
+                        if (product[i] > 0x50) {
+                            product[i] = (product[i] + 0x11) % 256; // Add 0x11 if greater than 0x50
+                        } else {
+                            product[i] = (product[i] - 0x11) % 256; // Subtract 0x11 if not
+                        }
+                        break;
+                    case 8:
+                        // Main case 8
+                        product[i] = (product[i] - 0x10) % 256;  // Subtract 0x10
+                        product[i] = rotate_right(product[i], 3); // Rotate right by 3 bits
+        
+                        // Nested logic in case 8
+                        if (product[i] % 3 == 0) {
+                            product[i] = (product[i] + 0x55) % 256; // Add 0x55 if divisible by 3
+                        } else {
+                            product[i] = (product[i] - 0x33) % 256; // Subtract 0x33 if not
+                        }
                         break;
                     default:
                         break;
