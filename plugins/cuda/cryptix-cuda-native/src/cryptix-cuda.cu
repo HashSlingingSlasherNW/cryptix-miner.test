@@ -73,6 +73,7 @@ __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
     return (value >> shift) | (value << (8 - shift));
 }
 
+
 extern "C" {
     __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
         int nonceId = threadIdx.x + blockIdx.x * blockDim.x;
@@ -129,13 +130,20 @@ extern "C" {
                 product[i] ^= sha3_hash[i];
             }
 
+
+
+
+
             // **Non-Linear S-Box**
             uint8_t sbox[256];
             for (int i = 0; i < 256; i++) {
                 sbox[i] = sha3_hash[i % 32];  
             }
 
-            for (int iter = 0; iter < 6; iter++) {
+            // Calculate dynamic number of iterations (between 3 and 9)
+            int iterations = 3 + (product[0] % 7);  
+
+            for (int iter = 0; iter < iterations; iter++) {
                 uint8_t temp_sbox[256];
                 for (int i = 0; i < 256; i++) {
                     uint8_t value = sbox[i];
