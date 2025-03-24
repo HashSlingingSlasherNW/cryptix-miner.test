@@ -201,11 +201,7 @@ impl Matrix {
         // XOR the product with the original hash   
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
-
-
-
-
-
+        // ### Memory Hard
 
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];

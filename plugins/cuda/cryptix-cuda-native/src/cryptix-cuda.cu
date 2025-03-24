@@ -130,9 +130,7 @@ extern "C" {
                 product[i] ^= sha3_hash[i];
             }
 
-
-
-
+             // ### Memory Hard
 
             // **Non-Linear S-Box**
             uint8_t sbox[256];
