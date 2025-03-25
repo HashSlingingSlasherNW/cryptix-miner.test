@@ -111,8 +111,24 @@ extern "C" {
                 // Condition
                 if (sha3_hash[3] % 3 == 0) { 
                     sha3_hash[20] ^= 0x55; 
-                } else if (sha3_hash[7] % 5 == 0) { 
+                } 
+                else if (sha3_hash[7] % 5 == 0) { 
                     sha3_hash[25] = rotate_left(sha3_hash[25], 7); 
+                } 
+                else if (sha3_hash[5] % 2 == 0) { 
+                    sha3_hash[10] ^= 0xAA; 
+                } 
+                else if (sha3_hash[6] % 4 == 0) {
+                    sha3_hash[15] = rotate_left(sha3_hash[15], 3); 
+                } 
+                else if (sha3_hash[8] % 7 == 0) {
+                    sha3_hash[30] ^= 0xFF; 
+                } 
+                else if (sha3_hash[9] % 11 == 0) {
+                    sha3_hash[5] = rotate_right(sha3_hash[5], 4); 
+                } 
+                else if (sha3_hash[12] % 13 == 0) {
+                    sha3_hash[18] = rotate_left(sha3_hash[18], 2); 
                 }
             }
 
