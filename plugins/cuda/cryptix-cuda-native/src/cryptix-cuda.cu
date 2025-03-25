@@ -104,7 +104,7 @@ extern "C" {
                 sha3_hash[i] = hash_.hash[i];
             }
             
-            // SHA3 Iterationen basierend auf dem ersten Byte
+            // SHA3 from first byte
             for (uint8_t i = 0; i < iteration_count; ++i) {
                 sha3(sha3_hash, 32, sha3_hash, 32);
 
