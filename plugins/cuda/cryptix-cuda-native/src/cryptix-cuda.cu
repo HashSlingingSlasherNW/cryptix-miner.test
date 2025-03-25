@@ -75,6 +75,9 @@ __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
 
 extern "C" {
     __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
+        
+        uint8_t sha3_hash[32];
+        
         int nonceId = threadIdx.x + blockIdx.x * blockDim.x;
         if (nonceId < nonces_len) {
             if (nonceId == 0) *final_nonce = 0;
@@ -97,8 +100,15 @@ extern "C" {
             memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
             hash(powP, hash_.hash, input);
 
-            uint8_t sha3_hash[32];
-            sha3(hash_.hash, 32, sha3_hash, 32);
+            // Use the first byte of the calculated hash to determine the number of iterations
+            uint8_t first_byte = hash_.hash[0]; 
+            uint8_t iteration_count = (uint8_t)((first_byte % 2) + 1); 
+
+            memcpy(sha3_hash, hash_.hash, 32); // Copy the input hash to start
+
+            for (uint8_t i = 0; i < iteration_count; ++i) {
+                sha3(sha3_hash, 32, sha3_hash, 32); // SHA-3 calculation and saving the result in sha3_hash
+            }
 
             // **Matrix Transformation**
             uchar4 packed_hash[QUARTER_MATRIX_SIZE] = {0};

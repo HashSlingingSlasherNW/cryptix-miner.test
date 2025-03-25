@@ -132,15 +132,26 @@ impl State {
     #[inline(always)]
     // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
+        // Calculate the first hash
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         let hash_bytes: [u8; 32] = hash.to_le_bytes();
-
+    
+        // Use the first byte of the hash to determine the number of iterations (between 1 and 2)
+        let iterations = (hash_bytes[0] % 2) + 1;  
+    
+        // Iterative SHA-3 process
         let mut sha3_hasher = Sha3_256::new();
-        sha3_hasher.update(hash_bytes);
-        let sha3_hash = sha3_hasher.finalize();
-        let sha3_hash_bytes: [u8; 32] = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
-
-        self.matrix.heavy_hash(Hash::from_le_bytes(sha3_hash_bytes))
+        let mut current_hash = hash_bytes;
+    
+        // sha3 iterations
+        for _ in 0..iterations {
+            sha3_hasher.update(&current_hash);
+            let sha3_hash = sha3_hasher.finalize_reset();
+            current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
+        }
+    
+        // Send to heavy hash
+        self.matrix.heavy_hash(Hash::from_le_bytes(current_hash))
     }
 
     #[inline(always)]

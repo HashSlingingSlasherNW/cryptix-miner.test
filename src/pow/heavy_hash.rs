@@ -147,11 +147,11 @@ impl Matrix {
         t
     }
 
-    // Affine Transformation (left rotation + XOR with constant 0x63)
+    // Affine Transformation (left rotation + XOR )
     fn affine_transform(value: u8) -> u8 {
         let mut result = value;
         result = result.rotate_left(4) ^ result; // Left rotation + XOR with itself (for diffusion)
-        result ^= 0x63; // XOR with a constant (similar to AES)
+        result ^= 0x63; // XOR 
         result
     } */
 
