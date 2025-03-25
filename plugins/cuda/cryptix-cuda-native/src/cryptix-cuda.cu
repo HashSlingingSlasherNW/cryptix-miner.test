@@ -3,7 +3,6 @@
 #include "keccak-tiny.c"
 #include "xoshiro256starstar.c"
 #include "sha3.c"
-#include "blake3.c"
 
 typedef uint8_t Hash[32];
 
@@ -20,11 +19,6 @@ typedef union _uint256_t {
 
 // Memory Hard
 #define MEMORY_TABLE_SIZE (16 * 1024) // 16 KB
-
-// Constants for the offsets
-#define SHA3_ROUND_OFFSET 8
-#define B3_ROUND_OFFSET 4
-#define ROUND_RANGE_SIZE 4
 
 #define RANDOM_LEAN 0
 #define RANDOM_XOSHIRO 1
