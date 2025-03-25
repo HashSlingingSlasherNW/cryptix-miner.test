@@ -136,18 +136,25 @@ impl State {
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         let hash_bytes: [u8; 32] = hash.to_le_bytes();
     
-        // Use the first byte of the hash to determine the number of iterations (between 1 and 2)
-        let iterations = (hash_bytes[0] % 2) + 1;  
+        // Use the first byte of the hash to determine the number of iterations
+        let iterations = (hash_bytes[0] % 2) + 1;  // The first byte modulo 2, plus 1 for the range [1, 2]
     
         // Iterative SHA-3 process
         let mut sha3_hasher = Sha3_256::new();
         let mut current_hash = hash_bytes;
-    
-        // sha3 iterations
+
+        // Iterate according to the number of iterations
         for _ in 0..iterations {
             sha3_hasher.update(&current_hash);
             let sha3_hash = sha3_hasher.finalize_reset();
             current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
+
+            // Conditions
+            if current_hash[3] % 3 == 0 { 
+                current_hash[20] ^= 0x55; // XOR with 0x55 if byte 3 is divisible by 3
+            } else if current_hash[7] % 5 == 0 { 
+                current_hash[25] = current_hash[25].rotate_left(7); // Rotate left by 7 if byte 7 is divisible by 5
+            }
         }
     
         // Send to heavy hash
