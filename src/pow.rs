@@ -143,7 +143,7 @@ impl State {
         let mut sha3_hasher = Sha3_256::new();
         let mut current_hash = hash_bytes;
 
-       // Perform iterations based on the first byte of the hash
+        // Perform iterations based on the first byte of the hash
         for i in 0..iterations {
             sha3_hasher.update(&current_hash);
             let sha3_hash = sha3_hasher.finalize_reset();
@@ -155,98 +155,103 @@ impl State {
                 let repeat = (current_hash[2] % 4) + 1; // 1-4 iterations based on the value of byte 2
                 
                 for _ in 0..repeat {
-                    // Apply XOR operation to byte 15 of the hash to alter its value
-                    current_hash[15] ^= 0xAA; // XOR with 0xAA
+                    // Dynamically select the byte to modify based on a combination of hash bytes and iteration
+                    let target_byte = ((current_hash[1] as usize) + (i as u8) as usize) % 32;  // Dynamic byte position for XOR
+                    let xor_value = current_hash[(i % 16) as usize] ^ 0xA5; // Dynamic XOR value based on iteration index and hash
+                    current_hash[target_byte] ^= xor_value;  // XOR on dynamically selected byte
 
                     // Dynamically choose the byte to calculate rotation based on the current iteration
                     let rotation_byte = current_hash[(i % 32) as usize];  // Use different byte based on iteration index
-                    let rotation_amount = (rotation_byte % 5) + 1; // Rotation value is between 1 and 5
+                    let rotation_amount = ((current_hash[2] as u32) + (current_hash[5] as u32) % 5) + 1; // Combined rotation calculation
                     
                     // Perform rotation based on whether the rotation byte is even or odd
                     if rotation_byte % 2 == 0 {
-                        // Rotate byte 15 to the left by 'rotation_amount' positions
-                        current_hash[15] = current_hash[15].rotate_left(rotation_amount as u32);
+                        // Rotate byte at dynamic position to the left by 'rotation_amount' positions
+                        current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount);
                     } else {
-                        // Rotate byte 15 to the right by 'rotation_amount' positions
-                        current_hash[15] = current_hash[15].rotate_right(rotation_amount as u32);
+                        // Rotate byte at dynamic position to the right by 'rotation_amount' positions
+                        current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount);
                     }
 
-                    // Perform additional bitwise manipulation on byte 15 using a shift
-                    // The shift amount is dynamically determined based on byte 4 (mod 8), with a range from 1 to 8
-                    let shift_amount = (current_hash[4] % 8) + 1; // Shift range: 1-8 positions
-                    current_hash[15] ^= current_hash[15].rotate_left(shift_amount as u32); // XOR with rotated value
+                    // Perform additional bitwise manipulation on the target byte using a shift
+                    let shift_amount = ((current_hash[7] as u32) + (current_hash[9] as u32) % 6) + 2; // Combined shift calculation
+                    current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount); // XOR with rotated value
                 }
             } else if current_hash[3] % 3 == 0 {
-                let repeat = (current_hash[4] % 5) + 1; // 1-5 iterations based on byte 4
+                let repeat = (current_hash[4] % 5) + 1;
                 for _ in 0..repeat {
-                    current_hash[20] ^= 0x55; // XOR operation
+                    let target_byte = ((current_hash[6] as usize) + (i as u8) as usize) % 32; 
+                    let xor_value = current_hash[(i % 16) as usize] ^ 0x55;
+                    current_hash[target_byte] ^= xor_value;
 
                     let rotation_byte = current_hash[(i % 32) as usize];
                     let rotation_amount = (rotation_byte % 4) + 1;
                     if rotation_byte % 2 == 0 {
-                        current_hash[20] = current_hash[20].rotate_left(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount as u32);
                     } else {
-                        current_hash[20] = current_hash[20].rotate_right(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount as u32);
                     }
 
-                    // Additional bit manipulation
-                    let shift_amount = (current_hash[5] % 8) + 2;
-                    current_hash[20] ^= current_hash[20].rotate_left(shift_amount as u32);
+                    let shift_amount = ((current_hash[5] as u32) + (current_hash[8] as u32) % 7) + 3;
+                    current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount);
                 }
             } else if current_hash[2] % 6 == 0 {
-                let repeat = (current_hash[6] % 4) + 1; // 1-4 iterations based on byte 6
+                let repeat = (current_hash[6] % 4) + 1;
                 for _ in 0..repeat {
-                    current_hash[10] ^= 0xFF; // XOR operation
+                    let target_byte = ((current_hash[10] as usize) + (i as u8) as usize) % 32; 
+                    let xor_value = current_hash[(i % 16) as usize] ^ 0xFF;
+                    current_hash[target_byte] ^= xor_value;
 
                     let rotation_byte = current_hash[(i % 32) as usize];  
                     let rotation_amount = (rotation_byte % 3) + 1;
                     if rotation_byte % 2 == 0 {
-                        current_hash[10] = current_hash[10].rotate_left(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount as u32);
                     } else {
-                        current_hash[10] = current_hash[10].rotate_right(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount as u32);
                     }
 
-                    // Additional bit manipulation
                     let shift_amount = (current_hash[7] % 5) + 3;
-                    current_hash[10] ^= current_hash[10].rotate_left(shift_amount as u32);
+                    current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount as u32);
                 }
             } else if current_hash[7] % 5 == 0 {
-                let repeat = (current_hash[8] % 4) + 1; // 1-4 iterations based on byte 8
+                let repeat = (current_hash[8] % 4) + 1;
                 for _ in 0..repeat {
-                    current_hash[25] ^= 0x66; // XOR operation
+                    let target_byte = ((current_hash[25] as usize) + (i as u8) as usize) % 32; 
+                    let xor_value = current_hash[(i % 16) as usize] ^ 0x66;
+                    current_hash[target_byte] ^= xor_value;
 
                     let rotation_byte = current_hash[(i % 32) as usize]; 
                     let rotation_amount = (rotation_byte % 3) + 2;
                     if rotation_byte % 2 == 0 {
-                        current_hash[25] = current_hash[25].rotate_left(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount as u32);
                     } else {
-                        current_hash[25] = current_hash[25].rotate_right(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount as u32);
                     }
 
-                    // Additional bit manipulation
                     let shift_amount = (current_hash[10] % 6) + 4;
-                    current_hash[25] ^= current_hash[25].rotate_left(shift_amount as u32);
+                    current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount as u32);
                 }
             } else if current_hash[8] % 7 == 0 {
-                let repeat = (current_hash[9] % 5) + 1; // 1-5 iterations based on byte 9
+                let repeat = (current_hash[9] % 5) + 1;
                 for _ in 0..repeat {
-                    current_hash[30] ^= 0x77; // XOR operation
+                    let target_byte = ((current_hash[30] as usize) + (i as u8) as usize) % 32; 
+                    let xor_value = current_hash[(i % 16) as usize] ^ 0x77; 
+                    current_hash[target_byte] ^= xor_value;
 
                     let rotation_byte = current_hash[(i % 32) as usize];  
                     let rotation_amount = (rotation_byte % 4) + 1;
                     if rotation_byte % 2 == 0 {
-                        current_hash[30] = current_hash[30].rotate_left(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount as u32);
                     } else {
-                        current_hash[30] = current_hash[30].rotate_right(rotation_amount as u32);
+                        current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount as u32);
                     }
 
-                    // Additional bit manipulation
                     let shift_amount = (current_hash[11] % 7) + 2;
-                    current_hash[30] ^= current_hash[30].rotate_left(shift_amount as u32);
+                    current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount as u32);
                 }
             }
         }
-        
+    
         // Send to heavy hash
         self.matrix.heavy_hash(Hash::from_le_bytes(current_hash))
     }
