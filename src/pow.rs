@@ -149,41 +149,104 @@ impl State {
             let sha3_hash = sha3_hasher.finalize_reset();
             current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
 
-            // Conditions
-            if current_hash[3] % 3 == 0 { 
+            // Conditions for dynamic rotation based on the first byte of the current hash
+            if current_hash[3] % 3 == 0 {
                 let repeat = (current_hash[4] % 3) + 1; // 1-3 iterations
                 for _ in 0..repeat {
                     current_hash[20] ^= 0x55; // XOR with 0x55
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[20] = current_hash[20].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[20] = current_hash[20].rotate_right(rotation_amount as u32);
+                    }
                 }
-            } else if current_hash[7] % 5 == 0 { 
+            } else if current_hash[7] % 5 == 0 {
                 let repeat = (current_hash[8] % 3) + 1;
                 for _ in 0..repeat {
-                    current_hash[25] = current_hash[25].rotate_left(7); // Rotate left by 7
+                    current_hash[25] = current_hash[25].rotate_left(7);
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[25] = current_hash[25].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[25] = current_hash[25].rotate_right(rotation_amount as u32);
+                    }
                 }
-            } else if current_hash[5] % 2 == 0 { 
+            } else if current_hash[5] % 2 == 0 {
                 let repeat = (current_hash[6] % 3) + 1;
                 for _ in 0..repeat {
-                    current_hash[10] ^= 0xAA; // XOR with 0xAA
+                    current_hash[10] ^= 0xAA;
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[10] = current_hash[10].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[10] = current_hash[10].rotate_right(rotation_amount as u32);
+                    }
                 }
             } else if current_hash[6] % 4 == 0 {
                 let repeat = (current_hash[7] % 3) + 1;
                 for _ in 0..repeat {
-                    current_hash[15] = current_hash[15].rotate_left(3); // Rotate left by 3
+                    current_hash[15] = current_hash[15].rotate_left(3);
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[15] = current_hash[15].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[15] = current_hash[15].rotate_right(rotation_amount as u32);
+                    }
                 }
             } else if current_hash[8] % 7 == 0 {
                 let repeat = (current_hash[9] % 3) + 1;
                 for _ in 0..repeat {
-                    current_hash[30] ^= 0xFF; // XOR with 0xFF
+                    current_hash[30] ^= 0xFF;
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[30] = current_hash[30].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[30] = current_hash[30].rotate_right(rotation_amount as u32);
+                    }
                 }
             } else if current_hash[9] % 11 == 0 {
                 let repeat = (current_hash[10] % 3) + 1;
                 for _ in 0..repeat {
-                    current_hash[5] = current_hash[5].rotate_right(4); // Rotate right by 4
+                    current_hash[5] = current_hash[5].rotate_right(4);
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[5] = current_hash[5].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[5] = current_hash[5].rotate_right(rotation_amount as u32);
+                    }
                 }
             } else if current_hash[12] % 13 == 0 {
                 let repeat = (current_hash[13] % 3) + 1;
                 for _ in 0..repeat {
-                    current_hash[18] = current_hash[18].rotate_left(2); // Rotate left by 2
+                    current_hash[18] = current_hash[18].rotate_left(2);
+
+                    let first_byte = current_hash[0];
+                    let rotation_amount = (first_byte % 4) + 1;
+
+                    if first_byte % 2 == 0 {
+                        current_hash[18] = current_hash[18].rotate_left(rotation_amount as u32);
+                    } else {
+                        current_hash[18] = current_hash[18].rotate_right(rotation_amount as u32);
+                    }
                 }
             }
         }
