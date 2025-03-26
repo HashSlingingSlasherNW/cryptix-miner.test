@@ -136,47 +136,67 @@ impl State {
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         let hash_bytes: [u8; 32] = hash.to_le_bytes();
     
-        // Use the first byte of the hash to determine the number of iterations
-        let iterations = (hash_bytes[0] % 2) + 1;  // The first byte modulo 2, plus 1 for the range [1, 2]
-    
-        // Iterative SHA-3 process
-        let mut sha3_hasher = Sha3_256::new();
-        let mut current_hash = hash_bytes;
+// Use the first byte of the hash to determine the number of iterations
+let iterations = (hash_bytes[0] % 2) + 1;  // The first byte modulo 2, plus 1 for the range [1, 2]
+println!("Number of iterations: {}", iterations);  // Debugging output for number of iterations
 
-        // Perform iterations based on the first byte of the hash
-        for i in 0..iterations {
-            sha3_hasher.update(&current_hash);
-            let sha3_hash = sha3_hasher.finalize_reset();
-            current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
+// Iterative SHA-3 process
+let mut sha3_hasher = Sha3_256::new();
+let mut current_hash = hash_bytes;
 
-            // Perform dynamic hash transformation based on conditions
-            if current_hash[1] % 4 == 0 {
-                // Calculate the number of iterations based on byte 2 (mod 4), ensuring it is between 1 and 4
-                let repeat = (current_hash[2] % 4) + 1; // 1-4 iterations based on the value of byte 2
-                
-                for _ in 0..repeat {
-                    // Dynamically select the byte to modify based on a combination of hash bytes and iteration
-                    let target_byte = ((current_hash[1] as usize) + (i as u8) as usize) % 32; // Dynamic byte position for XOR
-                    let xor_value = current_hash[(i % 16) as usize] ^ 0xA5; // Dynamic XOR value based on iteration index and hash
-                    current_hash[target_byte] ^= xor_value;  // XOR on dynamically selected byte
+// Perform iterations based on the first byte of the hash
+for i in 0..iterations {
+    sha3_hasher.update(&current_hash);
+    let sha3_hash = sha3_hasher.finalize_reset();
+    current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
+    println!("Iteration {}: current_hash = {:?}", i, current_hash);  // Debugging output for current hash
 
-                    // Dynamically choose the byte to calculate rotation based on the current iteration
-                    let rotation_byte = current_hash[(i % 32) as usize];  // Use different byte based on iteration index
-                    let rotation_amount = ((current_hash[2] as u32) + (current_hash[5] as u32) % 5) + 1; // Combined rotation calculation
-                    
-                    // Perform rotation based on whether the rotation byte is even or odd
-                    if rotation_byte % 2 == 0 {
-                        // Rotate byte at dynamic position to the left by 'rotation_amount' positions
-                        current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount);
-                    } else {
-                        // Rotate byte at dynamic position to the right by 'rotation_amount' positions
-                        current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount);
-                    }
+    // Perform dynamic hash transformation based on conditions
+    if current_hash[1] % 4 == 0 {
+        println!("Condition met: current_hash[1] % 4 == 0");
 
-                    // Perform additional bitwise manipulation on the target byte using a shift
-                    let shift_amount = ((current_hash[7] as u32) + (current_hash[9] as u32) % 6) + 2; // Combined shift calculation
-                    current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount); // XOR with rotated value
-                }
+        // Calculate the number of iterations based on byte 2 (mod 4), ensuring it is between 1 and 4
+        let repeat = (current_hash[2] % 4) + 1; // 1-4 iterations based on the value of byte 2
+        println!("Repeat count: {}", repeat);  // Debugging output for repeat count
+
+        for _ in 0..repeat {
+            // Dynamically select the byte to modify based on a combination of hash bytes and iteration
+            let target_byte = ((current_hash[1] as usize) + (i as u8) as usize) % 32; // Dynamic byte position for XOR
+            println!("Target byte: {}", target_byte);  // Debugging output for target byte
+
+            let xor_value = current_hash[(i % 16) as usize] ^ 0xA5; // Dynamic XOR value based on iteration index and hash
+            println!("XOR value: {:X}", xor_value);  // Debugging output for XOR value
+
+            current_hash[target_byte] ^= xor_value;  // XOR on dynamically selected byte
+            println!("Updated current_hash after XOR: {:?}", current_hash);  // Debugging output after XOR
+
+            // Dynamically choose the byte to calculate rotation based on the current iteration
+            let rotation_byte = current_hash[(i % 32) as usize];  // Use different byte based on iteration index
+            println!("Rotation byte: {}", rotation_byte);  // Debugging output for rotation byte
+
+            let rotation_amount = ((current_hash[2] as u32) + (current_hash[5] as u32) % 5) + 1; // Combined rotation calculation
+            println!("Rotation amount: {}", rotation_amount);  // Debugging output for rotation amount
+
+            // Perform rotation based on whether the rotation byte is even or odd
+            if rotation_byte % 2 == 0 {
+                // Rotate byte at dynamic position to the left by 'rotation_amount' positions
+                current_hash[target_byte] = current_hash[target_byte].rotate_left(rotation_amount);
+                println!("Rotated left: {:?}", current_hash);  // Debugging output after rotation
+            } else {
+                // Rotate byte at dynamic position to the right by 'rotation_amount' positions
+                current_hash[target_byte] = current_hash[target_byte].rotate_right(rotation_amount);
+                println!("Rotated right: {:?}", current_hash);  // Debugging output after rotation
+            }
+
+            // Perform additional bitwise manipulation on the target byte using a shift
+            let shift_amount = ((current_hash[7] as u32) + (current_hash[9] as u32) % 6) + 2; // Combined shift calculation
+            println!("Shift amount: {}", shift_amount);  // Debugging output for shift amount
+
+            current_hash[target_byte] ^= current_hash[target_byte].rotate_left(shift_amount); // XOR with rotated value
+            println!("Updated current_hash after shift and XOR: {:?}", current_hash);  // Debugging output after shift
+        }
+
+
             } else if current_hash[3] % 3 == 0 {
                 let repeat = (current_hash[4] % 5) + 1;
                 for _ in 0..repeat {
