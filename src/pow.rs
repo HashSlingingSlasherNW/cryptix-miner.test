@@ -128,6 +128,7 @@ impl State {
             nonce_fixed,
         })
     }
+    
 
     #[inline(always)]
     // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
@@ -143,113 +144,111 @@ impl State {
         let mut sha3_hasher = Sha3_256::new();
         let mut current_hash = hash_bytes;
 
-        // Iterate according to the number of iterations
-        for _ in 0..iterations {
-            sha3_hasher.update(&current_hash);
-            let sha3_hash = sha3_hasher.finalize_reset();
-            current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
+    // Iterate according to the number of iterations
+    for _ in 0..iterations {
+        sha3_hasher.update(&current_hash);
+        let sha3_hash = sha3_hasher.finalize_reset();
+        current_hash = sha3_hash.as_slice().try_into().expect("SHA-3 output length mismatch");
 
-            // Conditions for dynamic rotation based on the first byte of the current hash
-            if current_hash[3] % 3 == 0 {
-                let repeat = (current_hash[4] % 3) + 1; // 1-3 iterations
-                for _ in 0..repeat {
-                    current_hash[20] ^= 0x55; // XOR with 0x55
+        // Complex bit manipulation and shifts for dynamic hash transformation
+        if current_hash[1] % 4 == 0 {
+            let repeat = (current_hash[2] % 4) + 1; // 1-4 iterations
+            for _ in 0..repeat {
+                current_hash[15] ^= 0xAA; // Bitwise XOR
 
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
+                let first_byte = current_hash[0];
+                let rotation_amount = (first_byte % 5) + 1;
 
-                    if first_byte % 2 == 0 {
-                        current_hash[20] = current_hash[20].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[20] = current_hash[20].rotate_right(rotation_amount as u32);
-                    }
+                // Complex rotation pattern
+                if first_byte % 2 == 0 {
+                    current_hash[15] = current_hash[15].rotate_left(rotation_amount as u32);
+                } else {
+                    current_hash[15] = current_hash[15].rotate_right(rotation_amount as u32);
                 }
-            } else if current_hash[7] % 5 == 0 {
-                let repeat = (current_hash[8] % 3) + 1;
-                for _ in 0..repeat {
-                    current_hash[25] = current_hash[25].rotate_left(7);
 
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
+                // Additional bitwise manipulation
+                let shift_amount = (current_hash[4] % 8) + 1;
+                current_hash[15] ^= current_hash[15].rotate_left(shift_amount as u32);
+            }
+        } else if current_hash[3] % 3 == 0 {
+            let repeat = (current_hash[4] % 5) + 1; // 1-5 iterations
+            for _ in 0..repeat {
+                current_hash[20] ^= 0x55; // Bitwise XOR
 
-                    if first_byte % 2 == 0 {
-                        current_hash[25] = current_hash[25].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[25] = current_hash[25].rotate_right(rotation_amount as u32);
-                    }
+                let first_byte = current_hash[0];
+                let rotation_amount = (first_byte % 4) + 1;
+
+                // Complex rotation pattern
+                if first_byte % 2 == 0 {
+                    current_hash[20] = current_hash[20].rotate_left(rotation_amount as u32);
+                } else {
+                    current_hash[20] = current_hash[20].rotate_right(rotation_amount as u32);
                 }
-            } else if current_hash[5] % 2 == 0 {
-                let repeat = (current_hash[6] % 3) + 1;
-                for _ in 0..repeat {
-                    current_hash[10] ^= 0xAA;
 
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
+                // Additional bitwise manipulation
+                let shift_amount = (current_hash[5] % 8) + 2;
+                current_hash[20] ^= current_hash[20].rotate_left(shift_amount as u32);
+            }
+        } else if current_hash[2] % 6 == 0 {
+            let repeat = (current_hash[6] % 4) + 1; // 1-4 iterations
+            for _ in 0..repeat {
+                current_hash[10] ^= 0xFF; // Bitwise XOR
 
-                    if first_byte % 2 == 0 {
-                        current_hash[10] = current_hash[10].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[10] = current_hash[10].rotate_right(rotation_amount as u32);
-                    }
+                let first_byte = current_hash[0];
+                let rotation_amount = (first_byte % 3) + 1;
+
+                // Complex rotation pattern
+                if first_byte % 2 == 0 {
+                    current_hash[10] = current_hash[10].rotate_left(rotation_amount as u32);
+                } else {
+                    current_hash[10] = current_hash[10].rotate_right(rotation_amount as u32);
                 }
-            } else if current_hash[6] % 4 == 0 {
-                let repeat = (current_hash[7] % 3) + 1;
-                for _ in 0..repeat {
-                    current_hash[15] = current_hash[15].rotate_left(3);
 
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
+                // Additional bitwise manipulation
+                let shift_amount = (current_hash[7] % 5) + 3;
+                current_hash[10] ^= current_hash[10].rotate_left(shift_amount as u32);
+            }
+        } else if current_hash[7] % 5 == 0 {
+            let repeat = (current_hash[8] % 4) + 1; // 1-4 iterations
+            for _ in 0..repeat {
+                current_hash[25] ^= 0x66; // Bitwise XOR
 
-                    if first_byte % 2 == 0 {
-                        current_hash[15] = current_hash[15].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[15] = current_hash[15].rotate_right(rotation_amount as u32);
-                    }
+                let first_byte = current_hash[0];
+                let rotation_amount = (first_byte % 3) + 2;
+
+                // Complex rotation pattern
+                if first_byte % 2 == 0 {
+                    current_hash[25] = current_hash[25].rotate_left(rotation_amount as u32);
+                } else {
+                    current_hash[25] = current_hash[25].rotate_right(rotation_amount as u32);
                 }
-            } else if current_hash[8] % 7 == 0 {
-                let repeat = (current_hash[9] % 3) + 1;
-                for _ in 0..repeat {
-                    current_hash[30] ^= 0xFF;
 
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
+                // Additional bitwise manipulation
+                let shift_amount = (current_hash[10] % 6) + 4;
+                current_hash[25] ^= current_hash[25].rotate_left(shift_amount as u32);
+            }
+        } else if current_hash[8] % 7 == 0 {
+            let repeat = (current_hash[9] % 5) + 1; // 1-5 iterations
+            for _ in 0..repeat {
+                current_hash[30] ^= 0x77; // Bitwise XOR
 
-                    if first_byte % 2 == 0 {
-                        current_hash[30] = current_hash[30].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[30] = current_hash[30].rotate_right(rotation_amount as u32);
-                    }
+                let first_byte = current_hash[0];
+                let rotation_amount = (first_byte % 4) + 1;
+
+                // Complex rotation pattern
+                if first_byte % 2 == 0 {
+                    current_hash[30] = current_hash[30].rotate_left(rotation_amount as u32);
+                } else {
+                    current_hash[30] = current_hash[30].rotate_right(rotation_amount as u32);
                 }
-            } else if current_hash[9] % 11 == 0 {
-                let repeat = (current_hash[10] % 3) + 1;
-                for _ in 0..repeat {
-                    current_hash[5] = current_hash[5].rotate_right(4);
 
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
-
-                    if first_byte % 2 == 0 {
-                        current_hash[5] = current_hash[5].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[5] = current_hash[5].rotate_right(rotation_amount as u32);
-                    }
-                }
-            } else if current_hash[12] % 13 == 0 {
-                let repeat = (current_hash[13] % 3) + 1;
-                for _ in 0..repeat {
-                    current_hash[18] = current_hash[18].rotate_left(2);
-
-                    let first_byte = current_hash[0];
-                    let rotation_amount = (first_byte % 4) + 1;
-
-                    if first_byte % 2 == 0 {
-                        current_hash[18] = current_hash[18].rotate_left(rotation_amount as u32);
-                    } else {
-                        current_hash[18] = current_hash[18].rotate_right(rotation_amount as u32);
-                    }
-                }
+                // Additional bitwise manipulation
+                let shift_amount = (current_hash[11] % 7) + 2;
+                current_hash[30] ^= current_hash[30].rotate_left(shift_amount as u32);
             }
         }
+    }
+        
     
         // Send to heavy hash
         self.matrix.heavy_hash(Hash::from_le_bytes(current_hash))
