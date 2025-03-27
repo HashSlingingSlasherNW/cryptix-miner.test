@@ -67,7 +67,6 @@ __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
     return (value >> shift) | (value << (8 - shift));
 }
 
-
 // Main
 extern "C" {
     __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
@@ -120,7 +119,7 @@ extern "C" {
 
                         // Dynamically choose the byte to calculate rotation based on the current iteration
                         uint8_t rotation_byte = sha3_hash[i % 32];  // Use different byte based on iteration index
-                        uint8_t rotation_amount = (sha3_hash[2] + sha3_hash[5] % 5) + 1; // Combined rotation calculation
+                        uint8_t rotation_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 2; // Combined rotation calculation
 
                         // Perform rotation based on whether the rotation byte is even or odd
                         if (rotation_byte % 2 == 0) {
@@ -132,7 +131,7 @@ extern "C" {
                         }
 
                         // Perform additional bitwise manipulation on the target byte using a shift
-                        uint8_t shift_amount = (sha3_hash[7] + sha3_hash[9] % 6) + 2; // Combined shift calculation
+                        uint8_t shift_amount = (sha3_hash[5] + sha3_hash[1]) % 3 + 1; // Combined shift calculation
                         sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount); // XOR with rotated value
                     }
                 } else if (sha3_hash[3] % 3 == 0) {
@@ -143,14 +142,14 @@ extern "C" {
                         sha3_hash[target_byte] ^= xor_value;
 
                         uint8_t rotation_byte = sha3_hash[i % 32];
-                        uint8_t rotation_amount = (rotation_byte % 4) + 1;
+                        uint8_t rotation_amount = (sha3_hash[7] + sha3_hash[2]) % 6 + 1;
                         if (rotation_byte % 2 == 0) {
                             sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
                         } else {
                             sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
                         }
 
-                        uint8_t shift_amount = (sha3_hash[5] + sha3_hash[8] % 7) + 3;
+                        uint8_t shift_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 1; 
                         sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
                     }
                 } else if (sha3_hash[2] % 6 == 0) {
@@ -161,14 +160,14 @@ extern "C" {
                         sha3_hash[target_byte] ^= xor_value;
 
                         uint8_t rotation_byte = sha3_hash[i % 32];  
-                        uint8_t rotation_amount = (rotation_byte % 3) + 1;
+                        uint8_t rotation_amount = (sha3_hash[7] + sha3_hash[7]) % 7 + 1;
                         if (rotation_byte % 2 == 0) {
                             sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
                         } else {
                             sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
                         }
 
-                        uint8_t shift_amount = (sha3_hash[7] % 5) + 3;
+                        uint8_t shift_amount = (sha3_hash[3] + sha3_hash[5]) % 5 + 2; 
                         sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
                     }
                 } else if (sha3_hash[7] % 5 == 0) {
@@ -179,14 +178,14 @@ extern "C" {
                         sha3_hash[target_byte] ^= xor_value;
 
                         uint8_t rotation_byte = sha3_hash[i % 32]; 
-                        uint8_t rotation_amount = (rotation_byte % 3) + 2;
+                        uint8_t rotation_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 2;
                         if (rotation_byte % 2 == 0) {
                             sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
                         } else {
                             sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
                         }
 
-                        uint8_t shift_amount = (sha3_hash[10] % 6) + 4;
+                        uint8_t shift_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 1; 
                         sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
                     }
                 } else if (sha3_hash[8] % 7 == 0) {
@@ -197,14 +196,14 @@ extern "C" {
                         sha3_hash[target_byte] ^= xor_value;
 
                         uint8_t rotation_byte = sha3_hash[i % 32];  
-                        uint8_t rotation_amount = (rotation_byte % 4) + 1;
+                        uint8_t rotation_amount = (sha3_hash[2] + sha3_hash[5]) % 5 + 1;
                         if (rotation_byte % 2 == 0) {
                             sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
                         } else {
                             sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
                         }
 
-                        uint8_t shift_amount = (sha3_hash[11] % 7) + 2;
+                        uint8_t shift_amount = (sha3_hash[7] + sha3_hash[9]) % 6 + 2; 
                         sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
                     }
                 }
@@ -235,8 +234,6 @@ extern "C" {
             for (int i = 0; i < 32; i++) {
                 product[i] ^= sha3_hash[i];
             }
-
-             // ### Memory Hard
 
             // **Non-Linear S-Box**
             #pragma unroll
@@ -348,6 +345,7 @@ extern "C" {
             
                 product[i] = p;
             }
+
 
             memset(input, 0, 80);
             memcpy(input, product, 32);

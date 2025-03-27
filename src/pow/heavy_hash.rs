@@ -5,7 +5,6 @@ use std::mem::MaybeUninit;
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Matrix(pub [[u16; 64]; 64]);
 
-
 impl Matrix {
     // pub fn generate(hash: Hash) -> Self {
     //     let mut generator = XoShiRo256PlusPlus::new(hash);
@@ -353,7 +352,7 @@ impl Matrix {
                 _ => unreachable!(), // This should never happen
             }
         }
-
+                        
         //Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }
