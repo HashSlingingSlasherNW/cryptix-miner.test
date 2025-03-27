@@ -154,6 +154,114 @@ impl Matrix {
         result
     } */
 
+    fn octonion_multiply(a: &[u64; 8], b: &[u64; 8]) -> [u64; 8] {
+        let mut result = [0; 8];
+    
+        result[0] = a[0].wrapping_mul(b[0])
+            .wrapping_sub(a[1].wrapping_mul(b[1]))
+            .wrapping_sub(a[2].wrapping_mul(b[2]))
+            .wrapping_sub(a[3].wrapping_mul(b[3]))
+            .wrapping_sub(a[4].wrapping_mul(b[4]))
+            .wrapping_sub(a[5].wrapping_mul(b[5]))
+            .wrapping_sub(a[6].wrapping_mul(b[6]))
+            .wrapping_sub(a[7].wrapping_mul(b[7]));
+    
+        result[1] = a[0].wrapping_mul(b[1])
+            .wrapping_add(a[1].wrapping_mul(b[0]))
+            .wrapping_add(a[2].wrapping_mul(b[3]))
+            .wrapping_sub(a[3].wrapping_mul(b[2]))
+            .wrapping_add(a[4].wrapping_mul(b[5]))
+            .wrapping_sub(a[5].wrapping_mul(b[4]))
+            .wrapping_sub(a[6].wrapping_mul(b[7]))
+            .wrapping_add(a[7].wrapping_mul(b[6]));
+    
+        result[2] = a[0].wrapping_mul(b[2])
+            .wrapping_sub(a[1].wrapping_mul(b[3]))
+            .wrapping_add(a[2].wrapping_mul(b[0]))
+            .wrapping_add(a[3].wrapping_mul(b[1]))
+            .wrapping_add(a[4].wrapping_mul(b[6]))
+            .wrapping_sub(a[5].wrapping_mul(b[7]))
+            .wrapping_add(a[6].wrapping_mul(b[4]))
+            .wrapping_sub(a[7].wrapping_mul(b[5]));
+    
+        result[3] = a[0].wrapping_mul(b[3])
+            .wrapping_add(a[1].wrapping_mul(b[2]))
+            .wrapping_sub(a[2].wrapping_mul(b[1]))
+            .wrapping_add(a[3].wrapping_mul(b[0]))
+            .wrapping_add(a[4].wrapping_mul(b[7]))
+            .wrapping_add(a[5].wrapping_mul(b[6]))
+            .wrapping_sub(a[6].wrapping_mul(b[5]))
+            .wrapping_add(a[7].wrapping_mul(b[4]));
+    
+        result[4] = a[0].wrapping_mul(b[4])
+            .wrapping_sub(a[1].wrapping_mul(b[5]))
+            .wrapping_sub(a[2].wrapping_mul(b[6]))
+            .wrapping_sub(a[3].wrapping_mul(b[7]))
+            .wrapping_add(a[4].wrapping_mul(b[0]))
+            .wrapping_add(a[5].wrapping_mul(b[1]))
+            .wrapping_add(a[6].wrapping_mul(b[2]))
+            .wrapping_add(a[7].wrapping_mul(b[3]));
+    
+        result[5] = a[0].wrapping_mul(b[5])
+            .wrapping_add(a[1].wrapping_mul(b[4]))
+            .wrapping_sub(a[2].wrapping_mul(b[7]))
+            .wrapping_add(a[3].wrapping_mul(b[6]))
+            .wrapping_sub(a[4].wrapping_mul(b[1]))
+            .wrapping_add(a[5].wrapping_mul(b[0]))
+            .wrapping_add(a[6].wrapping_mul(b[3]))
+            .wrapping_add(a[7].wrapping_mul(b[2]));
+    
+        result[6] = a[0].wrapping_mul(b[6])
+            .wrapping_add(a[1].wrapping_mul(b[7]))
+            .wrapping_add(a[2].wrapping_mul(b[4]))
+            .wrapping_sub(a[3].wrapping_mul(b[5]))
+            .wrapping_sub(a[4].wrapping_mul(b[2]))
+            .wrapping_add(a[5].wrapping_mul(b[3]))
+            .wrapping_add(a[6].wrapping_mul(b[0]))
+            .wrapping_add(a[7].wrapping_mul(b[1]));
+    
+        result[7] = a[0].wrapping_mul(b[7])
+            .wrapping_sub(a[1].wrapping_mul(b[6]))
+            .wrapping_add(a[2].wrapping_mul(b[5]))
+            .wrapping_add(a[3].wrapping_mul(b[4]))
+            .wrapping_sub(a[4].wrapping_mul(b[3]))
+            .wrapping_add(a[5].wrapping_mul(b[2]))
+            .wrapping_add(a[6].wrapping_mul(b[1]))
+            .wrapping_add(a[7].wrapping_mul(b[0]));
+    
+        result
+    }
+    
+    fn octonion_hash(input_hash: &[u8; 32]) -> [u64; 8] {
+        let mut oct = [
+            input_hash[0] as u64,
+            input_hash[1] as u64,
+            input_hash[2] as u64,
+            input_hash[3] as u64,
+            input_hash[4] as u64,
+            input_hash[5] as u64,
+            input_hash[6] as u64,
+            input_hash[7] as u64,
+        ];
+    
+        for i in 8..input_hash.len() {
+            let rotation = [
+                input_hash[i % 32] as u64,
+                input_hash[(i + 1) % 32] as u64,
+                input_hash[(i + 2) % 32] as u64,
+                input_hash[(i + 3) % 32] as u64,
+                input_hash[(i + 4) % 32] as u64,
+                input_hash[(i + 5) % 32] as u64,
+                input_hash[(i + 6) % 32] as u64,
+                input_hash[(i + 7) % 32] as u64,
+            ];
+    
+            oct = Self::octonion_multiply(&oct, &rotation);
+        }
+    
+        oct
+    }    
+
     // Non linear sbox
     pub fn generate_non_linear_sbox(input: u8, key: u8) -> u8 {
         let mut result = input;
@@ -352,7 +460,21 @@ impl Matrix {
                 _ => unreachable!(), // This should never happen
             }
         }
-                        
+
+        // ** Octonion Function **
+        let octonion_result = Self::octonion_hash(&product); // Compute the octonion hash of the product
+        
+        // XOR with u64 values - convert to u8
+        for i in 0..32 {
+            let oct_value = octonion_result[i / 8];
+            
+            // Extract the relevant byte from the u64 value
+            let oct_value_u8 = ((oct_value >> (8 * (i % 8))) & 0xFF) as u8; 
+
+            // XOR the values and store the result in the product
+            product[i] ^= oct_value_u8;
+        }
+                                
         //Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }
