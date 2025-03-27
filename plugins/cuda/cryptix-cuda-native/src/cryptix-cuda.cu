@@ -301,6 +301,17 @@ extern "C" {
                 product[i] ^= sha3_hash[i];
             }
 
+            u64 octonion_result[8];
+            octonion_hash(product, octonion_result);
+            
+            for (int i = 0; i < 32; i++) {
+                u64 oct_value = octonion_result[i / 8];
+            
+                u8 oct_value_u8 = (u8)((oct_value >> (8 * (i % 8))) & 0xFF);
+            
+                product[i] ^= oct_value_u8;
+            }
+
             // **Non-Linear S-Box**
             #pragma unroll
             uint8_t sbox[256];
@@ -326,101 +337,6 @@ extern "C" {
             #pragma unroll
             for (int i = 0; i < 32; i++) {
                 product[i] ^= sbox[product[i]];
-            }
-
-            #pragma unroll
-            for (int i = 0; i < 32; i++) {
-                uint8_t cryptix_nonce = product[i];
-                uint8_t condition = ((product[i] ^ sha3_hash[i % 32]) ^ cryptix_nonce) % 9;
-            
-                uint8_t p = product[i];
-            
-                if (condition == 0) {
-                    p = (p + 13) % 256;
-                    p = rotate_left(p, 3);
-                    if (p > 100) {
-                        p += 0x20;
-                    } else {
-                        p -= 0x10;
-                    }
-                } else if (condition == 1) {
-                    p = (p - 7) % 256;
-                    p = rotate_left(p, 5);
-                    if (p % 2 == 0) {
-                        p += 0x11;
-                    } else {
-                        p -= 0x05;
-                    }
-                } else if (condition == 2) {
-                    p ^= 0x5A;
-                    p = (p + 0xAC) % 256;
-                    if (p > 0x50) {
-                        p = (p * 2) % 256;
-                    } else {
-                        p = (p / 3) % 256;
-                    }
-                } else if (condition == 3) {
-                    p = (p * 17) % 256;
-                    p ^= 0xAA;
-                    if (p % 4 == 0) {
-                        p = rotate_left(p, 4);
-                    } else {
-                        p = rotate_right(p, 2);
-                    }
-                } else if (condition == 4) {
-                    p = (p - 29) % 256;
-                    p = rotate_left(p, 1);
-                    if (p < 50) {
-                        p += 0x55;
-                    } else {
-                        p -= 0x22;
-                    }
-                } else if (condition == 5) {
-                    p = (p + (0xAA ^ cryptix_nonce)) % 256;
-                    p ^= 0x45;
-                    if ((p & 0x0F) == 0) {
-                        p = rotate_left(p, 6);
-                    } else {
-                        p = rotate_right(p, 3);
-                    }
-                } else if (condition == 6) {
-                    p = (p + 0x33) % 256;
-                    p = rotate_right(p, 4);
-                    if (p < 0x80) {
-                        p -= 0x22;
-                    } else {
-                        p += 0x44;
-                    }
-                } else if (condition == 7) {
-                    p = (p * 3) % 256;
-                    p = rotate_left(p, 2);
-                    if (p > 0x50) {
-                        p += 0x11;
-                    } else {
-                        p -= 0x11;
-                    }
-                } else if (condition == 8) {
-                    p = (p - 0x10) % 256;
-                    p = rotate_right(p, 3);
-                    if (p % 3 == 0) {
-                        p += 0x55;
-                    } else {
-                        p -= 0x33;
-                    }
-                }
-            
-                product[i] = p;
-            }
-
-            u64 octonion_result[8];
-            octonion_hash(product, octonion_result);
-            
-            for (int i = 0; i < 32; i++) {
-                u64 oct_value = octonion_result[i / 8];
-            
-                u8 oct_value_u8 = (u8)((oct_value >> (8 * (i % 8))) & 0xFF);
-            
-                product[i] ^= oct_value_u8;
             }
 
             memset(input, 0, 80);
