@@ -301,6 +301,7 @@ extern "C" {
                 product[i] ^= sha3_hash[i];
             }
 
+            // ** Octonion**
             u64 octonion_result[8];
             octonion_hash(product, octonion_result);
             
