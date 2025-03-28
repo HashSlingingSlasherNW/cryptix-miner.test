@@ -21,9 +21,6 @@ typedef union _uint256_t {
 #define QUARTER_MATRIX_SIZE 16
 #define HASH_HEADER_SIZE 72
 
-// Memory Hard
-#define MEMORY_TABLE_SIZE (16 * 1024) // 16 KB
-
 #define RANDOM_LEAN 0
 #define RANDOM_XOSHIRO 1
 
@@ -71,6 +68,7 @@ __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
     return (value >> shift) | (value << (8 - shift));
 }
 
+// Wrapping Mul
 __device__ u64 wrapping_mul(i64 a, i64 b) {
     i64 high, low;
     asm("mul.lo.u64 %0, %1, %2;" : "=l"(low) : "l"(a), "l"(b));
@@ -356,6 +354,22 @@ extern "C" {
             for (int i = 0; i < 32; i++) {
                 product[i] ^= sbox[product[i]];
             }
+
+
+
+            // Cache Test
+            uint8_t cache[2 * 1024];
+
+            for (int i = 0; i < (2 * 1024) / 32; ++i) {
+                cache[i] = sha3_hash[i % 32] ^ ((i * 31) & 0xFF); 
+            }
+
+            for (int i = 0; i < 32; ++i) {
+                int cache_index = (i * 256) % ((2 * 1024) / 32);
+                product[i] = cache[cache_index] ^ product[(i + 1) % 32];
+            }
+
+
 
             memset(input, 0, 80);
             memcpy(input, product, 32);
