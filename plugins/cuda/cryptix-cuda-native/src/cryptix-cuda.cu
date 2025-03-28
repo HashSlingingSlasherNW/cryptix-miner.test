@@ -6,6 +6,7 @@
 
 typedef uint8_t u8; 
 typedef uint64_t u64; 
+typedef int64_t i64; 
 
 typedef uint8_t Hash[32];
 
@@ -70,16 +71,16 @@ __device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
     return (value >> shift) | (value << (8 - shift));
 }
 
-__device__ u64 wrapping_mul(u64 a, u64 b) {
-    u64 high, low;
+__device__ u64 wrapping_mul(i64 a, i64 b) {
+    i64 high, low;
     asm("mul.lo.u64 %0, %1, %2;" : "=l"(low) : "l"(a), "l"(b));
     asm("mul.hi.u64 %0, %1, %2;" : "=l"(high) : "l"(a), "l"(b));
     return low;  
 }
 
 // Octonion
-__device__ void octonion_multiply(const u64 *a, const u64 *b, u64 *result) {
-    volatile u64 res[8];
+__device__ void octonion_multiply(const i64 *a, const i64 *b, i64 *result) {
+    volatile i64 res[8];
 
     res[0] = wrapping_mul(a[0], b[0]) - wrapping_mul(a[1], b[1]) - wrapping_mul(a[2], b[2]) - wrapping_mul(a[3], b[3]) 
              - wrapping_mul(a[4], b[4]) - wrapping_mul(a[5], b[5]) - wrapping_mul(a[6], b[6]) - wrapping_mul(a[7], b[7]);
@@ -111,20 +112,20 @@ __device__ void octonion_multiply(const u64 *a, const u64 *b, u64 *result) {
 }
 
 // Octonion Hash
-__device__ void octonion_hash(const u8 *input_hash, u64 *oct) {
+__device__ void octonion_hash(const u8 *input_hash, i64 *oct) {
 
     for (int i = 0; i < 8; i++) {
-        oct[i] = static_cast<u64>(input_hash[i]);
+        oct[i] = static_cast<i64>(input_hash[i]);
     }
 
     for (int i = 8; i < 32; i++) {
-        u64 rotation[8];
+        i64 rotation[8];
 
         for (int j = 0; j < 8; j++) {
-            rotation[j] = static_cast<u64>(input_hash[(i + j) % 32]);
+            rotation[j] = static_cast<i64>(input_hash[(i + j) % 32]);
         }
 
-        u64 result[8];
+        i64 result[8];
         octonion_multiply(oct, rotation, result);
 
         for (int j = 0; j < 8; j++) {
@@ -302,11 +303,11 @@ extern "C" {
             }
 
             // ** Octonion**
-            u64 octonion_result[8];
+            i64 octonion_result[8];
             octonion_hash(product, octonion_result);
             
             for (int i = 0; i < 32; i++) {
-                u64 oct_value = octonion_result[i / 8];
+                i64 oct_value = octonion_result[i / 8];
             
                 u8 oct_value_u8 = (u8)((oct_value >> (8 * (i % 8))) & 0xFF);
             
