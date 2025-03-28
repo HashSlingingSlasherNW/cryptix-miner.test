@@ -102,6 +102,21 @@ impl Matrix {
     // Octionion Multiply
     fn octonion_multiply(a: &[i64; 8], b: &[i64; 8]) -> [i64; 8] {
         let mut result = [0; 8];
+
+         /*
+            Multiplication table of octonions (non-commutative):
+
+                ×    |  1   e₁   e₂   e₃   e₄   e₅   e₆   e₇  
+                ------------------------------------------------
+                1    |  1   e₁   e₂   e₃   e₄   e₅   e₆   e₇  
+                e₁   | e₁  -1   e₃  -e₂   e₅  -e₆   e₄  -e₇  
+                e₂   | e₂  -e₃  -1    e₁   e₆   e₄  -e₅   e₇  
+                e₃   | e₃   e₂  -e₁  -1    e₄  -e₇   e₆  -e₅  
+                e₄   | e₄  -e₅  -e₆  -e₄  -1    e₇   e₂   e₃  
+                e₅   | e₅   e₆   e₄   e₇  -e₇  -1   -e₃   e₂  
+                e₆   | e₆  -e₄  -e₅   e₆  -e₂   e₃  -1    e₁  
+                e₇   | e₇   e₄  -e₇   e₅  -e₃  -e₂   e₁  -1  
+        */
         
          // e0
         result[0] = a[0].wrapping_mul(b[0])
