@@ -51,12 +51,6 @@ __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_ve
     }
     *ret = res;
 }
-// Sbox
-__device__ __inline__ uint8_t generate_non_linear_sbox(uint8_t input, uint8_t key) {
-    input *= key;
-    input = (input >> 3) | (input << 5);
-    return input ^ 0x5A;
-}
 
 // Rotate left
 __device__ __inline__ uint8_t rotate_left(uint8_t value, int shift) {
@@ -331,16 +325,73 @@ extern "C" {
             // **Non-Linear S-Box**
             #pragma unroll
             uint8_t sbox[256];
-            for (int i = 0; i < 256; i++) {
-                sbox[i] = sha3_hash[i % 32];  
-            }
 
             for (int i = 0; i < 256; i++) {
-                int offset = (i / 32);  
-                int index = (i + product[(i + offset) % 32]) % 32; // Berechnung mit Offset pro Wiederholung
-                sbox[i] = sha3_hash[index];
-            }
+                uint8_t i_u8 = (uint8_t)i;
             
+                uint8_t* source_array;
+                uint8_t rotate_left_val, rotate_right_val;
+                
+                if (i_u8 < 32) {
+                    source_array = product;  
+                    rotate_left_val = product[5] ^ 0x5A; 
+                    rotate_right_val = sha3_hash[5] ^ 0x3C; 
+                } else if (i_u8 < 64) {
+                    source_array = sha3_hash; 
+                    rotate_left_val = product[4] ^ 0xA1;
+                    rotate_right_val = sha3_hash[6] ^ 0xB2; 
+                } else if (i_u8 < 96) {
+                    source_array = product; 
+                    rotate_left_val = product[2] ^ 0x7F; 
+                    rotate_right_val = sha3_hash[0] ^ 0x8E; 
+                } else if (i_u8 < 128) {
+                    source_array = sha3_hash; 
+                    rotate_left_val = product[6] ^ 0x3B; 
+                    rotate_right_val = sha3_hash[2] ^ 0x4D;  
+                } else if (i_u8 < 160) {
+                    source_array = product;  
+                    rotate_left_val = product[7] ^ 0x92; 
+                    rotate_right_val = sha3_hash[1] ^ 0x61; 
+                } else if (i_u8 < 192) {
+                    source_array = sha3_hash;  
+                    rotate_left_val = product[0] ^ 0x4C; 
+                    rotate_right_val = sha3_hash[3] ^ 0x73; 
+                } else {
+                    source_array = product; 
+                    rotate_left_val = product[1] ^ 0x56; 
+                    rotate_right_val = sha3_hash[5] ^ 0x2D;  
+                }
+
+                uint8_t value;
+                if (i_u8 < 32) {
+                    value = product[i_u8] ^ 0xAA;
+                } else if (i_u8 < 64) {
+                    value = sha3_hash[(i_u8 - 32) % 32] ^ 0xBB;
+                } else if (i_u8 < 96) {
+                    value = product[(i_u8 - 64) % 32] ^ 0xCC;
+                } else if (i_u8 < 128) {
+                    value = sha3_hash[(i_u8 - 96) % 32] ^ 0xDD;
+                } else if (i_u8 < 160) {
+                    value = product[(i_u8 - 128) % 32] ^ 0xEE;
+                } else if (i_u8 < 192) {
+                    value = sha3_hash[(i_u8 - 160) % 32] ^ 0xFF;
+                } else {
+                    value = product[(i_u8 - 192) % 32] ^ 0x11;
+                }
+
+                int rotate_left_shift = (product[(i + 1) % 32] + i) % 8; 
+                int rotate_right_shift = (sha3_hash[(i + 2) % 32] + i) % 8; 
+                
+                int rotation_left = (rotate_left_val << rotate_left_shift) | (rotate_left_val >> (8 - rotate_left_shift)); 
+                int rotation_right = (rotate_right_val >> rotate_right_shift) | (rotate_right_val << (8 - rotate_right_shift)); 
+            
+                rotation_left &= 0xFF;  
+                rotation_right &= 0xFF;  
+            
+                int index = (i + rotation_left + rotation_right) % 32; 
+            
+                sbox[i] = source_array[index] ^ value; 
+            }
 
             // Calculate dynamic number of iterations
             int iterations = 3 + (product[0] % 4);  // 3 - 6
@@ -349,7 +400,6 @@ extern "C" {
                 uint8_t temp_sbox[256];
                 for (int i = 0; i < 256; i++) {
                     uint8_t value = sbox[i];
-                    value = generate_non_linear_sbox(value, sha3_hash[i % 32] ^ product[i % 32]);
                     value ^= rotate_left(value, 4) | rotate_right(value, 2);
                     temp_sbox[i] = value;
                 }
@@ -364,6 +414,9 @@ extern "C" {
 
 
 
+
+
+            
             // Cache Test
             uint8_t cache[2 * 1024];
 
