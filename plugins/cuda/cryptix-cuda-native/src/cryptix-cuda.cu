@@ -335,6 +335,13 @@ extern "C" {
                 sbox[i] = sha3_hash[i % 32];  
             }
 
+            for (int i = 0; i < 256; i++) {
+                int offset = (i / 32);  
+                int index = (i + product[(i + offset) % 32]) % 32; // Berechnung mit Offset pro Wiederholung
+                sbox[i] = sha3_hash[index];
+            }
+            
+
             // Calculate dynamic number of iterations
             int iterations = 3 + (product[0] % 4);  // 3 - 6
 

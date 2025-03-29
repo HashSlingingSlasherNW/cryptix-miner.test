@@ -298,13 +298,23 @@ impl Matrix {
             product[i] ^= oct_value_u8;
         }
 
+
+
+        // Debug before
+         println!("Product before calculation: {:?}", product);
+
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
 
-        // Use the bytes of the hash to fill the S-box
+
+
         for i in 0..256 {
-            sbox[i] = hash_bytes[i % hash_bytes.len()];
+            let offset = i / 32;  
+            let index = (i + (product[(i + offset) % product.len()] as usize)) % hash_bytes.len();        
+            sbox[i] = hash_bytes[index];
         }
+
+        println!("S-Box after filling with hash and product permutation: {:?}", sbox);
 
         // Number of iterations depends on the first byte of the product
         let iterations = 3 + (product[0] % 4);  // Modulo 4 gives values ​​from 0 to 3 → +3 gives 3 to 6
@@ -331,9 +341,14 @@ impl Matrix {
             product[i] ^= sbox[product[i] as usize]; 
         }
 
+        println!("Product after calculation: {:?}", product);
+
+
+
+
         // Debug before
-        println!("Product before calculation: {:?}", product);
-        println!("Hashbytes: {:?}", hash_bytes);
+        // println!("Product before calculation: {:?}", product);
+       // println!("Hashbytes: {:?}", hash_bytes);
 
 
 
@@ -358,7 +373,7 @@ impl Matrix {
 
 
         // Debug After
-        println!("Product after calculation: {:?}", product);
+       // println!("Product after calculation: {:?}", product);
 
         //Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(product))
@@ -589,44 +604,3 @@ mod benches {
         });
     }
 }
-
-        /*
-        // ### Cryptixhash v3
-
-        // Memory Hard Function - Inline Code
-        let mut memory_table: [u8; 16 * 1024] = [0; 16 * 1024]; // 16 KB
-        let nonce = hash.to_le_bytes();
-        
-        // **Fill the memory with the nonce**
-        for i in 0..memory_table.len() {
-            memory_table[i] = nonce[i % nonce.len()];  
-        }
-        
-        let mut index: usize = 0;
-        
-        // Repeat the calculations and manipulations in memory
-        for i in 0..32 {
-            let mut sum = 0u16;
-        
-             // Memory on product
-            for j in 0..32 {
-                sum += product[j] as u16 * self.0[2 * i][j % self.0[2 * i].len()] as u16;
-            }
-        
-            // **non-linear memory accesses**
-            for _ in 0..12 { 
-                index ^= (memory_table[(index * 7 + i) % memory_table.len()] as usize * 19) ^ ((i * 53) % 13);
-                index = (index * 73 + i * 41) % memory_table.len(); 
-                
-                // Index-Path
-                let shifted = (index.wrapping_add(i * 13)) % memory_table.len();
-                memory_table[shifted] ^= (sum & 0xFF) as u8;
-            }
-        }
-        
-        // Final hash result in memory
-        for i in 0..32 {
-            let shift_val = (product[i] as usize * 47 + i) % memory_table.len();
-            product[i] ^= memory_table[shift_val];
-        }
-         */
