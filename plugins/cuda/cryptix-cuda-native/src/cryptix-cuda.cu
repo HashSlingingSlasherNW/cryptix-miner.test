@@ -173,6 +173,7 @@ extern "C" {
             // Sha3 - The first byte modulo 2, plus 1 for the range [1, 2]
             uint8_t first_byte = hash_.hash[0]; 
             uint8_t iteration_count = (uint8_t)((first_byte % 2) + 1); 
+            
 
             #pragma unroll
             for (int i = 0; i < 32; i++) {
@@ -304,10 +305,13 @@ extern "C" {
                                  ((product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF));
             }
 
+            uint8_t product_before_oct[32]; 
+
             // XOR the product with the original hash   
             #pragma unroll
             for (int i = 0; i < 32; i++) {
                 product[i] ^= sha3_hash[i];
+                product_before_oct[i] = product[i];
             }
 
             // ** Octonion**
@@ -331,68 +335,58 @@ extern "C" {
             
                 uint8_t* source_array;
                 uint8_t rotate_left_val, rotate_right_val;
+            
+                if (i_u8 < 16) { source_array = product; rotate_left_val = product[3] ^ 0x4F; rotate_right_val = sha3_hash[2] ^ 0xD3; }
+                    else if (i_u8 < 32) { source_array = sha3_hash; rotate_left_val = product[7] ^ 0xA6; rotate_right_val = sha3_hash[5] ^ 0x5B; }
+                    else if (i_u8 < 48) { source_array = product; rotate_left_val = product_before_oct[1] ^ 0x9C; rotate_right_val = sha3_hash[0] ^ 0x8E; }
+                    else if (i_u8 < 64) { source_array = sha3_hash; rotate_left_val = product[6] ^ 0x71; rotate_right_val = sha3_hash[3] ^ 0x2F; }
+                    else if (i_u8 < 80) { source_array = product_before_oct; rotate_left_val = product[4] ^ 0xB2; rotate_right_val = sha3_hash[7] ^ 0x6D; }
+                    else if (i_u8 < 96) { source_array = sha3_hash; rotate_left_val = product[0] ^ 0x58; rotate_right_val = sha3_hash[1] ^ 0xEE; }
+                    else if (i_u8 < 112) { source_array = product; rotate_left_val = product_before_oct[2] ^ 0x37; rotate_right_val = sha3_hash[6] ^ 0x44; }
+                    else if (i_u8 < 128) { source_array = sha3_hash; rotate_left_val = product[5] ^ 0x1A; rotate_right_val = sha3_hash[4] ^ 0x7C; }
+                    else if (i_u8 < 144) { source_array = product_before_oct; rotate_left_val = product[3] ^ 0x93; rotate_right_val = sha3_hash[2] ^ 0xAF; }
+                    else if (i_u8 < 160) { source_array = sha3_hash; rotate_left_val = product[7] ^ 0x29; rotate_right_val = sha3_hash[5] ^ 0xDC; }
+                    else if (i_u8 < 176) { source_array = product; rotate_left_val = product_before_oct[1] ^ 0x4E; rotate_right_val = sha3_hash[0] ^ 0x8B; }
+                    else if (i_u8 < 192) { source_array = sha3_hash; rotate_left_val = product[6] ^ 0xF3; rotate_right_val = sha3_hash[3] ^ 0x62; }
+                    else if (i_u8 < 208) { source_array = product_before_oct; rotate_left_val = product[4] ^ 0xB7; rotate_right_val = sha3_hash[7] ^ 0x15; }
+                    else if (i_u8 < 224) { source_array = sha3_hash; rotate_left_val = product[0] ^ 0x2D; rotate_right_val = sha3_hash[1] ^ 0xC8; }
+                    else if (i_u8 < 240) { source_array = product; rotate_left_val = product_before_oct[2] ^ 0x6F; rotate_right_val = sha3_hash[6] ^ 0x99; }
+                    else { source_array = sha3_hash; rotate_left_val = product[5] ^ 0xE1; rotate_right_val = sha3_hash[4] ^ 0x3B; }
                 
-                if (i_u8 < 32) {
-                    source_array = product;  
-                    rotate_left_val = product[5] ^ 0x5A; 
-                    rotate_right_val = sha3_hash[5] ^ 0x3C; 
-                } else if (i_u8 < 64) {
-                    source_array = sha3_hash; 
-                    rotate_left_val = product[4] ^ 0xA1;
-                    rotate_right_val = sha3_hash[6] ^ 0xB2; 
-                } else if (i_u8 < 96) {
-                    source_array = product; 
-                    rotate_left_val = product[2] ^ 0x7F; 
-                    rotate_right_val = sha3_hash[0] ^ 0x8E; 
-                } else if (i_u8 < 128) {
-                    source_array = sha3_hash; 
-                    rotate_left_val = product[6] ^ 0x3B; 
-                    rotate_right_val = sha3_hash[2] ^ 0x4D;  
-                } else if (i_u8 < 160) {
-                    source_array = product;  
-                    rotate_left_val = product[7] ^ 0x92; 
-                    rotate_right_val = sha3_hash[1] ^ 0x61; 
-                } else if (i_u8 < 192) {
-                    source_array = sha3_hash;  
-                    rotate_left_val = product[0] ^ 0x4C; 
-                    rotate_right_val = sha3_hash[3] ^ 0x73; 
-                } else {
-                    source_array = product; 
-                    rotate_left_val = product[1] ^ 0x56; 
-                    rotate_right_val = sha3_hash[5] ^ 0x2D;  
-                }
+            
+                uint8_t value = (i_u8 < 16) ? product[i_u8 % 32] ^ 0xAA :
+                    (i_u8 < 32) ? sha3_hash[(i_u8 - 16) % 32] ^ 0xBB :
+                    (i_u8 < 48) ? product_before_oct[(i_u8 - 32) % 32] ^ 0xCC :
+                    (i_u8 < 64) ? sha3_hash[(i_u8 - 48) % 32] ^ 0xDD :
+                    (i_u8 < 80) ? product[(i_u8 - 64) % 32] ^ 0xEE :
+                    (i_u8 < 96) ? sha3_hash[(i_u8 - 80) % 32] ^ 0xFF :
+                    (i_u8 < 112) ? product_before_oct[(i_u8 - 96) % 32] ^ 0x11 :
+                    (i_u8 < 128) ? sha3_hash[(i_u8 - 112) % 32] ^ 0x22 :
+                    (i_u8 < 144) ? product[(i_u8 - 128) % 32] ^ 0x33 :
+                    (i_u8 < 160) ? sha3_hash[(i_u8 - 144) % 32] ^ 0x44 :
+                    (i_u8 < 176) ? product_before_oct[(i_u8 - 160) % 32] ^ 0x55 :
+                    (i_u8 < 192) ? sha3_hash[(i_u8 - 176) % 32] ^ 0x66 :
+                    (i_u8 < 208) ? product[(i_u8 - 192) % 32] ^ 0x77 :
+                    (i_u8 < 224) ? sha3_hash[(i_u8 - 208) % 32] ^ 0x88 :
+                    (i_u8 < 240) ? product_before_oct[(i_u8 - 224) % 32] ^ 0x99 :
+                                sha3_hash[(i_u8 - 240) % 32] ^ 0xAA;
 
-                uint8_t value;
-                if (i_u8 < 32) {
-                    value = product[i_u8] ^ 0xAA;
-                } else if (i_u8 < 64) {
-                    value = sha3_hash[(i_u8 - 32) % 32] ^ 0xBB;
-                } else if (i_u8 < 96) {
-                    value = product[(i_u8 - 64) % 32] ^ 0xCC;
-                } else if (i_u8 < 128) {
-                    value = sha3_hash[(i_u8 - 96) % 32] ^ 0xDD;
-                } else if (i_u8 < 160) {
-                    value = product[(i_u8 - 128) % 32] ^ 0xEE;
-                } else if (i_u8 < 192) {
-                    value = sha3_hash[(i_u8 - 160) % 32] ^ 0xFF;
-                } else {
-                    value = product[(i_u8 - 192) % 32] ^ 0x11;
-                }
-
-                int rotate_left_shift = (product[(i + 1) % 32] + i) % 8; 
-                int rotate_right_shift = (sha3_hash[(i + 2) % 32] + i) % 8; 
-                
-                int rotation_left = (rotate_left_val << rotate_left_shift) | (rotate_left_val >> (8 - rotate_left_shift)); 
-                int rotation_right = (rotate_right_val >> rotate_right_shift) | (rotate_right_val << (8 - rotate_right_shift)); 
             
-                rotation_left &= 0xFF;  
-                rotation_right &= 0xFF;  
+                int rotate_left_shift = (product[(i + 1) % 32] + i) % 8;
+                int rotate_right_shift = (sha3_hash[(i + 2) % 32] + i) % 8;
             
-                int index = (i + rotation_left + rotation_right) % 32; 
+                int rotation_left = (rotate_left_val << rotate_left_shift) | (rotate_left_val >> (8 - rotate_left_shift));
+                int rotation_right = (rotate_right_val >> rotate_right_shift) | (rotate_right_val << (8 - rotate_right_shift));
             
-                sbox[i] = source_array[index] ^ value; 
+                rotation_left &= 0xFF;
+                rotation_right &= 0xFF;
+            
+                int index = (i + rotation_left + rotation_right) % 32;
+                sbox[i] = source_array[index] ^ value;
             }
+            
 
+            /*
             // Calculate dynamic number of iterations
             int iterations = 3 + (product[0] % 4);  // 3 - 6
 
@@ -405,6 +399,7 @@ extern "C" {
                 }
                 memcpy(sbox, temp_sbox, 256);
             }
+            */
 
             // **Apply S-Box**
             #pragma unroll
