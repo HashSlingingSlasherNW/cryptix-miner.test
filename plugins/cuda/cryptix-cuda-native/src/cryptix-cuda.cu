@@ -371,19 +371,19 @@ extern "C" {
                 uint8_t value = (i_u8 < 16) ? product[i_u8 % 32] ^ 0xAA :
                     (i_u8 < 32) ? sha3_hash[(i_u8 - 16) % 32] ^ 0xBB :
                     (i_u8 < 48) ? product_before_oct[(i_u8 - 32) % 32] ^ 0xCC :
-                    (i_u8 < 64) ? sha3_hash[(i_u8 - 48) % 32] ^ 0xDD :
+                    (i_u8 < 64) ? nibble_product[(i_u8 - 48) % 32] ^ 0xDD :
                     (i_u8 < 80) ? product[(i_u8 - 64) % 32] ^ 0xEE :
                     (i_u8 < 96) ? sha3_hash[(i_u8 - 80) % 32] ^ 0xFF :
                     (i_u8 < 112) ? product_before_oct[(i_u8 - 96) % 32] ^ 0x11 :
-                    (i_u8 < 128) ? sha3_hash[(i_u8 - 112) % 32] ^ 0x22 :
+                    (i_u8 < 128) ? nibble_product[(i_u8 - 112) % 32] ^ 0x22 :
                     (i_u8 < 144) ? product[(i_u8 - 128) % 32] ^ 0x33 :
                     (i_u8 < 160) ? sha3_hash[(i_u8 - 144) % 32] ^ 0x44 :
                     (i_u8 < 176) ? product_before_oct[(i_u8 - 160) % 32] ^ 0x55 :
-                    (i_u8 < 192) ? sha3_hash[(i_u8 - 176) % 32] ^ 0x66 :
+                    (i_u8 < 192) ? nibble_product[(i_u8 - 176) % 32] ^ 0x66 :
                     (i_u8 < 208) ? product[(i_u8 - 192) % 32] ^ 0x77 :
                     (i_u8 < 224) ? sha3_hash[(i_u8 - 208) % 32] ^ 0x88 :
                     (i_u8 < 240) ? product_before_oct[(i_u8 - 224) % 32] ^ 0x99 :
-                                sha3_hash[(i_u8 - 240) % 32] ^ 0xAA;
+                                   nibble_product[(i_u8 - 240) % 32] ^ 0xAA;
 
             
                 int rotate_left_shift = (product[(i + 1) % 32] + i) % 8;
