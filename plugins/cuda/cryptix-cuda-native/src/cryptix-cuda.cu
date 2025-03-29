@@ -293,16 +293,30 @@ extern "C" {
                 packed_hash[i] = make_uchar4((h1 >> 4), (h1 & 0xF), (h2 >> 4), (h2 & 0xF));
             }
 
-            uint32_t product1, product2;
             uint8_t product[32] = {0};
+            uint8_t nibble_product[32] = {0};
+            
             #pragma unroll
             for (int rowId = 0; rowId < HALF_MATRIX_SIZE; rowId++) {
-                uint32_t product1, product2;
+                uint32_t product1, product2, product3, product4;
                 amul4bit((uint32_t *)(matrix[(2 * rowId)]), (uint32_t *)(packed_hash), &product1);
                 amul4bit((uint32_t *)(matrix[(2 * rowId + 1)]), (uint32_t *)(packed_hash), &product2);
-        
-                product[rowId] = (((product1 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product1 >> 8) & 0xF)) << 4) |
-                                 ((product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF));
+                amul4bit((uint32_t *)(matrix[(1 * rowId + 2)]), (uint32_t *)(packed_hash), &product3);
+                amul4bit((uint32_t *)(matrix[(1 * rowId + 3)]), (uint32_t *)(packed_hash), &product4);
+                
+                // Calculate a_nibble and b_nibble for product
+                uint8_t a_nibble = (product1 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product3 >> 8) & 0xF);
+                uint8_t b_nibble = (product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product4 >> 8) & 0xF);
+            
+                // Store in product array
+                product[rowId] = ((a_nibble << 4) | b_nibble);
+            
+                // Calculate c_nibble and d_nibble for nibble_product
+                uint8_t c_nibble = (product3 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF);
+                uint8_t d_nibble = (product1 & 0xF) ^ ((product4 >> 4) & 0xF) ^ ((product1 >> 8) & 0xF);
+            
+                // Store in nibble_product array
+                nibble_product[rowId] = ((c_nibble << 4) | d_nibble);
             }
 
             uint8_t product_before_oct[32]; 
