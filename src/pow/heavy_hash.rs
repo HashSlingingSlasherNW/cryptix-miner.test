@@ -381,19 +381,40 @@ impl Matrix {
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
-                0 => &nibble_product,
-                1 => &hash_bytes,
-                2 => &product,
-                _ => &product_before_oct,
+                0 => {
+                    println!("[i={}] Using nibble_product", i);
+                    &nibble_product
+                },
+                1 => {
+                    println!("[i={}] Using hash_bytes", i);
+                    &hash_bytes
+                },
+                2 => {
+                    println!("[i={}] Using product", i);
+                    &product
+                },
+                _ => {
+                    println!("[i={}] Using product_before_oct", i);
+                    &product_before_oct
+                },
             };
 
-            let byte_val = ref_array[(i * 13) % ref_array.len()] as usize;
+            let byte_index = (i * 13) % ref_array.len();
+            let byte_val = ref_array[byte_index] as usize;
+            println!("[i={}] byte_index: {} -> byte_val: {}", i, byte_index, byte_val);
 
+            let product_index = (i * 31) % product.len();
+            let hash_index = (i * 19) % hash_bytes.len();
+            
             let index = (byte_val 
-                        + product[(i * 31) % product.len()] as usize 
-                        + hash_bytes[(i * 19) % hash_bytes.len()] as usize 
+                        + product[product_index] as usize 
+                        + hash_bytes[hash_index] as usize 
                         + i * 41) % 256;  
-
+            
+            println!("[i={}] product_index: {} -> product_val: {}", i, product_index, product[product_index]);
+            println!("[i={}] hash_index: {} -> hash_val: {}", i, hash_index, hash_bytes[hash_index]);
+            println!("[i={}] Calculated S-Box index: {} -> S-Box value: {}", i, index, sbox[index]);
+            
             product[i] ^= sbox[index]; 
         }
 
