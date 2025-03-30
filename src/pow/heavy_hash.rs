@@ -356,64 +356,52 @@ impl Matrix {
         }
         
 
-        println!("S-Box after filling with hash and product permutation: {:?}", sbox);
+        println!("S-Box before Values Update: {:?}", sbox);
 
-        /* 
-        // Number of iterations depends on the first byte of the product
-        let iterations = 3 + (product[0] % 4);  // Modulo 4 gives values ​​from 0 to 3 → +3 gives 3 to 6
+        // Update Sbox Values
+        let iterations = 1 + (product[0] % 3);  
 
-        for _ in 0..iterations {  
+        for _ in 0..iterations {
             let mut temp_sbox = sbox;
-            
-            for i in 0..256 { 
-                let mut value = temp_sbox[i];  
-                
-                // Bitwise rotation + XOR
-                value ^= value.rotate_left(4) | value.rotate_right(2); 
+
+            for i in 0..256 {
+                let mut value = temp_sbox[i];
+
+                let rotate_left_shift = (product[(i + 1) % product.len()] as u32 + i as u32 + (i * 3) as u32) % 8;  
+                let rotate_right_shift = (hash_bytes[(i + 2) % hash_bytes.len()] as u32 + i as u32 + (i * 5) as u32) % 8; 
+
+                let rotated_value = value.rotate_left(rotate_left_shift) | value.rotate_right(rotate_right_shift);
+
+                let xor_value = {
+                    let base_value = (i as u8).wrapping_add(product[(i * 3) % product.len()] ^ hash_bytes[(i * 7) % hash_bytes.len()]) ^ 0xA5;
+                    let shifted_value = base_value.rotate_left((i % 8) as u32); 
+                    shifted_value ^ 0x55 
+                };
+
+                value ^= rotated_value ^ xor_value;
                 temp_sbox[i] = value; 
             }
 
-            sbox = temp_sbox; // Update the S-Box after the round
+            sbox = temp_sbox;
         }
-        */
 
+        println!("S-Box after Values Update: {:?}", sbox);
 
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
-                0 => {
-                    println!("[i={}] Using nibble_product", i);
-                    &nibble_product
-                },
-                1 => {
-                    println!("[i={}] Using hash_bytes", i);
-                    &hash_bytes
-                },
-                2 => {
-                    println!("[i={}] Using product", i);
-                    &product
-                },
-                _ => {
-                    println!("[i={}] Using product_before_oct", i);
-                    &product_before_oct
-                },
+                0 => &nibble_product,
+                1 => &hash_bytes,
+                2 => &product,
+                _ => &product_before_oct,
             };
 
-            let byte_index = (i * 13) % ref_array.len();
-            let byte_val = ref_array[byte_index] as usize;
-            println!("[i={}] byte_index: {} -> byte_val: {}", i, byte_index, byte_val);
+            let byte_val = ref_array[(i * 13) % ref_array.len()] as usize;
 
-            let product_index = (i * 31) % product.len();
-            let hash_index = (i * 19) % hash_bytes.len();
-            
             let index = (byte_val 
-                        + product[product_index] as usize 
-                        + hash_bytes[hash_index] as usize 
+                        + product[(i * 31) % product.len()] as usize 
+                        + hash_bytes[(i * 19) % hash_bytes.len()] as usize 
                         + i * 41) % 256;  
-            
-            println!("[i={}] product_index: {} -> product_val: {}", i, product_index, product[product_index]);
-            println!("[i={}] hash_index: {} -> hash_val: {}", i, hash_index, hash_bytes[hash_index]);
-            println!("[i={}] Calculated S-Box index: {} -> S-Box value: {}", i, index, sbox[index]);
             
             product[i] ^= sbox[index]; 
         }
