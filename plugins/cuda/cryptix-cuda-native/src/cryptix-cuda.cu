@@ -170,9 +170,9 @@ extern "C" {
             memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
             hash(powP, hash_.hash, input);
 
-            // Sha3 - The first byte modulo 2, plus 1 for the range [1 - 3]
+            // Sha3 - The first byte modulo 2, plus 1 for the range [1 - 2]
             uint8_t first_byte = hash_.hash[0]; 
-            uint8_t iteration_count = (uint8_t)((first_byte % 3) + 1); 
+            uint8_t iteration_count = (uint8_t)((first_byte % 2) + 1); 
             
 
             #pragma unroll
@@ -400,7 +400,8 @@ extern "C" {
             }
             
             // Update Sbox Values
-            int iterations = 1 + (product[0] % 3);
+            size_t index = ((size_t)product_before_oct[2] % 8) + 1;  
+            int iterations = 1 + (product[index] % 2);            
 
             uint8_t temp_sbox[256];
             
