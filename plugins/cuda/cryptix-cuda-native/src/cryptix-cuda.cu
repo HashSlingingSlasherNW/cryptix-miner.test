@@ -170,9 +170,9 @@ extern "C" {
             memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
             hash(powP, hash_.hash, input);
 
-            // Sha3 - The first byte modulo 2, plus 1 for the range [1 - 2]
+            // Sha3 - The first byte modulo 3, plus 1 for the range [1 - 3]
             uint8_t first_byte = hash_.hash[0]; 
-            uint8_t iteration_count = (uint8_t)((first_byte % 2) + 1); 
+            uint8_t iteration_count = (uint8_t)((first_byte % 3) + 1); 
             
 
             #pragma unroll
