@@ -460,7 +460,6 @@ extern "C" {
                 product_blake3[i] ^= sbox[index];
             }
 
-
             memset(input, 0, 80);
             memcpy(input, product_blake3, 32);
             hash(heavyP, hash_.hash, input);
