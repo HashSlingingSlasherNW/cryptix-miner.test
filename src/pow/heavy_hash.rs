@@ -302,8 +302,8 @@ impl Matrix {
             product[i] ^= oct_value_u8;
         }
 
-        // Debug before
-         println!("Product before calculation: {:?}", product);
+        // Debug before Sbox
+        // println!("Product before calculation: {:?}", product);
 
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
@@ -354,9 +354,6 @@ impl Matrix {
             let index = (i as usize + rotation_left as usize + rotation_right as usize) % source_array.len();
             sbox[i as usize] = source_array[index] ^ value;
         }
-        
-
-        println!("S-Box before Values Update: {:?}", sbox);
 
         // Update Sbox Values
         let iterations = 1 + (product[0] % 3);  
@@ -385,8 +382,6 @@ impl Matrix {
             sbox = temp_sbox;
         }
 
-        println!("S-Box after Values Update: {:?}", sbox);
-
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
@@ -406,7 +401,8 @@ impl Matrix {
             product[i] ^= sbox[index]; 
         }
 
-        println!("Product after calculation: {:?}", product);
+        // Debug after Sbox
+        // println!("Product after calculation: {:?}", product);
 
         //Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(product))
