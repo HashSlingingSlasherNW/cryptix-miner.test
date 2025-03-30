@@ -385,28 +385,6 @@ impl Matrix {
 
         println!("Product after calculation: {:?}", product);
 
-
-
-
-
-
-
-        // Cache Test
-        const CACHE_SIZE: usize = 2 * 1024; // 2KB
-        let mut cache: [u8; CACHE_SIZE] = [0; CACHE_SIZE];
-
-        for i in 0..CACHE_SIZE {
-            cache[i] = hash_bytes[i % 32] ^ (i as u8);  // XOR
-        }
-
-        // Apply to Product
-        for i in 0..32 {
-            let cache_index = (i * 256) % CACHE_SIZE; 
-            product[i] = cache[cache_index] ^ product[(i + 1) % 32];
-        }
-
-
-
         //Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(product))
     }

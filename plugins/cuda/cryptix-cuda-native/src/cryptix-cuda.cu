@@ -170,9 +170,9 @@ extern "C" {
             memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
             hash(powP, hash_.hash, input);
 
-            // Sha3 - The first byte modulo 2, plus 1 for the range [1, 2]
+            // Sha3 - The first byte modulo 2, plus 1 for the range [1 - 3]
             uint8_t first_byte = hash_.hash[0]; 
-            uint8_t iteration_count = (uint8_t)((first_byte % 2) + 1); 
+            uint8_t iteration_count = (uint8_t)((first_byte % 3) + 1); 
             
 
             #pragma unroll
@@ -420,25 +420,6 @@ extern "C" {
             for (int i = 0; i < 32; i++) {
                 product[i] ^= sbox[product[i]];
             }
-
-
-
-
-
-            
-            // Cache Test
-            uint8_t cache[2 * 1024];
-
-            for (int i = 0; i < (2 * 1024) / 32; ++i) {
-                cache[i] = sha3_hash[i % 32] ^ ((i * 31) & 0xFF); 
-            }
-
-            for (int i = 0; i < 32; ++i) {
-                int cache_index = (i * 256) % ((2 * 1024) / 32);
-                product[i] = cache[cache_index] ^ product[(i + 1) % 32];
-            }
-
-
 
             memset(input, 0, 80);
             memcpy(input, product, 32);
