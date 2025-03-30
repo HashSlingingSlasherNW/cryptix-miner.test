@@ -418,8 +418,26 @@ extern "C" {
             // **Apply S-Box**
             #pragma unroll
             for (int i = 0; i < 32; i++) {
-                product[i] ^= sbox[product[i]];
+                int array_selector = (i * 31) % 4;
+                const uint8_t* ref_array;
+
+                switch (array_selector) {
+                    case 0: ref_array = nibble_product; break;
+                    case 1: ref_array = sha3_hash; break;
+                    case 2: ref_array = product; break;
+                    default: ref_array = product_before_oct; break;
+                }
+
+                int byte_val = ref_array[(i * 13) % 32];  
+
+                int index = (byte_val 
+                            + product[(i * 31) % 32] 
+                            + sha3_hash[(i * 19) % 32] 
+                            + i * 41) % 256;  
+
+                product[i] ^= sbox[index];
             }
+
 
             memset(input, 0, 80);
             memcpy(input, product, 32);

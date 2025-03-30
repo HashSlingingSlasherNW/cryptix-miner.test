@@ -267,16 +267,18 @@ impl Matrix {
                 sum4 += self.0[1 * i + 3][j] * elem;
             }
     
-            // Combine the nibbles back into bytes
+            // Calculate a_nibble and b_nibble for product
             let a_nibble = (sum1 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum3 >> 8) & 0xF);
             let b_nibble = (sum2 & 0xF) ^ ((sum1 >> 4) & 0xF) ^ ((sum4 >> 8) & 0xF);
 
-            // Calculate c_nibble and d_nibble
+            // Calculate c_nibble and d_nibble for nibble product
             let c_nibble = (sum3 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum2 >> 8) & 0xF);
             let d_nibble = (sum1 & 0xF) ^ ((sum4 >> 4) & 0xF) ^ ((sum1 >> 8) & 0xF);
 
             // Combine c_nibble and d_nibble to form nibble_product
             nibble_product[i] = ((c_nibble << 4) | d_nibble) as u8; 
+            
+            // Combine a_nibble and b_nibble to form product
             product[i] = ((a_nibble << 4) | b_nibble) as u8;
         }
     
@@ -302,9 +304,6 @@ impl Matrix {
 
         // Debug before
          println!("Product before calculation: {:?}", product);
-         println!("Product before Oct before calculation: {:?}", product_before_oct);
-         println!("Nibbles: {:?}", nibble_product);
-         println!("Hashbytes: {:?}", hash_bytes);
 
         // **Apply nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
@@ -378,9 +377,24 @@ impl Matrix {
         }
         */
 
+
         // Apply S-Box to the product with XOR
         for i in 0..32 {
-            product[i] ^= sbox[product[i] as usize]; 
+            let ref_array = match (i * 31) % 4 { 
+                0 => &nibble_product,
+                1 => &hash_bytes,
+                2 => &product,
+                _ => &product_before_oct,
+            };
+
+            let byte_val = ref_array[(i * 13) % ref_array.len()] as usize;
+
+            let index = (byte_val 
+                        + product[(i * 31) % product.len()] as usize 
+                        + hash_bytes[(i * 19) % hash_bytes.len()] as usize 
+                        + i * 41) % 256;  
+
+            product[i] ^= sbox[index]; 
         }
 
         println!("Product after calculation: {:?}", product);
