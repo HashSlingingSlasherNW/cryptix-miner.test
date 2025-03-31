@@ -402,16 +402,21 @@ impl Matrix {
             sbox = temp_sbox;
         }
 
-        // BLAKE3 Step
-        let mut b3_hasher = blake3::Hasher::new();
-        b3_hasher.update(&product);
-        let product_blake3 = b3_hasher.finalize();
-        let b3_hash_bytes = product_blake3.as_bytes();
+        // Blake3 Chaining
+        let index_blake = ((product_before_oct[5] % 8) + 1) as usize;  
+        let iterations_blake = 1 + (product[index_blake] % 3);
 
-        // Convert Blake3 [u8; 32]
-        let mut b3_hash_array = [0u8; 32];
-        b3_hash_array.copy_from_slice(b3_hash_bytes);
+        let mut b3_hash_array = product.clone(); 
+        for _ in 0..iterations_blake {
+            // BLAKE3 Hashing
+            let mut b3_hasher = blake3::Hasher::new();
+            b3_hasher.update(&b3_hash_array);
+            let product_blake3 = b3_hasher.finalize();
+            let b3_hash_bytes = product_blake3.as_bytes();
 
+            // Convert
+            b3_hash_array.copy_from_slice(b3_hash_bytes);
+        }
 
         // Apply S-Box to the product with XOR
         for i in 0..32 {
