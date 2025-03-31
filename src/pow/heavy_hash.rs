@@ -112,7 +112,6 @@ impl Matrix {
         let complex_op = (left * right + 97) & 0xFF; 
         let nonlinear_op = (complex_op ^ (right >> 4) ^ (left * 11)) & 0xFF;
     
-        // Umwandlung von sinus_in in u16 für die Modulo-Operation
         let angle: f32 = (sinus_in as u16 % 360) as f32 * (3.14159265359f32 / 180.0f32);
         let sin_value: f32 = angle.sin();
         let sin_lookup = (f32::abs(sin_value) * 255.0) as u8;  
@@ -445,6 +444,10 @@ impl Matrix {
             b3_hash_array.copy_from_slice(b3_hash_bytes);
         }
 
+        // Sinus (Testnet)
+        // let sinus_in = product.clone();    
+        // let sinus_out = Self::sinusoidal_multiply(&sinus_in);
+
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
@@ -462,6 +465,7 @@ impl Matrix {
                         + i * 41) % 256;  
             
            b3_hash_array[i] ^= sbox[index]; 
+           // b3_hash_array[i] ^= sbox[index] ^ sinus_out;
         }
 
         // Final Cryptixhash v2
