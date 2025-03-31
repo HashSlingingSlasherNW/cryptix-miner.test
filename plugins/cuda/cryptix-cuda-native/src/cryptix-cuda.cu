@@ -494,7 +494,7 @@ extern "C" {
                 memcpy(product_blake3, temp_blake3, 32);  
             }
 
-            // Sinus (Testnet)
+            // Sinus (Testnet)          
             // uint8_t sinus_in[32];  
             // uint8_t sinus_out[32];
             // sinusoidal_multiply(sinus_in, sinus_out);
