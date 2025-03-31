@@ -71,6 +71,7 @@ __device__ u64 wrapping_mul(i64 a, i64 b) {
     return low;  
 }
 
+/*
 // Sinusoidal Lookup
 __constant__ uint8_t SIN_LOOKUP[360] = {
     0, 4, 8, 13, 17, 22, 26, 31, 35, 39, 44, 48, 53, 57, 61, 65, 70, 74, 78, 83, 87, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127, 131, 135, 138, 142, 146, 149, 153, 156, 160,
@@ -106,7 +107,7 @@ __device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_
 
     sinus_out = ((static_cast<uint16_t>(obfuscated) ^ (static_cast<uint16_t>(sbox_val) * 7) ^ static_cast<uint16_t>(nonlinear_op)) + 0xF1) & 0xFF;
 }
-
+*/
 
 // Octonion
 __device__ void octonion_multiply(const i64 *a, const i64 *b, i64 *result) {
