@@ -71,7 +71,20 @@ __device__ u64 wrapping_mul(i64 a, i64 b) {
     return low;  
 }
 
-// Sinusoidal (It needs to be tested in the testnet first due to arch rounding errors)
+// Sinusoidal Lookup
+__constant__ uint8_t SIN_LOOKUP[360] = {
+    0, 4, 8, 13, 17, 22, 26, 31, 35, 39, 44, 48, 53, 57, 61, 65, 70, 74, 78, 83, 87, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127, 131, 135, 138, 142, 146, 149, 153, 156, 160,
+    163, 167, 170, 173, 177, 180, 183, 186, 189, 192, 195, 198, 200, 203, 206, 208, 211, 213, 216, 218, 220, 223, 225, 227, 229, 231, 232, 234, 236, 238, 239, 241, 242, 243, 245, 246, 247, 248, 249, 250,
+    251, 251, 252, 253, 253, 254, 254, 254, 254, 254, 255, 254, 254, 254, 254, 254, 253, 253, 252, 251, 251, 250, 249, 248, 247, 246, 245, 243, 242, 241, 239, 238, 236, 234, 232, 231, 229, 227, 225, 223,
+    220, 218, 216, 213, 211, 208, 206, 203, 200, 198, 195, 192, 189, 186, 183, 180, 177, 173, 170, 167, 163, 160, 156, 153, 149, 146, 142, 138, 135, 131, 127, 123, 119, 115, 111, 107, 103, 99, 95, 91,
+    87, 83, 78, 74, 70, 65, 61, 57, 53, 48, 44, 39, 35, 31, 26, 22, 17, 13, 8, 4, 0, 4, 8, 13, 17, 22, 26, 31, 35, 39, 44, 48, 53, 57, 61, 65, 70, 74, 78, 83,
+    87, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127, 131, 135, 138, 142, 146, 149, 153, 156, 160, 163, 167, 170, 173, 177, 180, 183, 186, 189, 192, 195, 198, 200, 203, 206, 208, 211, 213, 216, 218,
+    220, 223, 225, 227, 229, 231, 232, 234, 236, 238, 239, 241, 242, 243, 245, 246, 247, 248, 249, 250, 251, 251, 252, 253, 253, 254, 254, 254, 254, 254, 255, 254, 254, 254, 254, 254, 253, 253, 252, 251,
+    251, 250, 249, 248, 247, 246, 245, 243, 242, 241, 239, 238, 236, 234, 232, 231, 229, 227, 225, 223, 220, 218, 216, 213, 211, 208, 206, 203, 200, 198, 195, 192, 189, 186, 183, 180, 177, 173, 170, 167,
+    163, 160, 156, 153, 149, 146, 142, 138, 135, 131, 127, 123, 119, 115, 111, 107, 103, 99, 95, 91, 87, 83, 78, 74, 70, 65, 61, 57, 53, 48, 44, 39, 35, 31, 26, 22, 17, 13, 8, 4
+};
+
+// Sinusoidal Multiply
 __device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_out) {
     uint8_t left = (sinus_in >> 4) & 0x0F;  
     uint8_t right = sinus_in & 0x0F;   
@@ -85,17 +98,15 @@ __device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_
     uint8_t complex_op = (left * right + 97) & 0xFF;  
     uint8_t nonlinear_op = (complex_op ^ (right >> 4) ^ (left * 11)) & 0xFF;
 
-    uint16_t sinus_in_u16 = static_cast<uint16_t>(sinus_in); 
-    float angle = (sinus_in_u16 % 360) * (3.14159265359f / 180.0f);
-    float sin_value = __sinf(angle);  
-    uint8_t sin_lookup = static_cast<uint8_t>(fabsf(sin_value) * 255.0f); 
+    uint8_t sin_value = SIN_LOOKUP[sinus_in % 360];
 
-    uint8_t modulated_value = (sin_lookup ^ (sin_lookup >> 3) ^ (sin_lookup << 1) ^ 0xA5) & 0xFF;
+    uint8_t modulated_value = (sin_value ^ (sin_value >> 3) ^ (sin_value << 1) ^ 0xA5) & 0xFF;
     uint8_t sbox_val = ((modulated_value ^ (modulated_value >> 4)) * 43 + 17) & 0xFF;
-    uint8_t obfuscated = ((sbox_val >> 2) | (sbox_val << 6)) ^ 0xF3 ^ 0xA5;
+    uint8_t obfuscated = __byte_perm(sbox_val, 0xF3 ^ 0xA5, 0x0123); 
 
-    sinus_out = ((obfuscated ^ (sbox_val * 7) ^ nonlinear_op) + 0xF1) & 0xFF;
+    sinus_out = ((static_cast<uint16_t>(obfuscated) ^ (static_cast<uint16_t>(sbox_val) * 7) ^ static_cast<uint16_t>(nonlinear_op)) + 0xF1) & 0xFF;
 }
+
 
 // Octonion
 __device__ void octonion_multiply(const i64 *a, const i64 *b, i64 *result) {
