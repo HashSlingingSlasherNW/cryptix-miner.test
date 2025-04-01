@@ -429,26 +429,25 @@ extern "C" {
                     else if (i_u8 < 224) { source_array = sha3_hash; rotate_left_val = product[0] ^ 0x2D; rotate_right_val = product_before_oct[1] ^ 0xC8; }
                     else if (i_u8 < 240) { source_array = product; rotate_left_val = product_before_oct[2] ^ 0x6F; rotate_right_val = nibble_product[6] ^ 0x99; }
                     else { source_array = sha3_hash; rotate_left_val = nibble_product[5] ^ 0xE1; rotate_right_val = sha3_hash[4] ^ 0x3B; }
-                
-            
-                uint8_t value = (i_u8 < 16) ? product[i_u8 % 32] ^ 0xAA :
-                    (i_u8 < 32) ? sha3_hash[(i_u8 - 16) % 32] ^ 0xBB :
-                    (i_u8 < 48) ? product_before_oct[(i_u8 - 32) % 32] ^ 0xCC :
-                    (i_u8 < 64) ? nibble_product[(i_u8 - 48) % 32] ^ 0xDD :
-                    (i_u8 < 80) ? product[(i_u8 - 64) % 32] ^ 0xEE :
-                    (i_u8 < 96) ? sha3_hash[(i_u8 - 80) % 32] ^ 0xFF :
-                    (i_u8 < 112) ? product_before_oct[(i_u8 - 96) % 32] ^ 0x11 :
-                    (i_u8 < 128) ? nibble_product[(i_u8 - 112) % 32] ^ 0x22 :
-                    (i_u8 < 144) ? product[(i_u8 - 128) % 32] ^ 0x33 :
-                    (i_u8 < 160) ? sha3_hash[(i_u8 - 144) % 32] ^ 0x44 :
-                    (i_u8 < 176) ? product_before_oct[(i_u8 - 160) % 32] ^ 0x55 :
-                    (i_u8 < 192) ? nibble_product[(i_u8 - 176) % 32] ^ 0x66 :
-                    (i_u8 < 208) ? product[(i_u8 - 192) % 32] ^ 0x77 :
-                    (i_u8 < 224) ? sha3_hash[(i_u8 - 208) % 32] ^ 0x88 :
-                    (i_u8 < 240) ? product_before_oct[(i_u8 - 224) % 32] ^ 0x99 :
-                                   nibble_product[(i_u8 - 240) % 32] ^ 0xAA;
-
-            
+                      
+                uint8_t value = 
+                    (i_u8 < 16) ? (uint8_t)((product[i_u8 % 32] * 0x03 + i_u8 * 0xAA) & 0xFF) :
+                    (i_u8 < 32) ? (uint8_t)((sha3_hash[(i_u8 - 16) % 32] * 0x05 + (i_u8 - 16) * 0xBB) & 0xFF) :
+                    (i_u8 < 48) ? (uint8_t)((product_before_oct[(i_u8 - 32) % 32] * 0x07 + (i_u8 - 32) * 0xCC) & 0xFF) :
+                    (i_u8 < 64) ? (uint8_t)((nibble_product[(i_u8 - 48) % 32] * 0x0F + (i_u8 - 48) * 0xDD) & 0xFF) :
+                    (i_u8 < 80) ? (uint8_t)((product[(i_u8 - 64) % 32] * 0x11 + (i_u8 - 64) * 0xEE) & 0xFF) :
+                    (i_u8 < 96) ? (uint8_t)((sha3_hash[(i_u8 - 80) % 32] * 0x13 + (i_u8 - 80) * 0xFF) & 0xFF) :
+                    (i_u8 < 112) ? (uint8_t)((product_before_oct[(i_u8 - 96) % 32] * 0x17 + (i_u8 - 96) * 0x11) & 0xFF) :
+                    (i_u8 < 128) ? (uint8_t)((nibble_product[(i_u8 - 112) % 32] * 0x19 + (i_u8 - 112) * 0x22) & 0xFF) :
+                    (i_u8 < 144) ? (uint8_t)((product[(i_u8 - 128) % 32] * 0x1D + (i_u8 - 128) * 0x33) & 0xFF) :
+                    (i_u8 < 160) ? (uint8_t)((sha3_hash[(i_u8 - 144) % 32] * 0x1F + (i_u8 - 144) * 0x44) & 0xFF) :
+                    (i_u8 < 176) ? (uint8_t)((product_before_oct[(i_u8 - 160) % 32] * 0x23 + (i_u8 - 160) * 0x55) & 0xFF) :
+                    (i_u8 < 192) ? (uint8_t)((nibble_product[(i_u8 - 176) % 32] * 0x29 + (i_u8 - 176) * 0x66) & 0xFF) :
+                    (i_u8 < 208) ? (uint8_t)((product[(i_u8 - 192) % 32] * 0x2F + (i_u8 - 192) * 0x77) & 0xFF) :
+                    (i_u8 < 224) ? (uint8_t)((sha3_hash[(i_u8 - 208) % 32] * 0x31 + (i_u8 - 208) * 0x88) & 0xFF) :
+                    (i_u8 < 240) ? (uint8_t)((product_before_oct[(i_u8 - 224) % 32] * 0x37 + (i_u8 - 224) * 0x99) & 0xFF) :
+                                   (uint8_t)((nibble_product[(i_u8 - 240) % 32] * 0x3F + (i_u8 - 240) * 0xAA) & 0xFF);
+           
                 int rotate_left_shift = (product[(i + 1) % 32] + i) % 8;
                 int rotate_right_shift = (sha3_hash[(i + 2) % 32] + i) % 8;
             

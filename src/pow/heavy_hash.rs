@@ -434,7 +434,8 @@ impl Matrix {
         for i in 0..256 {
             let i = i as u8;
         
-            let (source_array, rotate_left_val, rotate_right_val) = if i < 16 { (&product, nibble_product[3] ^ 0x4F, hash_bytes[2] ^ 0xD3) }
+            let (source_array, rotate_left_val, rotate_right_val) = 
+                if i < 16 { (&product, nibble_product[3] ^ 0x4F, hash_bytes[2] ^ 0xD3) }
                 else if i < 32 { (&hash_bytes, product[7] ^ 0xA6, nibble_product[5] ^ 0x5B) }
                 else if i < 48 { (&nibble_product, product_before_oct[1] ^ 0x9C, product[0] ^ 0x8E) }
                 else if i < 64 { (&hash_bytes, product[6] ^ 0x71, product_before_oct[3] ^ 0x2F) }
@@ -451,22 +452,23 @@ impl Matrix {
                 else if i < 240 { (&product, product_before_oct[2] ^ 0x6F, nibble_product[6] ^ 0x99) }
                 else { (&hash_bytes, nibble_product[5] ^ 0xE1, hash_bytes[4] ^ 0x3B) };
         
-            let value = if i < 16 { product[i as usize % 32] ^ 0xAA }
-                else if i < 32 { hash_bytes[(i - 16) as usize % 32] ^ 0xBB }
-                else if i < 48 { product_before_oct[(i - 32) as usize % 32] ^ 0xCC }
-                else if i < 64 { nibble_product[(i - 48) as usize % 32] ^ 0xDD }
-                else if i < 80 { product[(i - 64) as usize % 32] ^ 0xEE }
-                else if i < 96 { hash_bytes[(i - 80) as usize % 32] ^ 0xFF }
-                else if i < 112 { product_before_oct[(i - 96) as usize % 32] ^ 0x11 }
-                else if i < 128 { nibble_product[(i - 112) as usize % 32] ^ 0x22 }
-                else if i < 144 { product[(i - 128) as usize % 32] ^ 0x33 }
-                else if i < 160 { hash_bytes[(i - 144) as usize % 32] ^ 0x44 }
-                else if i < 176 { product_before_oct[(i - 160) as usize % 32] ^ 0x55 }
-                else if i < 192 { nibble_product[(i - 176) as usize % 32] ^ 0x66 }
-                else if i < 208 { product[(i - 192) as usize % 32] ^ 0x77 }
-                else if i < 224 { hash_bytes[(i - 208) as usize % 32] ^ 0x88 }
-                else if i < 240 { product_before_oct[(i - 224) as usize % 32] ^ 0x99 }
-                else { nibble_product[(i - 240) as usize % 32] ^ 0xAA };
+            let value = 
+                if i < 16 { (product[i as usize % 32].wrapping_mul(0x03).wrapping_add(i.wrapping_mul(0xAA))) & 0xFF }
+                else if i < 32 { (hash_bytes[(i - 16) as usize % 32].wrapping_mul(0x05).wrapping_add((i - 16).wrapping_mul(0xBB))) & 0xFF }
+                else if i < 48 { (product_before_oct[(i - 32) as usize % 32].wrapping_mul(0x07).wrapping_add((i - 32).wrapping_mul(0xCC))) & 0xFF }
+                else if i < 64 { (nibble_product[(i - 48) as usize % 32].wrapping_mul(0x0F).wrapping_add((i - 48).wrapping_mul(0xDD))) & 0xFF }
+                else if i < 80 { (product[(i - 64) as usize % 32].wrapping_mul(0x11).wrapping_add((i - 64).wrapping_mul(0xEE))) & 0xFF }
+                else if i < 96 { (hash_bytes[(i - 80) as usize % 32].wrapping_mul(0x13).wrapping_add((i - 80).wrapping_mul(0xFF))) & 0xFF }
+                else if i < 112 { (product_before_oct[(i - 96) as usize % 32].wrapping_mul(0x17).wrapping_add((i - 96).wrapping_mul(0x11))) & 0xFF }
+                else if i < 128 { (nibble_product[(i - 112) as usize % 32].wrapping_mul(0x19).wrapping_add((i - 112).wrapping_mul(0x22))) & 0xFF }
+                else if i < 144 { (product[(i - 128) as usize % 32].wrapping_mul(0x1D).wrapping_add((i - 128).wrapping_mul(0x33))) & 0xFF }
+                else if i < 160 { (hash_bytes[(i - 144) as usize % 32].wrapping_mul(0x1F).wrapping_add((i - 144).wrapping_mul(0x44))) & 0xFF }
+                else if i < 176 { (product_before_oct[(i - 160) as usize % 32].wrapping_mul(0x23).wrapping_add((i - 160).wrapping_mul(0x55))) & 0xFF }
+                else if i < 192 { (nibble_product[(i - 176) as usize % 32].wrapping_mul(0x29).wrapping_add((i - 176).wrapping_mul(0x66))) & 0xFF }
+                else if i < 208 { (product[(i - 192) as usize % 32].wrapping_mul(0x2F).wrapping_add((i - 192).wrapping_mul(0x77))) & 0xFF }
+                else if i < 224 { (hash_bytes[(i - 208) as usize % 32].wrapping_mul(0x31).wrapping_add((i - 208).wrapping_mul(0x88))) & 0xFF }
+                else if i < 240 { (product_before_oct[(i - 224) as usize % 32].wrapping_mul(0x37).wrapping_add((i - 224).wrapping_mul(0x99))) & 0xFF }
+                else { (nibble_product[(i - 240) as usize % 32].wrapping_mul(0x3F).wrapping_add((i - 240).wrapping_mul(0xAA))) & 0xFF };           
         
             let rotate_left_shift = (product[(i as usize + 1) % product.len()] as u32 + i as u32) % 8;
             let rotate_right_shift = (hash_bytes[(i as usize + 2) % hash_bytes.len()] as u32 + i as u32) % 8;
