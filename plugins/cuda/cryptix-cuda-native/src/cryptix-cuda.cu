@@ -99,6 +99,16 @@ __device__ u64 wrapping_mul(i64 a, i64 b) {
     return low;  
 }
 
+// Wrapping Add 8
+__device__ uint8_t wrapping_add_8(uint8_t a, uint8_t b) {
+    return (a + b) & 0xFF;
+}
+
+// Wrapping Mul u8
+__device__ uint8_t wrapping_mul_8(uint8_t a, uint8_t b) {
+    return (a * b) & 0xFF;
+}
+
 // Octonion
 __device__ void octonion_multiply(const i64 *a, const i64 *b, i64 *result) {
     volatile i64 res[8];
@@ -373,6 +383,12 @@ extern "C" {
             for (int i = 0; i < 32; i++) {
                 product[i] ^= sha3_hash[i];
                 product_before_oct[i] = product[i];
+            }
+
+            // XOR the nibble_product with the original hash   
+            #pragma unroll
+            for (int i = 0; i < 32; i++) {
+                nibble_product[i] ^= sha3_hash[i];
             }
 
             // ** Octonion**

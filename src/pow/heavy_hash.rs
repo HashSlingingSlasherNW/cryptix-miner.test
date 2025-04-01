@@ -406,6 +406,7 @@ impl Matrix {
     
         // XOR the product with the original hash   
         product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
+        nibble_product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
         let product_before_oct = product.clone();
 
