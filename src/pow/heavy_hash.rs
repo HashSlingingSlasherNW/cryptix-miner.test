@@ -97,48 +97,34 @@ impl Matrix {
         }
         rank
     }
-
-    /* 
-    // Sin Lookup
-    const SIN_LOOKUP: [u8; 360] = [
-        0, 4, 8, 13, 17, 22, 26, 31, 35, 39, 44, 48, 53, 57, 61, 65, 70, 74, 78, 83, 87, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127, 131, 135, 138, 142, 146, 149, 153, 156, 160,
-        163, 167, 170, 173, 177, 180, 183, 186, 189, 192, 195, 198, 200, 203, 206, 208, 211, 213, 216, 218, 220, 223, 225, 227, 229, 231, 232, 234, 236, 238, 239, 241, 242, 243, 245, 246, 247, 248, 249, 250,
-        251, 251, 252, 253, 253, 254, 254, 254, 254, 254, 255, 254, 254, 254, 254, 254, 253, 253, 252, 251, 251, 250, 249, 248, 247, 246, 245, 243, 242, 241, 239, 238, 236, 234, 232, 231, 229, 227, 225, 223,
-        220, 218, 216, 213, 211, 208, 206, 203, 200, 198, 195, 192, 189, 186, 183, 180, 177, 173, 170, 167, 163, 160, 156, 153, 149, 146, 142, 138, 135, 131, 127, 123, 119, 115, 111, 107, 103, 99, 95, 91,
-        87, 83, 78, 74, 70, 65, 61, 57, 53, 48, 44, 39, 35, 31, 26, 22, 17, 13, 8, 4, 0, 4, 8, 13, 17, 22, 26, 31, 35, 39, 44, 48, 53, 57, 61, 65, 70, 74, 78, 83,
-        87, 91, 95, 99, 103, 107, 111, 115, 119, 123, 127, 131, 135, 138, 142, 146, 149, 153, 156, 160, 163, 167, 170, 173, 177, 180, 183, 186, 189, 192, 195, 198, 200, 203, 206, 208, 211, 213, 216, 218,
-        220, 223, 225, 227, 229, 231, 232, 234, 236, 238, 239, 241, 242, 243, 245, 246, 247, 248, 249, 250, 251, 251, 252, 253, 253, 254, 254, 254, 254, 254, 255, 254, 254, 254, 254, 254, 253, 253, 252, 251,
-        251, 250, 249, 248, 247, 246, 245, 243, 242, 241, 239, 238, 236, 234, 232, 231, 229, 227, 225, 223, 220, 218, 216, 213, 211, 208, 206, 203, 200, 198, 195, 192, 189, 186, 183, 180, 177, 173, 170, 167,
-        163, 160, 156, 153, 149, 146, 142, 138, 135, 131, 127, 123, 119, 115, 111, 107, 103, 99, 95, 91, 87, 83, 78, 74, 70, 65, 61, 57, 53, 48, 44, 39, 35, 31, 26, 22, 17, 13, 8, 4
-    ];
-
-    // Sinusoidal Multiply
+    
+    // Sinusoidal (It needs to be tested in the testnet first due to arch rounding errors)
     fn sinusoidal_multiply(sinus_in: u8) -> u8 {
         let mut left = (sinus_in >> 4) & 0x0F; 
-        let mut right = sinus_in & 0x0F;
-
-        for _ in 0..16 {
+        let mut right = sinus_in & 0x0F;  
+    
+        for _i in 0..16 {
             let temp = right;
-            right = (left ^ ((right * 31 + 13) & 0xFF) ^ (right >> 3) ^ (right * 5)) & 0x0F;
+            right = (left ^ ((right * 31 + 13) & 0xFF) ^ (right >> 3) ^ (right * 5)) & 0x0F; 
             left = temp;
         }
-
-        let complex_op = (left * right + 97) & 0xFF;
+    
+        let complex_op = (left * right + 97) & 0xFF; 
         let nonlinear_op = (complex_op ^ (right >> 4) ^ (left * 11)) & 0xFF;
-
-        let index = (sinus_in as usize) % 360;
-        let sin_value = Self::SIN_LOOKUP[index];
-
-        let modulated_value = (sin_value ^ (sin_value >> 3) ^ (sin_value << 1) ^ 0xA5) & 0xFF;
+    
+        let angle: f32 = (sinus_in as u16 % 360) as f32 * (3.14159265359f32 / 180.0f32);
+        let sin_value: f32 = angle.sin();
+        let sin_lookup = (f32::abs(sin_value) * 255.0) as u8;  
+    
+        let modulated_value = (sin_lookup ^ (sin_lookup >> 3) ^ (sin_lookup << 1) ^ 0xA5) & 0xFF;
         let sbox_val = ((modulated_value ^ (modulated_value >> 4)) * 43 + 17) & 0xFF;
-        let obfuscated = sbox_val.rotate_right(2) ^ 0xF3 ^ 0xA5;
-
-        let sinus_out = ((obfuscated as u16 ^ (sbox_val as u16 * 7) ^ nonlinear_op as u16) + 0xF1) as u8;
-
+        let obfuscated = ((sbox_val >> 2) | (sbox_val << 6)) ^ 0xF3 ^ 0xA5;
+    
+        let sinus_out = ((obfuscated ^ (sbox_val * 7) ^ nonlinear_op) + 0xF1) & 0xFF;
+    
         sinus_out
     }
-    */
-    
+
     // Octionion Multiply
     fn octonion_multiply(a: &[i64; 8], b: &[i64; 8]) -> [i64; 8] {
         let mut result = [0; 8];
