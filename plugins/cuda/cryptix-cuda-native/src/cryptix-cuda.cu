@@ -99,7 +99,7 @@ __device__ u64 wrapping_mul(i64 a, i64 b) {
     return low;  
 }
 
-// Wrapping Add 8
+// Wrapping Add u8
 __device__ uint8_t wrapping_add_8(uint8_t a, uint8_t b) {
     return (a + b) & 0xFF;
 }
@@ -348,26 +348,35 @@ extern "C" {
                                     ^ ((wrapping_mul(product1, 0xABCD) >> 12) & 0xF) 
                                     ^ ((wrapping_mul(product1, 0x1234) >> 8) & 0xF)
                                     ^ ((wrapping_mul(product2, 0x5678) >> 16) & 0xF)
-                                    ^ ((wrapping_mul(product3, 0x9ABC) >> 4) & 0xF);
+                                    ^ ((wrapping_mul(product3, 0x9ABC) >> 4) & 0xF)
+                                    ^ (((product1 << 3) | (product1 >> (32 - 3))) & 0xF)
+                                    ^ (((product3 >> 5) | (product3 << (32 - 5))) & 0xF); 
 
                 // B
                 uint32_t b_nibble = (product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product4 >> 8) & 0xF) 
                                     ^ ((wrapping_mul(product2, 0xDCBA) >> 14) & 0xF)
                                     ^ ((wrapping_mul(product2, 0x8765) >> 10) & 0xF) 
-                                    ^ ((wrapping_mul(product1, 0x4321) >> 6) & 0xF);
+                                    ^ ((wrapping_mul(product1, 0x4321) >> 6) & 0xF)
+                                    ^ (((product4 << 2) | (product4 >> (32 - 2))) & 0xF) 
+                                    ^ (((product1 >> 1) | (product1 << (32 - 1))) & 0xF); 
 
                 // C
                 uint32_t c_nibble = (product3 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF) 
                                     ^ ((wrapping_mul(product3, 0xF135) >> 10) & 0xF)
                                     ^ ((wrapping_mul(product3, 0x2468) >> 12) & 0xF) 
                                     ^ ((wrapping_mul(product4, 0xACEF) >> 8) & 0xF)
-                                    ^ ((wrapping_mul(product2, 0x1357) >> 4) & 0xF);
+                                    ^ ((wrapping_mul(product2, 0x1357) >> 4) & 0xF)
+                                    ^ (((product3 << 5) | (product3 >> (32 - 5))) & 0xF)
+                                    ^ (((product1 >> 7) | (product1 << (32 - 7))) & 0xF);
 
                 // D
                 uint32_t d_nibble = (product1 & 0xF) ^ ((product4 >> 4) & 0xF) ^ ((product1 >> 8) & 0xF)
                                     ^ ((wrapping_mul(product4, 0x57A3) >> 6) & 0xF)
                                     ^ ((wrapping_mul(product3, 0xD4E3) >> 12) & 0xF)
-                                    ^ ((wrapping_mul(product1, 0x9F8B) >> 10) & 0xF);
+                                    ^ ((wrapping_mul(product1, 0x9F8B) >> 10) & 0xF)
+                                    ^ (((product4 << 4) | (product4 >> (32 - 4))) & 0xF) 
+                                    ^ ((product1 + product2) & 0xF);
+
             
                 // Store in product array
                 product[rowId] = static_cast<u8>((a_nibble << 4) | b_nibble);
