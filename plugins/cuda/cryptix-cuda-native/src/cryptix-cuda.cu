@@ -413,23 +413,23 @@ extern "C" {
                 uint8_t* source_array;
                 uint8_t rotate_left_val, rotate_right_val;
             
-                if (i_u8 < 16) { source_array = product; rotate_left_val = nibble_product[3] ^ 0x4F; rotate_right_val = sha3_hash[2] ^ 0xD3; }
-                    else if (i_u8 < 32) { source_array = sha3_hash; rotate_left_val = product[7] ^ 0xA6; rotate_right_val = nibble_product[5] ^ 0x5B; }
-                    else if (i_u8 < 48) { source_array = nibble_product; rotate_left_val = product_before_oct[1] ^ 0x9C; rotate_right_val = product[0] ^ 0x8E; }
-                    else if (i_u8 < 64) { source_array = sha3_hash; rotate_left_val = product[6] ^ 0x71; rotate_right_val = product_before_oct[3] ^ 0x2F; }
-                    else if (i_u8 < 80) { source_array = product_before_oct; rotate_left_val = nibble_product[4] ^ 0xB2; rotate_right_val = sha3_hash[7] ^ 0x6D; }
-                    else if (i_u8 < 96) { source_array = sha3_hash; rotate_left_val = product[0] ^ 0x58; rotate_right_val = nibble_product[1] ^ 0xEE; }
-                    else if (i_u8 < 112) { source_array = product; rotate_left_val = product_before_oct[2] ^ 0x37; rotate_right_val = sha3_hash[6] ^ 0x44; }
-                    else if (i_u8 < 128) { source_array = sha3_hash; rotate_left_val = product[5] ^ 0x1A; rotate_right_val = sha3_hash[4] ^ 0x7C; }
-                    else if (i_u8 < 144) { source_array = product_before_oct; rotate_left_val = nibble_product[3] ^ 0x93; rotate_right_val = product[2] ^ 0xAF; }
-                    else if (i_u8 < 160) { source_array = sha3_hash; rotate_left_val = product[7] ^ 0x29; rotate_right_val = nibble_product[5] ^ 0xDC; }
-                    else if (i_u8 < 176) { source_array = nibble_product; rotate_left_val = product_before_oct[1] ^ 0x4E; rotate_right_val = sha3_hash[0] ^ 0x8B; }
-                    else if (i_u8 < 192) { source_array = sha3_hash; rotate_left_val = nibble_product[6] ^ 0xF3; rotate_right_val = product_before_oct[3] ^ 0x62; }
-                    else if (i_u8 < 208) { source_array = product_before_oct; rotate_left_val = product[4] ^ 0xB7; rotate_right_val = product[7] ^ 0x15; }
-                    else if (i_u8 < 224) { source_array = sha3_hash; rotate_left_val = product[0] ^ 0x2D; rotate_right_val = product_before_oct[1] ^ 0xC8; }
-                    else if (i_u8 < 240) { source_array = product; rotate_left_val = product_before_oct[2] ^ 0x6F; rotate_right_val = nibble_product[6] ^ 0x99; }
-                    else { source_array = sha3_hash; rotate_left_val = nibble_product[5] ^ 0xE1; rotate_right_val = sha3_hash[4] ^ 0x3B; }
-                      
+                if (i_u8 < 16) { source_array = product; rotate_left_val = ((nibble_product[3] ^ 0x4F) * 3) % 256; rotate_right_val = ((sha3_hash[2] ^ 0xD3) * 5) % 256; }
+                    else if (i_u8 < 32) { source_array = sha3_hash; rotate_left_val = ((product[7] ^ 0xA6) * 2) % 256; rotate_right_val = ((nibble_product[5] ^ 0x5B) * 7) % 256; }
+                    else if (i_u8 < 48) { source_array = nibble_product; rotate_left_val = ((product_before_oct[1] ^ 0x9C) * 9) % 256; rotate_right_val = ((product[0] ^ 0x8E) * 3) % 256; }
+                    else if (i_u8 < 64) { source_array = sha3_hash; rotate_left_val = ((product[6] ^ 0x71) * 4) % 256; rotate_right_val = ((product_before_oct[3] ^ 0x2F) * 5) % 256; }
+                    else if (i_u8 < 80) { source_array = product_before_oct; rotate_left_val = ((nibble_product[4] ^ 0xB2) * 3) % 256; rotate_right_val = ((sha3_hash[7] ^ 0x6D) * 7) % 256; }
+                    else if (i_u8 < 96) { source_array = sha3_hash; rotate_left_val = ((product[0] ^ 0x58) * 6) % 256; rotate_right_val = ((nibble_product[1] ^ 0xEE) * 9) % 256; }
+                    else if (i_u8 < 112) { source_array = product; rotate_left_val = ((product_before_oct[2] ^ 0x37) * 2) % 256; rotate_right_val = ((sha3_hash[6] ^ 0x44) * 6) % 256; }
+                    else if (i_u8 < 128) { source_array = sha3_hash; rotate_left_val = ((product[5] ^ 0x1A) * 5) % 256; rotate_right_val = ((sha3_hash[4] ^ 0x7C) * 8) % 256; }
+                    else if (i_u8 < 144) { source_array = product_before_oct; rotate_left_val = ((nibble_product[3] ^ 0x93) * 7) % 256; rotate_right_val = ((product[2] ^ 0xAF) * 3) % 256; }
+                    else if (i_u8 < 160) { source_array = sha3_hash; rotate_left_val = ((product[7] ^ 0x29) * 9) % 256; rotate_right_val = ((nibble_product[5] ^ 0xDC) * 2) % 256; }
+                    else if (i_u8 < 176) { source_array = nibble_product; rotate_left_val = ((product_before_oct[1] ^ 0x4E) * 4) % 256; rotate_right_val = ((sha3_hash[0] ^ 0x8B) * 3) % 256; }
+                    else if (i_u8 < 192) { source_array = sha3_hash; rotate_left_val = ((nibble_product[6] ^ 0xF3) * 5) % 256; rotate_right_val = ((product_before_oct[3] ^ 0x62) * 8) % 256; }
+                    else if (i_u8 < 208) { source_array = product_before_oct; rotate_left_val = ((product[4] ^ 0xB7) * 6) % 256; rotate_right_val = ((product[7] ^ 0x15) * 2) % 256; }
+                    else if (i_u8 < 224) { source_array = sha3_hash; rotate_left_val = ((product[0] ^ 0x2D) * 8) % 256; rotate_right_val = ((product_before_oct[1] ^ 0xC8) * 7) % 256; }
+                    else if (i_u8 < 240) { source_array = product; rotate_left_val = ((product_before_oct[2] ^ 0x6F) * 3) % 256; rotate_right_val = ((nibble_product[6] ^ 0x99) * 9) % 256; }
+                    else { source_array = sha3_hash; rotate_left_val = ((nibble_product[5] ^ 0xE1) * 7) % 256; rotate_right_val = ((sha3_hash[4] ^ 0x3B) * 5) % 256; }
+                                
                 uint8_t value = 
                     (i_u8 < 16) ? (uint8_t)((product[i_u8 % 32] * 0x03 + i_u8 * 0xAA) & 0xFF) :
                     (i_u8 < 32) ? (uint8_t)((sha3_hash[(i_u8 - 16) % 32] * 0x05 + (i_u8 - 16) * 0xBB) & 0xFF) :
