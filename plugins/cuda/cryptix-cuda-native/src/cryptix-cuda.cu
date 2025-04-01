@@ -53,6 +53,7 @@ __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_ve
     *ret = res;
 }
 
+/*
 // Sinusoidal (It needs to be tested in the testnet first due to arch rounding errors)
 __device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_out) {
     uint8_t left = (sinus_in >> 4) & 0x0F;  
@@ -78,6 +79,7 @@ __device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_
 
     sinus_out = ((obfuscated ^ (sbox_val * 7) ^ nonlinear_op) + 0xF1) & 0xFF;
 }
+*/
 
 // Rotate left
 __device__ __inline__ uint8_t rotate_left(uint8_t value, int shift) {
