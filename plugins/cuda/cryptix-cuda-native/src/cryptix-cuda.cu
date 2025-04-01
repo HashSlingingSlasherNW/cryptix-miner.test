@@ -81,6 +81,81 @@ __device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_
 }
 */
 
+/*
+// ***Complex Lookup Table***
+__device__ uint32_t chaotic_random(uint32_t x) {
+    for (int i = 0; i < 5; i++) {
+        x = (x * 3646246005U) << 13 | (x >> (32 - 13));
+        x ^= 0xA5A5A5A5;
+    }
+    return x;
+}
+
+__device__ std::vector<uint32_t> prime_factors(uint32_t n) {
+    std::vector<uint32_t> factors;
+    uint32_t i = 2;
+    while (i * i <= n) {
+        while (n % i == 0) {
+            factors.push_back(i);
+            n /= i;
+        }
+        i += 1;
+    }
+    if (n > 1) {
+        factors.push_back(n);
+    }
+    return factors;
+}
+
+__device__ uint32_t serial_dependency(uint32_t x, uint8_t rounds) {
+    for (int i = 0; i < rounds; i++) {
+        x = (x * 3 + 5) << 7 | (x >> (32 - 7)); 
+        x ^= chaotic_random(x);
+    }
+    return x;
+}
+
+__device__ uint8_t unpredictable_depth(uint32_t x) {
+    uint32_t noise = chaotic_random(x) & 0xF;
+    return 10 + (uint8_t)noise;
+}
+
+__device__ uint8_t recursive_multiplication_with_randomness(uint8_t dynlut_input) {
+    uint8_t depth = unpredictable_depth((uint32_t)dynlut_input);
+    return (uint8_t)(serial_dependency((uint32_t)dynlut_input, depth) & 0xFF);
+}
+
+__device__ uint8_t recursive_multiplication_with_factors(uint8_t dynlut_input, uint8_t depth) {
+    uint32_t result = (uint32_t)dynlut_input;
+
+    for (int i = 0; i < depth; i++) {
+        std::vector<uint32_t> factors = prime_factors(result);
+        for (auto factor : factors) {
+            result = (result * factor) & 0xFFFFFFF;
+        }
+        result = (result * 3893621) & 0xFFFFFFF;
+    }
+
+    return (uint8_t)(result & 0xFF);
+}
+
+__device__ uint8_t dynamic_depth_multiplication(uint8_t dynlut_input) {
+    return recursive_multiplication_with_randomness(dynlut_input);
+}
+
+__device__ uint8_t complex_lookup_table(uint8_t dynlut_input) {
+    uint8_t dynlut_out = dynamic_depth_multiplication(dynlut_input);
+    return dynlut_out;
+}
+
+__global__ void process_complex_lookup_table(uint8_t *input, uint8_t *output, int num_elements) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < num_elements) {
+        output[idx] = complex_lookup_table(input[idx]);
+    }
+}
+*/
+
 // Rotate left
 __device__ __inline__ uint8_t rotate_left(uint8_t value, int shift) {
     return (value << shift) | (value >> (8 - shift));

@@ -128,6 +128,7 @@ impl Matrix {
     }
     */
     
+    /*
     // ***Complex Lookup Table***
     fn chaotic_random(mut x: u32) -> u32 {
         for _ in 0..5 {
@@ -193,6 +194,7 @@ impl Matrix {
         let dynlut_out = Self::dynamic_depth_multiplication(dynlut_input);
         dynlut_out
     }
+    */
 
     /*
     let mut lookup_table = [0u8; 64];
