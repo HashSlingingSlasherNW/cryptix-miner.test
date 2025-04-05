@@ -6,23 +6,6 @@ use std::mem::MaybeUninit;
 pub struct Matrix(pub [[u16; 64]; 64]);
 
 impl Matrix {
-    // pub fn generate(hash: Hash) -> Self {
-    //     let mut generator = XoShiRo256PlusPlus::new(hash);
-    //     let mut mat = Matrix([[0u16; 64]; 64]);
-    //     loop {
-    //         for i in 0..64 {
-    //             for j in (0..64).step_by(16) {
-    //                 let val = generator.u64();
-    //                 for shift in 0..16 {
-    //                     mat.0[i][j + shift] = (val >> (4 * shift) & 0x0F) as u16;
-    //                 }
-    //             }
-    //         }
-    //         if mat.compute_rank() == 64 {
-    //             return mat;
-    //         }
-    //     }
-    // }
 
     #[inline(always)]
     pub fn generate(hash: Hash) -> Self {
@@ -340,15 +323,14 @@ impl Matrix {
             oct = Self::octonion_multiply(&oct, &rotation);
         }
     
-        // Return the resulting octonion after applying all rotations
+        // Return the resulting octonion 
         oct
     }    
 
     pub fn heavy_hash(&self, hash: Hash) -> Hash {
-        // Convert the hash to its byte representation
         let hash_bytes = hash.to_le_bytes();
            
-        // Create an array containing the nibbles (4-bit halves of the bytes)
+        // Create an array containing the nibbles
         let mut nibbles = [0u8; 64];
         for (i, &byte) in hash_bytes.iter().enumerate() {
             nibbles[2 * i] = byte >> 4;
@@ -418,7 +400,7 @@ impl Matrix {
         let product_before_oct = product.clone();
 
         // ** Octonion Function **
-        let octonion_result = Self::octonion_hash(&product); // Compute the octonion hash of the product
+        let octonion_result = Self::octonion_hash(&product);
         
         // XOR with i64 values - convert to u8
         for i in 0..32 {

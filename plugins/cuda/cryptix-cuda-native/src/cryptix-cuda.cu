@@ -574,6 +574,7 @@ extern "C" {
 
                 memcpy(sbox, temp_sbox, 256);
             }
+         
 
             // Blake3 Chaining
             size_t index_blake = ((size_t)product_before_oct[5] % 8) + 1;  
