@@ -284,7 +284,7 @@ checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 
 [[package]]
 name = "cryptix-miner"
-version = "0.2.6-GPU-0.7-cryptix"
+version = "0.2.8-GPU-0.8-cryptix"
 dependencies = [
  "async-trait",
  "blake2b_simd",

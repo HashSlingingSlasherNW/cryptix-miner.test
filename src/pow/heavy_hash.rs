@@ -98,6 +98,7 @@ impl Matrix {
         rank
     }
     
+    
     /*
     // ***Sinusoidal*** 
     // It needs to be tested in the testnet first due to arch rounding errors)
@@ -416,15 +417,14 @@ impl Matrix {
 
         let product_before_oct = product.clone();
 
-
         // ** Octonion Function **
         let octonion_result = Self::octonion_hash(&product); // Compute the octonion hash of the product
         
-        // XOR with u64 values - convert to u8
+        // XOR with i64 values - convert to u8
         for i in 0..32 {
             let oct_value = octonion_result[i / 8];
             
-            // Extract the relevant byte from the u64 value
+            // Extract the relevant byte from the i64 value
             let oct_value_u8 = ((oct_value >> (8 * (i % 8))) & 0xFF) as u8; 
 
             // XOR the values and store the result in the product
@@ -434,6 +434,7 @@ impl Matrix {
         // Debug before Sbox
         // println!("Product before calculation: {:?}", product);
 
+        
         // **Nonlinear S-Box**
         let mut sbox: [u8; 256] = [0; 256];
 
@@ -513,7 +514,8 @@ impl Matrix {
 
             sbox = temp_sbox;
         }
-
+        
+        
         // Blake3 Chaining
         let index_blake = ((product_before_oct[5] % 8) + 1) as usize;  
         let iterations_blake = 1 + (product[index_blake] % 3);
@@ -534,6 +536,7 @@ impl Matrix {
         // let sinus_in = product.clone();    
         // let sinus_out = Self::sinusoidal_multiply(&sinus_in);
 
+        
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
