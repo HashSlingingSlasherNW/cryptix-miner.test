@@ -84,7 +84,7 @@ impl Matrix {
     // ***Anti FPGA Sidedoor***
     fn chaotic_random(mut x: u32) -> u32 {
         for _ in 0..5 {
-            x = x.wrapping_mul(3646246005).rotate_left(13) ^ 0xA5A5A5A5;
+            x = x.wrapping_mul(362605).rotate_left(13) ^ 0xA5A5A5A5;
         }
         x
     }
@@ -131,7 +131,7 @@ impl Matrix {
             for factor in factors {
                 result = result.wrapping_mul(factor);
             }
-            result = (result * 3893621) & 0x0FFFFFFF;
+            result = (result.wrapping_mul(38621)) & 0x0FFFFFFF;
         }
 
         (result & 0xFF) as u8
@@ -142,7 +142,7 @@ impl Matrix {
         let mut acc = seed;
     
         for i in 0..64 { 
-            acc = acc.wrapping_mul(1664525).rotate_left(11) ^ (i as u32);
+            acc = acc.wrapping_mul(16625).rotate_left(11) ^ (i as u32);
             state[i] = acc;
         }
     
@@ -198,6 +198,7 @@ impl Matrix {
 
         after_comp_product
     }
+    
     // ***Octionion Multiply***
     fn octonion_multiply(a: &[i64; 8], b: &[i64; 8]) -> [i64; 8] {
         let mut result = [0; 8];
