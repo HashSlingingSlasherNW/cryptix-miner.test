@@ -82,13 +82,6 @@ impl Matrix {
     }
 
     // ***Anti-FPGA Sidedoor***
-    fn chaotic_random(mut x: u32) -> u32 {
-        for _ in 0..3 { 
-            x = x.wrapping_mul(362605).rotate_left(13) ^ 0xA5A5A5A5;
-        }
-        x
-    }
-
     fn prime_factors(mut n: u32) -> Vec<u32> {
         let mut factors = Vec::new();
         let mut i = 2;
@@ -105,37 +98,11 @@ impl Matrix {
         factors
     }
 
-    fn serial_dependency(mut x: u32, rounds: u8) -> u32 {
-        let effective_rounds = rounds.min(5); 
-        for _ in 0..effective_rounds {
-            x = x.wrapping_mul(3).wrapping_add(5).rotate_left(7);
-            x ^= Self::chaotic_random(x);
+    fn chaotic_random(mut x: u32) -> u32 {
+        for _ in 0..3 { 
+            x = x.wrapping_mul(362605).rotate_left(13) ^ 0xA5A5A5A5;
         }
         x
-    }
-
-    fn unpredictable_depth(x: u32) -> u8 {
-        let noise = Self::chaotic_random(x) & 0x7; 
-        6 + (noise as u8) 
-    }
-
-    fn recursive_multiplication_with_randomness(dynlut_input: u8) -> u8 {
-        let depth = Self::unpredictable_depth(dynlut_input as u32);
-        Self::serial_dependency(dynlut_input as u32, depth) as u8
-    }
-
-    fn recursive_multiplication_with_factors(dynlut_input: u8, depth: u8) -> u8 {
-        let mut result = dynlut_input as u32;
-
-        for _ in 0..depth {
-            let factors = Self::prime_factors(result);
-            for factor in factors {
-                result = result.wrapping_mul(factor);
-            }
-            result = result.wrapping_mul(38621) & 0x0FFFFFFF;
-        }
-
-        (result & 0xFF) as u8
     }
 
     fn memory_intensive_mix(seed: u32) -> u32 {
@@ -179,6 +146,11 @@ impl Matrix {
         let noise = Self::memory_intensive_mix(x);
         let depth = ((noise & 0x0F) + 10) as u8; 
 
+        let factors = Self::prime_factors(x);
+        let prime_factor_sum = factors.iter().fold(0, |acc, &factor| acc + factor);
+
+        x ^= prime_factor_sum;
+
         x = Self::recursive_fibonacci_modulated(x ^ noise, depth);
         x ^= Self::memory_intensive_mix(x.rotate_left(9));
         x = x.wrapping_mul(0xA5A5A5A5).rotate_left((x % 29) as u32);
@@ -191,9 +163,10 @@ impl Matrix {
 
         for i in 0..32 {
             let input = pre_comp_product[i] as u32 ^ ((i as u32) << 8);
-            let modified_input = Self::recursive_multiplication_with_randomness(input as u8) as u32;
-            let final_input = Self::recursive_multiplication_with_factors(modified_input as u8, 2);
-            let hashed = Self::anti_fpga_hash(final_input as u32);
+            let normalized_input = input % 256;
+            let modified_input = Self::chaotic_random(normalized_input);
+
+            let hashed = Self::anti_fpga_hash(modified_input);
             after_comp_product[i] = (hashed & 0xFF) as u8;
         }
 
@@ -510,13 +483,8 @@ impl Matrix {
         }
 
         // Anti FPGA Sidedoor
-
         let pre_comp_product: [u8; 32] = product;
-        println!("Before (pre_comp_product): {:?}", pre_comp_product);
-
         let after_comp_product = Self::compute_after_comp_product(pre_comp_product);
-
-        println!("After  (after_comp_product): {:?}", after_comp_product);
         
         // Blake3 Chaining
         let index_blake = ((product_before_oct[5] % 8) + 1) as usize;  
