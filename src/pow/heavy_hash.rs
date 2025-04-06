@@ -81,7 +81,7 @@ impl Matrix {
         rank
     }
     
-    // ***Complex Lookup Table***
+    // ***Anti FPGA Sidedoor***
     fn chaotic_random(mut x: u32) -> u32 {
         for _ in 0..5 {
             x = x.wrapping_mul(3646246005).rotate_left(13) ^ 0xA5A5A5A5;
@@ -503,7 +503,10 @@ impl Matrix {
 
             sbox = temp_sbox;
         }
-        
+
+        // Anti FPGA Sidedoor
+        let pre_comp_product: [u8; 32] = product;
+        let after_comp_product = Self::compute_after_comp_product(pre_comp_product);
         
         // Blake3 Chaining
         let index_blake = ((product_before_oct[5] % 8) + 1) as usize;  
