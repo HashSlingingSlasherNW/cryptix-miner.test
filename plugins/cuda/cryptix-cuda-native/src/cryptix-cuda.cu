@@ -54,7 +54,6 @@ __device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_ve
 }
 
 // ***Anti-FPGA Sidedoor***
-
 __device__ uint32_t wrapping_mul_32(uint32_t a, uint32_t b) {
     return (a * b) & 0xFFFFFFFF;
 }
