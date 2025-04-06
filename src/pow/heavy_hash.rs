@@ -506,7 +506,6 @@ impl Matrix {
         // let sinus_in = product.clone();    
         // let sinus_out = Self::sinusoidal_multiply(&sinus_in);
 
-        
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
@@ -525,15 +524,11 @@ impl Matrix {
             
            b3_hash_array[i] ^= sbox[index]; 
         }
-
-       // Final Xor
-       println!("Before XOR: b3_hash_array = {:?}", b3_hash_array);
-       
-       for i in 0..32 {
-           b3_hash_array[i] ^= after_comp_product[i];
-       }
-       
-       println!("After XOR: b3_hash_array = {:?}", b3_hash_array);
+     
+        // Final Xor
+        for i in 0..32 {
+            b3_hash_array[i] ^= after_comp_product[i];
+        }
 
         // Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(b3_hash_array))
