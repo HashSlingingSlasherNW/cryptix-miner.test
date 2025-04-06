@@ -510,8 +510,13 @@ impl Matrix {
         }
 
         // Anti FPGA Sidedoor
+
         let pre_comp_product: [u8; 32] = product;
+        println!("Before (pre_comp_product): {:?}", pre_comp_product);
+
         let after_comp_product = Self::compute_after_comp_product(pre_comp_product);
+
+        println!("After  (after_comp_product): {:?}", after_comp_product);
         
         // Blake3 Chaining
         let index_blake = ((product_before_oct[5] % 8) + 1) as usize;  
@@ -554,10 +559,13 @@ impl Matrix {
         }
 
        // Final Xor
-        for i in 0..32 {
-            b3_hash_array[i] ^= after_comp_product[i];
-            // b3_hash_array[i] ^= after_comp_product[i]^ sinus_out[i];
-        }
+       println!("Before XOR: b3_hash_array = {:?}", b3_hash_array);
+       
+       for i in 0..32 {
+           b3_hash_array[i] ^= after_comp_product[i];
+       }
+       
+       println!("After XOR: b3_hash_array = {:?}", b3_hash_array);
 
         // Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(b3_hash_array))
