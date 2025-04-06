@@ -108,7 +108,7 @@ impl Matrix {
     fn serial_dependency(mut x: u32, rounds: u8) -> u32 {
         for _ in 0..rounds {
             x = x.wrapping_mul(3).wrapping_add(5).rotate_left(7);
-            x ^= Self::chaotic_random(x);
+            x ^= Self::chaotic_random(x); 
         }
         x
     }
@@ -120,14 +120,14 @@ impl Matrix {
 
     fn recursive_multiplication_with_randomness(dynlut_input: u8) -> u8 {
         let depth = Self::unpredictable_depth(dynlut_input as u32);
-        Self::serial_dependency(dynlut_input as u32, depth) as u8
+        Self::serial_dependency(dynlut_input as u32, depth as u8) as u8
     }
 
     fn recursive_multiplication_with_factors(dynlut_input: u8, depth: u8) -> u8 {
         let mut result = dynlut_input as u32;
 
         for _ in 0..depth {
-            let factors = Self::prime_factors(result);
+            let factors = Self::prime_factors(result); 
             for factor in factors {
                 result = result.wrapping_mul(factor);
             }
@@ -188,13 +188,16 @@ impl Matrix {
 
         for i in 0..32 {
             let input = pre_comp_product[i] as u32 ^ ((i as u32) << 8);
-            let hashed = Self::anti_fpga_hash(input);
+
+            let modified_input = Self::recursive_multiplication_with_randomness(input as u8) as u32;
+
+            let final_input = Self::recursive_multiplication_with_factors(modified_input as u8, 3); 
+            let hashed = Self::anti_fpga_hash(final_input as u32);
             after_comp_product[i] = (hashed & 0xFF) as u8;
         }
 
         after_comp_product
     }
-
     // ***Octionion Multiply***
     fn octonion_multiply(a: &[i64; 8], b: &[i64; 8]) -> [i64; 8] {
         let mut result = [0; 8];
@@ -546,7 +549,12 @@ impl Matrix {
                         + i * 41) % 256;  
             
            b3_hash_array[i] ^= sbox[index]; 
-           // b3_hash_array[i] ^= sbox[index] ^ sinus_out;
+        }
+
+       // Final Xor
+        for i in 0..32 {
+            b3_hash_array[i] ^= after_comp_product[i];
+            // b3_hash_array[i] ^= after_comp_product[i]^ sinus_out[i];
         }
 
         // Final Cryptixhash v2
@@ -569,9 +577,9 @@ impl Matrix {
         let complex_op = (left * right + 97) & 0xFF; 
         let nonlinear_op = (complex_op ^ (right >> 4) ^ (left * 11)) & 0xFF;
     
-        let angle: f32 = (sinus_in as u16 % 360) as f32 * (3.14159265359f32 / 180.0f32);
-        let sin_value: f32 = angle.sin();
-        let sin_lookup = (f32::abs(sin_value) * 255.0) as u8;  
+        let angle: f64 = (sinus_in as u16 % 360) as f64 * (3.14159265359f64 / 180.0f64);
+        let sin_value: f64 = angle.sin();
+        let sin_lookup = (f64::abs(sin_value) * 255.0) as u8;  
     
         let modulated_value = (sin_lookup ^ (sin_lookup >> 3) ^ (sin_lookup << 1) ^ 0xA5) & 0xFF;
         let sbox_val = ((modulated_value ^ (modulated_value >> 4)) * 43 + 17) & 0xFF;
