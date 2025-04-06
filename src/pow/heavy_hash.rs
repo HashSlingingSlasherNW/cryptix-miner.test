@@ -138,23 +138,23 @@ impl Matrix {
     }
 
     fn memory_intensive_mix(seed: u32) -> u32 {
-        let mut state = vec![0u32; 256];
+        let mut state = vec![0u32; 64];  
         let mut acc = seed;
-
-        for i in 0..256 {
+    
+        for i in 0..64 { 
             acc = acc.wrapping_mul(1664525).rotate_left(11) ^ (i as u32);
             state[i] = acc;
         }
-
+    
         for _ in 0..3 {
-            for i in 0..256 {
-                let index = (state[i] ^ acc) as usize % 256;
+            for i in 0..64 {  
+                let index = (state[i] ^ acc) as usize % 64; 
                 acc = acc.wrapping_add(state[index]).rotate_left((acc % 31) as u32);
                 state[i] ^= acc;
             }
         }
-
-        acc ^ state[(acc as usize) % 256]
+    
+        acc ^ state[(acc as usize) % 64] 
     }
 
     fn recursive_fibonacci_modulated(mut x: u32, depth: u8) -> u32 {
