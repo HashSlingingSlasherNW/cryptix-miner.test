@@ -497,7 +497,7 @@ impl Matrix {
             b3_hash_array[i] ^= after_comp_product[i];
         }
 
-        println!("hash after: {:?}", b3_hash_array);
+        // println!("hash after: {:?}", b3_hash_array);
 
         // Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(b3_hash_array))
