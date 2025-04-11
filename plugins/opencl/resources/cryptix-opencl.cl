@@ -17,6 +17,83 @@ typedef int int32_t;
 typedef ulong uint64_t;
 typedef long int64_t;
 
+
+
+
+ /******** The Blake3 permutation ********/
+
+__constant uint IV[8] = {
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
+};
+
+__constant uchar MSG_PERMUTATION[7][16] = {
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15 },
+    { 2, 6, 3,10, 7, 0, 4,13, 1,11,12, 5, 9,14,15, 8 },
+    { 3, 4,10,12,13, 2, 7,14, 6, 5, 9, 0,11,15, 8, 1 },
+    {10, 7,12, 9,14, 3,13,15, 4, 0,11, 2, 5, 8, 1, 6 },
+    {12,13, 9,11,15,10,14, 8, 7, 2, 5, 3, 0, 1, 6, 4 },
+    { 9,14,11, 5, 8,12,15, 1,13, 3, 0,10, 2, 6, 4, 7 },
+    {11,15, 5, 0, 1, 9, 8, 6,14,10, 2,12, 3, 4, 7,13 }
+};
+
+uint rotr(uint x, uint n) {
+    return (x >> n) | (x << (32 - n));
+}
+
+void g(uint* a, uint* b, uint* c, uint* d, uint x, uint y) {
+    *a = *a + *b + x;
+    *d = rotr(*d ^ *a, 16);
+    *c = *c + *d;
+    *b = rotr(*b ^ *c, 12);
+    *a = *a + *b + y;
+    *d = rotr(*d ^ *a, 8);
+    *c = *c + *d;
+    *b = rotr(*b ^ *c, 7);
+}
+
+void round_fn(uint v[16], const uint m[16], int round) {
+    const uchar* p = MSG_PERMUTATION[round];
+
+    // Mix columns
+    g(&v[0], &v[4], &v[8],  &v[12], m[p[0]], m[p[1]]);
+    g(&v[1], &v[5], &v[9],  &v[13], m[p[2]], m[p[3]]);
+    g(&v[2], &v[6], &v[10], &v[14], m[p[4]], m[p[5]]);
+    g(&v[3], &v[7], &v[11], &v[15], m[p[6]], m[p[7]]);
+    // Mix diagonals
+    g(&v[0], &v[5], &v[10], &v[15], m[p[8]],  m[p[9]]);
+    g(&v[1], &v[6], &v[11], &v[12], m[p[10]], m[p[11]]);
+    g(&v[2], &v[7], &v[8],  &v[13], m[p[12]], m[p[13]]);
+    g(&v[3], &v[4], &v[9],  &v[14], m[p[14]], m[p[15]]);
+}
+
+void compress(__global const uint *chaining_value, __global const uint *block_words,
+              uint counter, uint block_len, uint flags, __global uint *out) {
+
+    uint v[16];
+    uint m[16];
+
+    // Load message
+    for (int i = 0; i < 16; i++) m[i] = block_words[i];
+
+    // Initialize v
+    for (int i = 0; i < 8; i++) v[i] = chaining_value[i];
+    for (int i = 0; i < 8; i++) v[i + 8] = IV[i];
+
+    v[12] ^= counter;
+    v[13] ^= 0; // counter_hi
+    v[14] ^= block_len;
+    v[15] ^= flags;
+
+    // 7 rounds
+    for (int r = 0; r < 7; r++) round_fn(v, m, r);
+
+    for (int i = 0; i < 8; i++) {
+        out[i] = v[i] ^ v[i + 8];
+    }
+}
+
+
 /* TINY KECCAK */
 /** libkeccak-tiny
  *
