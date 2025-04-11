@@ -389,6 +389,16 @@ void STATIC inline _amul4bit(__constant uchar4 packed_vec1[32], uchar4 packed_ve
 #endif
 #define SWAP4( x ) as_uint( as_uchar4( x ).wzyx )
 
+
+__kernel void blake3_hash_kernel(
+    __global const uint *cv,
+    __global const uint *block,
+    __global uint *out
+) {
+    compress(cv, block, 0, 64, 0, out);
+}
+
+
 kernel void heavy_hash(
     const ulong local_size,
     const ulong nonce_mask,
