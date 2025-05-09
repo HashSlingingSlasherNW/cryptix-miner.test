@@ -1,3 +1,4 @@
+
 use crate::pow::{hasher::HeavyHasher, xoshiro::XoShiRo256PlusPlus};
 use crate::Hash;
 use std::mem::MaybeUninit;
@@ -391,8 +392,10 @@ impl Matrix {
                 else if i < 208 { (&product_before_oct, (product[4] ^ 0xB7).wrapping_mul(6) as u8, (product[7] ^ 0x15).wrapping_mul(2) as u8) }
                 else if i < 224 { (&hash_bytes, (product[0] ^ 0x2D).wrapping_mul(8) as u8, (product_before_oct[1] ^ 0xC8).wrapping_mul(7) as u8) }
                 else if i < 240 { (&product, (product_before_oct[2] ^ 0x6F).wrapping_mul(3) as u8, (nibble_product[6] ^ 0x99).wrapping_mul(9) as u8) }
-                else { (&hash_bytes, (nibble_product[5] ^ 0xE1).wrapping_mul(7) as u8, (hash_bytes[4] ^ 0x3B).wrapping_mul(5) as u8) };      
-        
+                else { (&hash_bytes, (nibble_product[5] ^ 0xE1).wrapping_mul(7) as u8, (hash_bytes[4] ^ 0x3B).wrapping_mul(5) as u8) }; 
+
+                // println!("End of iteration {}: source_array: {:?}, rotate_left_val: {:02X}, rotate_right_val: {:02X}", i, source_array, rotate_left_val, rotate_right_val);
+
             let value = 
                 if i < 16 { (product[i as usize % 32].wrapping_mul(0x03).wrapping_add(i.wrapping_mul(0xAA))) & 0xFF }
                 else if i < 32 { (hash_bytes[(i - 16) as usize % 32].wrapping_mul(0x05).wrapping_add((i - 16).wrapping_mul(0xBB))) & 0xFF }
@@ -409,7 +412,9 @@ impl Matrix {
                 else if i < 208 { (product[(i - 192) as usize % 32].wrapping_mul(0x2F).wrapping_add((i - 192).wrapping_mul(0x77))) & 0xFF }
                 else if i < 224 { (hash_bytes[(i - 208) as usize % 32].wrapping_mul(0x31).wrapping_add((i - 208).wrapping_mul(0x88))) & 0xFF }
                 else if i < 240 { (product_before_oct[(i - 224) as usize % 32].wrapping_mul(0x37).wrapping_add((i - 224).wrapping_mul(0x99))) & 0xFF }
-                else { (nibble_product[(i - 240) as usize % 32].wrapping_mul(0x3F).wrapping_add((i - 240).wrapping_mul(0xAA))) & 0xFF };           
+                else { (nibble_product[(i - 240) as usize % 32].wrapping_mul(0x3F).wrapping_add((i - 240).wrapping_mul(0xAA))) & 0xFF }; 
+                
+               // println!("i: {}, value: {:02X}", i, value);
         
             let rotate_left_shift = (product[(i as usize + 1) % product.len()] as u32 + i as u32) % 8;
             let rotate_right_shift = (hash_bytes[(i as usize + 2) % hash_bytes.len()] as u32 + i as u32) % 8;
@@ -419,6 +424,8 @@ impl Matrix {
         
             let index = (i as usize + rotation_left as usize + rotation_right as usize) % source_array.len();
             sbox[i as usize] = source_array[index] ^ value;
+
+            // println!("  SBox[{}]: {:02X}", i, sbox[i as usize]);
         }
 
         // Update Sbox Values
@@ -472,7 +479,7 @@ impl Matrix {
         // Sinus (Testnet)
         // let sinus_in = product.clone();    
         // let sinus_out = Self::sinusoidal_multiply(&sinus_in);
-
+ 
         // Apply S-Box to the product with XOR
         for i in 0..32 {
             let ref_array = match (i * 31) % 4 { 
@@ -491,12 +498,12 @@ impl Matrix {
             
            b3_hash_array[i] ^= sbox[index]; 
         }
-
+      
         // Final Xor
         for i in 0..32 {
             b3_hash_array[i] ^= after_comp_product[i];
         }
-
+         
         // println!("hash after: {:?}", b3_hash_array);
 
         // Final Cryptixhash v2
