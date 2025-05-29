@@ -90,7 +90,7 @@ impl Matrix {
     fn memory_intensive_mix(seed: u32) -> u32 {
         let mut acc = seed;
         for i in 0..32 {
-            acc = (acc * 16625) ^ i;
+            acc = (acc * 16625) ^ i; //over
         }
         acc
     }
