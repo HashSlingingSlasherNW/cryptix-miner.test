@@ -1,4 +1,4 @@
-integrations/hiveos/createmanifest.sh $1 $2
-mkdir $3
-cp h-manifest.conf integrations/hiveos/*.sh $2/* $3
-tar czvf $3-hiveos.tgz $3
+./createmanifest.sh $1 $2
+mkdir -p $3
+cp h-manifest.conf *.sh $2 $3/
+tar cvf $3.tar.gz $3

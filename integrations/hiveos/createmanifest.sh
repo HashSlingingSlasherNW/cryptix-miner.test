@@ -1,17 +1,9 @@
-####################################################################################
-###
-### cryptix-miner
-### https://github.com/cryptix-network/cryptix-miner/releases
-###
-### Hive integration: Merlin
-###
-####################################################################################
-
 if [ "$#" -ne "2" ]
-  then
+then
     echo "No arguments supplied. Call using createmanifest.sh <VERSION_NUMBER> <MINER BINARY NAME>"
-    exit
+    exit 1
 fi
+
 cat > h-manifest.conf << EOF
 ####################################################################################
 ###
@@ -23,7 +15,7 @@ cat > h-manifest.conf << EOF
 ####################################################################################
 
 # The name of the miner
-CUSTOM_NAME=cryptix-miner
+CUSTOM_NAME=cryptix_miner_hive_sheet_v029
 
 # Optional version of your custom miner package
 CUSTOM_VERSION=$1

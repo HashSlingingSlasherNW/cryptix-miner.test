@@ -1,13 +1,3 @@
-####################################################################################
-###
-### cryptix-miner
-### https://github.com/cryptix-network/cryptix-miner/releases
-###
-### Hive integration: Merlin
-###
-####################################################################################
-
-#!/usr/bin/env bash
 
 cd `dirname $0`
 

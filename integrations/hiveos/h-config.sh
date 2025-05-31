@@ -1,21 +1,10 @@
-####################################################################################
-###
-### cryptix-miner
-### https://github.com/cryptix-network/cryptix-miner/releases
-###
-### Hive integration: Merlin
-###
-####################################################################################
+[[ -e /hive/custom ]] && . /hive/custom/cryptix_miner_hive_sheet_v029/h-manifest.conf
+[[ -e /hive/miners/custom ]] && . /hive/miners/custom/cryptix_miner_hive_sheet_v029/h-manifest.conf
 
-#!/usr/bin/env bash
-[[ -e /hive/custom ]] && . /hive/custom/cryptix-miner/h-manifest.conf
-[[ -e /hive/miners/custom ]] && . /hive/miners/custom/cryptix-miner/h-manifest.conf
 conf=""
 conf+=" --cryptixd-address=$CUSTOM_URL --mining-address $CUSTOM_TEMPLATE"
-
 
 [[ ! -z $CUSTOM_USER_CONFIG ]] && conf+=" $CUSTOM_USER_CONFIG"
 
 echo "$conf"
 echo "$conf" > $CUSTOM_CONFIG_FILENAME
-
