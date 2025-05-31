@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. /hive/miners/custom/cryptix_miner_hive_sheet_v029/
+. /hive/miners/custom/cryptix_miner_hive_sheet_v029/h-manifest.conf
 
 stats_raw=$(grep -w "hashrate" "$CUSTOM_LOG_BASENAME.log" | tail -n 1)
 
@@ -71,7 +71,7 @@ if [ "$diffTime" -lt "$maxDelay" ]; then
         --argjson temp "$temp_json" \
         --arg uptime "$uptime" \
         --arg ths "$total_hashrate" \
-        '{hs: $hs, hs_units: "khs", algo: "heavyhash", ver: $ver, uptime: ($uptime|tonumber), bus_numbers: $bus_numbers, temp: $temp, fan: $fan}')
+       '{hs: $hs, hs_units: "khs", algo: "cryptix_ox8", ver: $ver, uptime: ($uptime|tonumber), bus_numbers: $bus_numbers, temp: $temp, fan: $fan}'
     khs=$total_hashrate
 else
     khs=0
