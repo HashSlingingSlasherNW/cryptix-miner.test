@@ -136,6 +136,148 @@ Connect a Pool:
 
 `-s --mining-address cryptix:XXXXX stratum+tcp://stratum.cryptix-network.org:13095 --threads 4 `
 
+### Hive OS
+This is the easiest way to get the miner running on HiveOS:
+
+Recommended setup:
+HiveOS Version: 0.6-229@250517 (latest),
+Kernel: 6.6.60,
+CUDA: 12.4,
+Ubuntu: 22.04,
+NVIDIA Driver: 550.144.03
+
+We cannot provide support for modified HiveOS systems or rigs that do not use the recommended setup. We also cannot support modified hardware and firmware.
+Via Flight Sheet
+
+How to use HiveOS Flight sheet
+
+Flight sheet
+
+    Open Flight Sheets
+
+Choose a generic coin like:
+
+    Coin: Other (Unsupported) or without any Algo
+
+Name:
+
+    Custom Miner Name: cryptix_miner_hive_sheet_v029
+
+Wallet
+
+    Enter your wallet address
+
+Pool
+
+    Choose: Configure in miner or Pool Address
+
+Miner
+
+    Choose: Custom
+    A form with the following fields will appear
+
+Custom miner configuration:
+
+    Installation URL:
+    https://github.com/cryptix-network/cryptix-miner/releases/download/v0.2.9/cryptix_miner_hive_sheet_v029.tar.gz
+
+Start it:
+
+    Click Create Flight Sheet
+    Assign it to your rig
+    Start Button
+
+sheet
+OR Via Shell
+
+Check CUDA (You need at least CUDA 12.4 - higher versions may also work. If not, switch to CUDA 12.4),
+Go to the HiveOS console (important: the console, not the HiveOS flight sheets),
+Use these commands one after the other in the correct order:,
+
+Create the Folder:
+mkdir cryptix
+cd cryptix
+
+Install the Miner Files:
+wget https://github.com/cryptix-network/cryptix-miner/releases/download/v0.2.9/cryptix-miner-hiveos-v-0-2-9.tar
+tar -xf cryptix-miner-hiveos-v-0-2-9.tar
+cd cryptix-miner-hiveos-v-0-2-9
+
+Start the Miner:
+./cryptix-miner -s "xxxxxxx" --mining-address="xxxxxxxxxx" -t "x"
+It is also possible to compile the PTX files for Cuda yourself from the CU file, so the CUDA file will definitely be suitable for the system.
+Compile by yourself: (Rust and Cargo must be installed on the system.)
+HiveOS
+
+git clone --branch hive-os https://github.com/cryptix-network/cryptix-miner.git
+cd cryptix-miner
+cargo build --release
+Linux
+
+git clone https://github.com/cryptix-network/cryptix-miner.git
+cd cryptix-miner
+cargo build --release
+Windows
+
+git clone https://github.com/cryptix-network/cryptix-miner.git
+cd cryptix-miner
+cargo build --release
+Compile own Cuda Files:
+Linux & HiveOS
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_50 --gpu-code=sm_50 -o plugins/cuda/resources/cryptix-cuda-sm50.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_52 --gpu-code=sm_52 -o plugins/cuda/resources/cryptix-cuda-sm52.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_60 --gpu-code=sm_60 -o plugins/cuda/resources/cryptix-cuda-sm60.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_61 --gpu-code=sm_61 -o plugins/cuda/resources/cryptix-cuda-sm61.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_62 --gpu-code=sm_62 -o plugins/cuda/resources/cryptix-cuda-sm62.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_70 --gpu-code=sm_70 -o plugins/cuda/resources/cryptix-cuda-sm70.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_72 --gpu-code=sm_72 -o plugins/cuda/resources/cryptix-cuda-sm72.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_75 --gpu-code=sm_75 -o plugins/cuda/resources/cryptix-cuda-sm75.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_80 --gpu-code=sm_80 -o plugins/cuda/resources/cryptix-cuda-sm80.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_86 --gpu-code=sm_86 -o plugins/cuda/resources/cryptix-cuda-sm86.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_87 --gpu-code=sm_87 -o plugins/cuda/resources/cryptix-cuda-sm87.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_89 --gpu-code=sm_89 -o plugins/cuda/resources/cryptix-cuda-sm89.ptx -Xptxas -O3 -Xcompiler -O3
+
+nvcc plugins/cuda/cryptix-cuda-native/src/cryptix-cuda.cu -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_90 --gpu-code=sm_90 -o plugins/cuda/resources/cryptix-cuda-sm90.ptx -Xptxas -O3 -Xcompiler -O3
+Windows:
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_50 --gpu-code=sm_50 -o "plugins\cuda\resources\cryptix-cuda-sm50.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_52 --gpu-code=sm_52 -o "plugins\cuda\resources\cryptix-cuda-sm52.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_60 --gpu-code=sm_60 -o "plugins\cuda\resources\cryptix-cuda-sm60.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_61 --gpu-code=sm_61 -o "plugins\cuda\resources\cryptix-cuda-sm61.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_62 --gpu-code=sm_62 -o "plugins\cuda\resources\cryptix-cuda-sm62.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_70 --gpu-code=sm_70 -o "plugins\cuda\resources\cryptix-cuda-sm70.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_72 --gpu-code=sm_72 -o "plugins\cuda\resources\cryptix-cuda-sm72.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_75 --gpu-code=sm_75 -o "plugins\cuda\resources\cryptix-cuda-sm75.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_80 --gpu-code=sm_80 -o "plugins\cuda\resources\cryptix-cuda-sm80.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_86 --gpu-code=sm_86 -o "plugins\cuda\resources\cryptix-cuda-sm86.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_87 --gpu-code=sm_87 -o "plugins\cuda\resources\cryptix-cuda-sm87.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_89 --gpu-code=sm_89 -o "plugins\cuda\resources\cryptix-cuda-sm89.ptx" -Xptxas -O3 -Xcompiler -O3
+
+nvcc "plugins\cuda\cryptix-cuda-native\src\cryptix-cuda.cu" -std=c++11 -O3 --restrict --ptx --gpu-architecture=compute_90 --gpu-code=sm_90 -o "plugins\cuda\resources\cryptix-cuda-sm90.ptx" -Xptxas -O3 -Xcompiler -O3
+
 
 ## Discord
 
