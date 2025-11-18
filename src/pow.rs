@@ -33,6 +33,7 @@ pub enum BlockSeed {
         nonce_mask: u64,
         nonce_fixed: u64,
         hash: Option<String>,
+        
     },
 }
 

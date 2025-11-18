@@ -447,31 +447,58 @@ extern "C" {
                 product[i] ^= oct_value_u8;
             }
 
-            // **Non-Linear S-Box**
+            // **Non-Linear S-Box** (Optimized)
             uint8_t sbox[256];
 
+            // Pre-calculate rotation values (only 16 unique calculations needed)
+            uint8_t rot_left_vals[16];
+            uint8_t rot_right_vals[16];
+            rot_left_vals[0] = ((nibble_product[3] ^ 0x4F) * 3) % 256;
+            rot_right_vals[0] = ((sha3_hash[2] ^ 0xD3) * 5) % 256;
+            rot_left_vals[1] = ((product[7] ^ 0xA6) * 2) % 256;
+            rot_right_vals[1] = ((nibble_product[5] ^ 0x5B) * 7) % 256;
+            rot_left_vals[2] = ((product_before_oct[1] ^ 0x9C) * 9) % 256;
+            rot_right_vals[2] = ((product[0] ^ 0x8E) * 3) % 256;
+            rot_left_vals[3] = ((product[6] ^ 0x71) * 4) % 256;
+            rot_right_vals[3] = ((product_before_oct[3] ^ 0x2F) * 5) % 256;
+            rot_left_vals[4] = ((nibble_product[4] ^ 0xB2) * 3) % 256;
+            rot_right_vals[4] = ((sha3_hash[7] ^ 0x6D) * 7) % 256;
+            rot_left_vals[5] = ((product[0] ^ 0x58) * 6) % 256;
+            rot_right_vals[5] = ((nibble_product[1] ^ 0xEE) * 9) % 256;
+            rot_left_vals[6] = ((product_before_oct[2] ^ 0x37) * 2) % 256;
+            rot_right_vals[6] = ((sha3_hash[6] ^ 0x44) * 6) % 256;
+            rot_left_vals[7] = ((product[5] ^ 0x1A) * 5) % 256;
+            rot_right_vals[7] = ((sha3_hash[4] ^ 0x7C) * 8) % 256;
+            rot_left_vals[8] = ((nibble_product[3] ^ 0x93) * 7) % 256;
+            rot_right_vals[8] = ((product[2] ^ 0xAF) * 3) % 256;
+            rot_left_vals[9] = ((product[7] ^ 0x29) * 9) % 256;
+            rot_right_vals[9] = ((nibble_product[5] ^ 0xDC) * 2) % 256;
+            rot_left_vals[10] = ((product_before_oct[1] ^ 0x4E) * 4) % 256;
+            rot_right_vals[10] = ((sha3_hash[0] ^ 0x8B) * 3) % 256;
+            rot_left_vals[11] = ((nibble_product[6] ^ 0xF3) * 5) % 256;
+            rot_right_vals[11] = ((product_before_oct[3] ^ 0x62) * 8) % 256;
+            rot_left_vals[12] = ((product[4] ^ 0xB7) * 6) % 256;
+            rot_right_vals[12] = ((product[7] ^ 0x15) * 2) % 256;
+            rot_left_vals[13] = ((product[0] ^ 0x2D) * 8) % 256;
+            rot_right_vals[13] = ((product_before_oct[1] ^ 0xC8) * 7) % 256;
+            rot_left_vals[14] = ((product_before_oct[2] ^ 0x6F) * 3) % 256;
+            rot_right_vals[14] = ((nibble_product[6] ^ 0x99) * 9) % 256;
+            rot_left_vals[15] = ((nibble_product[5] ^ 0xE1) * 7) % 256;
+            rot_right_vals[15] = ((sha3_hash[4] ^ 0x3B) * 5) % 256;
+
+            #pragma unroll 16
             for (int i = 0; i < 256; i++) {
                 uint8_t i_u8 = (uint8_t)i;
+                uint8_t block = i_u8 >> 4;  // Divide by 16
             
-                uint8_t* source_array;
-                uint8_t rotate_left_val, rotate_right_val;
-            
-                if (i_u8 < 16) { source_array = product; rotate_left_val = ((nibble_product[3] ^ 0x4F) * 3) % 256; rotate_right_val = ((sha3_hash[2] ^ 0xD3) * 5) % 256; }
-                    else if (i_u8 < 32) { source_array = sha3_hash; rotate_left_val = ((product[7] ^ 0xA6) * 2) % 256; rotate_right_val = ((nibble_product[5] ^ 0x5B) * 7) % 256; }
-                    else if (i_u8 < 48) { source_array = nibble_product; rotate_left_val = ((product_before_oct[1] ^ 0x9C) * 9) % 256; rotate_right_val = ((product[0] ^ 0x8E) * 3) % 256; }
-                    else if (i_u8 < 64) { source_array = sha3_hash; rotate_left_val = ((product[6] ^ 0x71) * 4) % 256; rotate_right_val = ((product_before_oct[3] ^ 0x2F) * 5) % 256; }
-                    else if (i_u8 < 80) { source_array = product_before_oct; rotate_left_val = ((nibble_product[4] ^ 0xB2) * 3) % 256; rotate_right_val = ((sha3_hash[7] ^ 0x6D) * 7) % 256; }
-                    else if (i_u8 < 96) { source_array = sha3_hash; rotate_left_val = ((product[0] ^ 0x58) * 6) % 256; rotate_right_val = ((nibble_product[1] ^ 0xEE) * 9) % 256; }
-                    else if (i_u8 < 112) { source_array = product; rotate_left_val = ((product_before_oct[2] ^ 0x37) * 2) % 256; rotate_right_val = ((sha3_hash[6] ^ 0x44) * 6) % 256; }
-                    else if (i_u8 < 128) { source_array = sha3_hash; rotate_left_val = ((product[5] ^ 0x1A) * 5) % 256; rotate_right_val = ((sha3_hash[4] ^ 0x7C) * 8) % 256; }
-                    else if (i_u8 < 144) { source_array = product_before_oct; rotate_left_val = ((nibble_product[3] ^ 0x93) * 7) % 256; rotate_right_val = ((product[2] ^ 0xAF) * 3) % 256; }
-                    else if (i_u8 < 160) { source_array = sha3_hash; rotate_left_val = ((product[7] ^ 0x29) * 9) % 256; rotate_right_val = ((nibble_product[5] ^ 0xDC) * 2) % 256; }
-                    else if (i_u8 < 176) { source_array = nibble_product; rotate_left_val = ((product_before_oct[1] ^ 0x4E) * 4) % 256; rotate_right_val = ((sha3_hash[0] ^ 0x8B) * 3) % 256; }
-                    else if (i_u8 < 192) { source_array = sha3_hash; rotate_left_val = ((nibble_product[6] ^ 0xF3) * 5) % 256; rotate_right_val = ((product_before_oct[3] ^ 0x62) * 8) % 256; }
-                    else if (i_u8 < 208) { source_array = product_before_oct; rotate_left_val = ((product[4] ^ 0xB7) * 6) % 256; rotate_right_val = ((product[7] ^ 0x15) * 2) % 256; }
-                    else if (i_u8 < 224) { source_array = sha3_hash; rotate_left_val = ((product[0] ^ 0x2D) * 8) % 256; rotate_right_val = ((product_before_oct[1] ^ 0xC8) * 7) % 256; }
-                    else if (i_u8 < 240) { source_array = product; rotate_left_val = ((product_before_oct[2] ^ 0x6F) * 3) % 256; rotate_right_val = ((nibble_product[6] ^ 0x99) * 9) % 256; }
-                    else { source_array = sha3_hash; rotate_left_val = ((nibble_product[5] ^ 0xE1) * 7) % 256; rotate_right_val = ((sha3_hash[4] ^ 0x3B) * 5) % 256; }
+                const uint8_t* source_array;
+                if (block == 0 || block == 6 || block == 14) source_array = product;
+                else if (block == 2 || block == 10) source_array = nibble_product;
+                else if (block == 4 || block == 8 || block == 12) source_array = product_before_oct;
+                else source_array = sha3_hash;
+                
+                uint8_t rotate_left_val = rot_left_vals[block];
+                uint8_t rotate_right_val = rot_right_vals[block];
                                 
                 uint8_t value = 
                     (i_u8 < 16) ? (uint8_t)((product[i_u8 % 32] * 0x03 + i_u8 * 0xAA) & 0xFF) :
@@ -504,34 +531,36 @@ extern "C" {
                 sbox[i] = source_array[index] ^ value;
             }
             
-            // Update Sbox Values
-            size_t index = ((size_t)product_before_oct[2] % 8) + 1;  
-            int iterations = 1 + (product[index] % 2);            
+            // Update Sbox Values (Optimized - no memcpy)
+            size_t sbox_idx = ((size_t)product_before_oct[2] % 8) + 1;  
+            int iterations = 1 + (product[sbox_idx] % 2);            
 
-            uint8_t temp_sbox[256];
-
-            #pragma unroll
+            #pragma unroll 2
             for (int iter = 0; iter < iterations; iter++) {
-                memcpy(temp_sbox, sbox, 256);
-
+                uint8_t temp_sbox[256];
+                
+                // Copy and transform in one pass
+                #pragma unroll 16
                 for (int i = 0; i < 256; i++) {
-                    uint8_t value = temp_sbox[i];
+                    uint8_t value = sbox[i];
 
                     uint8_t rotate_left_shift = (product[(i + 1) % 32] + i + (i * 3)) % 8;
                     uint8_t rotate_right_shift = (sha3_hash[(i + 2) % 32] + i + (i * 5)) % 8;
 
                     uint8_t rotated_value = rotate_left(value, rotate_left_shift) | rotate_right(value, rotate_right_shift);
 
-                    uint8_t base_value = static_cast<uint8_t>((i + (product[(i * 3) % 32] ^ sha3_hash[(i * 7) % 32])) & 0xFF) ^ 0xA5;
-                    uint8_t shifted_value = rotate_left(base_value, static_cast<uint32_t>(i % 8));
+                    uint8_t base_value = ((i + (product[(i * 3) % 32] ^ sha3_hash[(i * 7) % 32])) & 0xFF) ^ 0xA5;
+                    uint8_t shifted_value = rotate_left(base_value, i % 8);
                     uint8_t xor_value = shifted_value ^ 0x55;
 
-                    value ^= rotated_value ^ xor_value;
-
-                    temp_sbox[i] = value;
+                    temp_sbox[i] = value ^ rotated_value ^ xor_value;
                 }
-
-                memcpy(sbox, temp_sbox, 256);
+                
+                // Copy back
+                #pragma unroll 16
+                for (int i = 0; i < 256; i++) {
+                    sbox[i] = temp_sbox[i];
+                }
             }
 
             // Anti FPGA Sidedoor

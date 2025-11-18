@@ -308,11 +308,32 @@ impl StratumHandler {
                             ref extranonce,
                             ref nonce_size,
                         ))) => self.set_extranonce(extranonce.as_str(), nonce_size),
+                        StratumCommand::SetExtranonce(SetExtranonce::SetExtranoncePlainEth((
+                            ref extranonce,
+                        ))) => self.set_extranonce_eth(extranonce.as_str()),
                         StratumCommand::MiningSetDifficulty((ref difficulty,)) => self.set_difficulty(difficulty),
                         StratumCommand::MiningNotify(MiningNotify::MiningNotifyShort((id, header_hash, timestamp))) => {
                             self.block_template_ctr
                                 .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| Some((v + 1) % 10_000))
                                 .unwrap();
+                            miner
+                                .process_block(Some(PartialBlock {
+                                    id,
+                                    header_hash,
+                                    timestamp,
+                                    nonce: 0,
+                                    target: self.target_pool,
+                                    nonce_mask: self.nonce_mask,
+                                    nonce_fixed: self.nonce_fixed,
+                                    hash: None,
+                                }))
+                                .await
+                        }
+                        StratumCommand::MiningNotify(MiningNotify::MiningNotifyHeaderHex((id, header_hex, timestamp))) => {
+                            self.block_template_ctr
+                                .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| Some((v + 1) % 10_000))
+                                .unwrap();
+                            let header_hash = Self::hex32_to_u64x4(&header_hex)?;
                             miner
                                 .process_block(Some(PartialBlock {
                                     id,
@@ -395,10 +416,40 @@ impl StratumHandler {
     fn set_extranonce(&mut self, extranonce: &str, nonce_size: &u32) -> Result<(), Error> {
         self.extranonce = Some(extranonce.to_string());
         info!("Extra! {:?}", extranonce);
-        self.nonce_fixed = u64::from_str_radix(extranonce, 16)? << (nonce_size * 8);
+        let shift: u32 = (*nonce_size as u32).saturating_mul(8);
+        let val = u64::from_str_radix(extranonce, 16)?;
+        self.nonce_fixed = if shift >= 64 { 0 } else { val << shift };
         info!("Extra Done!");
-        self.nonce_mask = (1 << (nonce_size * 8)) - 1;
+        self.nonce_mask = if shift >= 64 { u64::MAX } else { (1u64 << shift) - 1u64 };
         Ok(())
+    }
+
+    fn set_extranonce_eth(&mut self, extranonce: &str) -> Result<(), Error> {
+        // Derive nonce_size from hex length (bytes)
+        let size_bytes: u32 = (extranonce.len() / 2) as u32;
+        self.extranonce = Some(extranonce.to_string());
+        info!("Extra(ETH)! {:?}", extranonce);
+        let shift: u32 = size_bytes.saturating_mul(8);
+        let val = u64::from_str_radix(extranonce, 16)?;
+        self.nonce_fixed = if shift >= 64 { 0 } else { val << shift };
+        self.nonce_mask = if shift >= 64 { u64::MAX } else { (1u64 << shift) - 1u64 };
+        Ok(())
+    }
+
+    fn hex32_to_u64x4(hex: &str) -> Result<[u64; 4], Error> {
+        // Expect 32 bytes (64 hex chars). If prefixed with 0x strip it.
+        let h = hex.strip_prefix("0x").unwrap_or(hex);
+        let bytes = hex::decode(h).map_err(|e| e.to_string())?;
+        if bytes.len() != 32 {
+            return Err(format!("expected 32-byte header hash, got {} bytes", bytes.len()).into());
+        }
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes[..32]);
+        let a0 = u64::from_le_bytes(arr[0..8].try_into().unwrap());
+        let a1 = u64::from_le_bytes(arr[8..16].try_into().unwrap());
+        let a2 = u64::from_le_bytes(arr[16..24].try_into().unwrap());
+        let a3 = u64::from_le_bytes(arr[24..32].try_into().unwrap());
+        Ok([a0, a1, a2, a3])
     }
 
     async fn log_shares(shares_info: Arc<ShareStats>) {

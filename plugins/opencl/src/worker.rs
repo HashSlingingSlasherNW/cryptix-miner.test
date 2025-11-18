@@ -320,30 +320,44 @@ impl OpenCLGPUWorker {
         })
     }
 }
-
 fn from_source(context: &Context, device: &Device, options: &str) -> Result<Program, String> {
     let version = device.version()?;
     let v = version.split(' ').nth(1).unwrap();
+    let platform_name = Platform::new(device.platform().unwrap())
+        .name()
+        .unwrap_or_else(|_| "Unknown".into())
+        .to_lowercase();
+
     let mut compile_options = options.to_string();
     compile_options += CL_MAD_ENABLE;
     compile_options += CL_FINITE_MATH_ONLY;
-    if v == "2.0" || v == "2.1" || v == "3.0" {
+
+    // NVIDIA: reports "OpenCL 3.0", but only supports real OpenCL 1.2 → CL2.0 breaks kernel args
+    //
+    if platform_name.contains("nvidia") {
+        info!("NVIDIA detected → forcing OpenCL 1.2");
+        compile_options += "-cl-std=CL1.2 ";
+    }
+    // AMD / Intel: use CL2.0 if supported; OpenCL 3.0 is backward compatible with CL2.0 features
+    else if v == "2.0" || v == "2.1" || v == "3.0" {
         info!("Compiling with OpenCl 2");
         compile_options += CL_STD_2_0;
     }
-    compile_options += &match Platform::new(device.platform().unwrap()).name() {
-        Ok(name) => format!(
-            "-D{} ",
-            name.chars()
-                .map(|c| match c.is_ascii_alphanumeric() {
-                    true => c,
-                    false => '_',
-                })
-                .collect::<String>()
-                .to_uppercase()
-        ),
-        Err(_) => String::new(),
-    };
+    //
+    // ------------------------
+    //
+
+    // Add platform macro
+    compile_options += &format!(
+        "-D{} ",
+        platform_name
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+            .collect::<String>()
+            .to_uppercase()
+    );
+
+    // NVIDIA compute capability defines
     compile_options += &match device.compute_capability_major_nv() {
         Ok(major) => format!("-D __COMPUTE_MAJOR__={} ", major),
         Err(_) => String::new(),
@@ -353,7 +367,7 @@ fn from_source(context: &Context, device: &Device, options: &str) -> Result<Prog
         Err(_) => String::new(),
     };
 
-    // Hack to recreate the AMD flags
+    // AMD flags
     compile_options += &match device.pcie_id_amd() {
         Ok(_) => {
             let device_name = device.name().unwrap_or_else(|_| "Unknown".into()).to_lowercase();
@@ -365,4 +379,5 @@ fn from_source(context: &Context, device: &Device, options: &str) -> Result<Prog
     info!("Build OpenCL with {}", compile_options);
 
     Program::create_and_build_from_source(context, PROGRAM_SOURCE, compile_options.as_str())
+
 }
