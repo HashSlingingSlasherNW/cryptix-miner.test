@@ -16,7 +16,7 @@ typedef union _uint256_t {
     uint8_t hash[32];
 } uint256_t;
 
-#define BLOCKDIM 1024
+#define BLOCKDIM 256
 #define MATRIX_SIZE 64
 #define HALF_MATRIX_SIZE 32
 #define QUARTER_MATRIX_SIZE 16
