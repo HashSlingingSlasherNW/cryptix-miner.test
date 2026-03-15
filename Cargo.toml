@@ -79,4 +79,4 @@ sha3 = "0.10"
 
 [workspace]
 members = ["plugins/*"]
-default-members = [".", "plugins/cuda", "plugins/opencl"]
+default-members = [".", "plugins/cuda"]
