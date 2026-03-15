@@ -214,7 +214,7 @@ impl StratumHandler {
                 .unwrap_or_else(|| Arc::new(AtomicU16::new((thread_rng().next_u64() % 10_000u64) as u16))),
             target_pool: Default::default(),
             target_real: Default::default(),
-            nonce_mask: 0,
+            nonce_mask: u64::MAX,
             nonce_fixed: 0,
             extranonce: None,
             last_stratum_id,
@@ -414,10 +414,25 @@ impl StratumHandler {
     }
 
     fn set_extranonce(&mut self, extranonce: &str, nonce_size: &u32) -> Result<(), Error> {
+        let extranonce = extranonce.strip_prefix("0x").or_else(|| extranonce.strip_prefix("0X")).unwrap_or(extranonce);
         self.extranonce = Some(extranonce.to_string());
         info!("Extra! {:?}", extranonce);
-        let shift: u32 = (*nonce_size as u32).saturating_mul(8);
-        let val = u64::from_str_radix(extranonce, 16)?;
+
+        let mut size_bytes = *nonce_size;
+        if size_bytes == 0 && !extranonce.is_empty() {
+            size_bytes = ((extranonce.len() + 1) / 2) as u32;
+            info!("Inferred extranonce size: {} byte(s)", size_bytes);
+        }
+
+        if size_bytes == 0 {
+            self.nonce_fixed = 0;
+            self.nonce_mask = u64::MAX;
+            info!("No extranonce partition announced; using full nonce space");
+            return Ok(());
+        }
+
+        let shift: u32 = size_bytes.saturating_mul(8);
+        let val = if extranonce.is_empty() { 0 } else { u64::from_str_radix(extranonce, 16)? };
         self.nonce_fixed = if shift >= 64 { 0 } else { val << shift };
         info!("Extra Done!");
         self.nonce_mask = if shift >= 64 { u64::MAX } else { (1u64 << shift) - 1u64 };
@@ -425,10 +440,19 @@ impl StratumHandler {
     }
 
     fn set_extranonce_eth(&mut self, extranonce: &str) -> Result<(), Error> {
+        let extranonce = extranonce.strip_prefix("0x").or_else(|| extranonce.strip_prefix("0X")).unwrap_or(extranonce);
         // Derive nonce_size from hex length (bytes)
-        let size_bytes: u32 = (extranonce.len() / 2) as u32;
+        let size_bytes: u32 = ((extranonce.len() + 1) / 2) as u32;
         self.extranonce = Some(extranonce.to_string());
         info!("Extra(ETH)! {:?}", extranonce);
+
+        if size_bytes == 0 {
+            self.nonce_fixed = 0;
+            self.nonce_mask = u64::MAX;
+            info!("No extranonce provided; using full nonce space");
+            return Ok(());
+        }
+
         let shift: u32 = size_bytes.saturating_mul(8);
         let val = u64::from_str_radix(extranonce, 16)?;
         self.nonce_fixed = if shift >= 64 { 0 } else { val << shift };
