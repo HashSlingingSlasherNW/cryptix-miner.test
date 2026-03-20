@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU16, AtomicU32, AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
@@ -97,6 +97,7 @@ pub struct StratumHandler {
     last_stratum_id: Arc<AtomicU32>,
 
     shares_stats: Arc<ShareStats>,
+    submit_worker: Arc<RwLock<String>>,
     block_channel: Sender<BlockSeed>,
     block_handle: BlockHandle,
 }
@@ -136,6 +137,10 @@ impl Client for StratumHandler {
                 self.miner_address.clone()
             }
         };
+        {
+            let mut submit_worker = self.submit_worker.write().unwrap();
+            *submit_worker = pay_address.clone();
+        }
         self.send_channel
             .send(StratumLine {
                 id,
@@ -196,9 +201,10 @@ impl StratumHandler {
             SHARE_STATS.clone().unwrap()
         };
         let last_stratum_id = Arc::new(AtomicU32::new(0));
+        let submit_worker = Arc::new(RwLock::new(miner_address.clone()));
         let (block_channel, block_handle) = Self::create_block_channel(
             send_channel.clone(),
-            miner_address.clone(),
+            submit_worker.clone(),
             last_stratum_id.clone(),
             share_state.clone(),
         );
@@ -219,6 +225,7 @@ impl StratumHandler {
             extranonce: None,
             last_stratum_id,
             shares_stats: share_state,
+            submit_worker,
             mining_dev: None,
             block_channel,
             block_handle,
@@ -227,7 +234,7 @@ impl StratumHandler {
 
     fn create_block_channel(
         send_channel: Sender<StratumLine>,
-        miner_address: String,
+        submit_worker: Arc<RwLock<String>>,
         last_stratum_id: Arc<AtomicU32>,
         share_stats: Arc<ShareStats>,
     ) -> (Sender<BlockSeed>, BlockHandle) {
@@ -252,7 +259,7 @@ impl StratumHandler {
                         id: Some(msg_id),
                         payload: StratumLinePayload::StratumCommand(StratumCommand::MiningSubmit(
                             MiningSubmit::MiningSubmitShort((
-                                miner_address.clone(),
+                                submit_worker.read().unwrap().clone(),
                                 id.into(),
                                 format!("{:016x}", nonce),
                             )),
