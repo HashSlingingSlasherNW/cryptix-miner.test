@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::num::Wrapping;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -13,7 +13,7 @@ use tokio::task::{self, JoinHandle};
 use tokio::time::MissedTickBehavior;
 
 use crate::pow::BlockSeed;
-use cryptix_miner::{PluginManager, WorkerSpec};
+use cryptix_miner::{PluginManager, Worker, WorkerSpec};
 
 type MinerHandler = std::thread::JoinHandle<Result<(), Error>>;
 
@@ -235,18 +235,9 @@ impl MinerManager {
     fn plan_gpu_specs(
         specs: Vec<Box<dyn WorkerSpec>>,
     ) -> Vec<(Box<dyn WorkerSpec>, Option<Box<dyn WorkerSpec>>)> {
-        let mut nvidia_cuda_names = HashSet::<String>::new();
-        for spec in &specs {
-            let id = spec.id();
-            let normalized = Self::normalize_gpu_name(&id);
-            if normalized.contains("nvidia") && Self::is_cuda_id(&id) {
-                nvidia_cuda_names.insert(Self::nvidia_match_key(&id));
-            }
-        }
-
         let mut planned = Vec::<(Box<dyn WorkerSpec>, Option<Box<dyn WorkerSpec>>)>::new();
-        let mut nvidia_opencl_fallbacks = HashMap::<String, Box<dyn WorkerSpec>>::new();
-        let mut nvidia_cuda_primary = Vec::<(String, Box<dyn WorkerSpec>)>::new();
+        let mut nvidia_opencl_primary = HashMap::<String, Box<dyn WorkerSpec>>::new();
+        let mut nvidia_cuda_fallbacks = HashMap::<String, Box<dyn WorkerSpec>>::new();
 
         for spec in specs {
             let id = spec.id();
@@ -259,18 +250,22 @@ impl MinerManager {
                 continue;
             }
 
+            let key = Self::nvidia_match_key(&id);
             if is_cuda {
-                nvidia_cuda_primary.push((Self::nvidia_match_key(&id), spec));
-            } else if nvidia_cuda_names.contains(&Self::nvidia_match_key(&id)) {
-                nvidia_opencl_fallbacks.entry(Self::nvidia_match_key(&id)).or_insert(spec);
+                nvidia_cuda_fallbacks.entry(key).or_insert(spec);
             } else {
-                planned.push((spec, None));
+                nvidia_opencl_primary.entry(key).or_insert(spec);
             }
         }
 
-        for (normalized, cuda_spec) in nvidia_cuda_primary {
-            let fallback = nvidia_opencl_fallbacks.remove(&normalized);
-            planned.push((cuda_spec, fallback));
+        for (key, opencl_spec) in nvidia_opencl_primary {
+            let fallback = nvidia_cuda_fallbacks.remove(&key);
+            planned.push((opencl_spec, fallback));
+        }
+
+        // For NVIDIA devices where OpenCL is unavailable, keep CUDA as primary.
+        for (_, cuda_spec) in nvidia_cuda_fallbacks {
+            planned.push((cuda_spec, None));
         }
 
         planned
@@ -297,6 +292,11 @@ impl MinerManager {
         Ok(())
     }
 
+    fn build_worker_safe(spec: Box<dyn WorkerSpec>) -> Result<Box<dyn Worker>, Error> {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| spec.build()))
+            .map_err(|_| "GPU worker failed to initialize".into())
+    }
+
     #[allow(unreachable_code)]
     fn launch_gpu_miner(
         send_channel: Sender<BlockSeed>,
@@ -307,20 +307,20 @@ impl MinerManager {
         worker_hashes_tried: Arc<AtomicU64>,
     ) -> MinerHandler {
         std::thread::spawn(move || {
-            let mut box_ = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| spec.build())) {
+            let mut fallback_spec = fallback_spec;
+            let mut box_ = match Self::build_worker_safe(spec) {
                 Ok(worker) => worker,
-                Err(_) => {
-                    if let Some(fallback) = fallback_spec {
-                        warn!("Primary GPU worker failed to initialize, switching to OpenCL fallback");
-                        fallback.build()
+                Err(e) => {
+                    if let Some(fallback) = fallback_spec.take() {
+                        warn!("Primary GPU worker failed to initialize ({}), switching to fallback", e);
+                        Self::build_worker_safe(fallback)?
                     } else {
-                        return Err("GPU worker failed to initialize".into());
+                        return Err(e);
                     }
                 }
             };
-            let gpu_work = box_.as_mut();
             (|| {
-                info!("Spawned Thread for GPU {}", gpu_work.id());
+                info!("Spawned Thread for GPU {}", box_.id());
                 let mut nonces = vec![0u64; 1];
 
                 let mut state = None;
@@ -335,25 +335,51 @@ impl MinerManager {
                                 None => None,
                             },
                             Err(e) => {
-                                info!("{}: GPU thread crashed: {}", gpu_work.id(), e.to_string());
+                                info!("{}: GPU thread crashed: {}", box_.id(), e.to_string());
                                 return Ok(());
                             }
                         };
                     }
                     let state_ref = match &state {
-                        Some(s) => {
-                            s.load_to_gpu(gpu_work);
-                            s
-                        },
+                        Some(s) => s,
                         None => continue,
                     };
-                    state_ref.pow_gpu(gpu_work);
-                    if let Err(e) = gpu_work.sync() {
-                        warn!("CUDA run ignored: {}", e);
-                        continue
+
+                    let launch_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        let gpu_work = box_.as_mut();
+                        state_ref.load_to_gpu(gpu_work);
+                        state_ref.pow_gpu(gpu_work);
+                    }));
+                    if launch_result.is_err() {
+                        if let Some(fallback) = fallback_spec.take() {
+                            warn!("{} run panicked, switching to fallback worker", box_.id());
+                            box_ = Self::build_worker_safe(fallback)?;
+                            info!("Spawned fallback GPU worker {}", box_.id());
+                            continue;
+                        }
+                        return Err(format!("{} run panicked and no fallback is available", box_.id()).into());
                     }
 
-                    gpu_work.copy_output_to(&mut nonces)?;
+                    if let Err(e) = box_.as_mut().sync() {
+                        if let Some(fallback) = fallback_spec.take() {
+                            warn!("{} run failed ({}), switching to fallback worker", box_.id(), e);
+                            box_ = Self::build_worker_safe(fallback)?;
+                            info!("Spawned fallback GPU worker {}", box_.id());
+                            continue;
+                        }
+                        warn!("GPU run ignored: {}", e);
+                        continue;
+                    }
+
+                    if let Err(e) = box_.as_mut().copy_output_to(&mut nonces) {
+                        if let Some(fallback) = fallback_spec.take() {
+                            warn!("{} output read failed ({}), switching to fallback worker", box_.id(), e);
+                            box_ = Self::build_worker_safe(fallback)?;
+                            info!("Spawned fallback GPU worker {}", box_.id());
+                            continue;
+                        }
+                        return Err(e);
+                    }
                     if nonces[0] != 0 {
                         if let Some(block_seed) = state_ref.generate_block_if_pow(nonces[0]) {
                             match send_channel.blocking_send(block_seed.clone()) {
@@ -364,8 +390,8 @@ impl MinerManager {
                                 state = None;
                             }
                             nonces[0] = 0;
-                            hashes_tried.fetch_add(gpu_work.get_workload().try_into().unwrap(), Ordering::AcqRel);
-                            worker_hashes_tried.fetch_add(gpu_work.get_workload().try_into().unwrap(), Ordering::AcqRel);
+                            hashes_tried.fetch_add(box_.get_workload().try_into().unwrap(), Ordering::AcqRel);
+                            worker_hashes_tried.fetch_add(box_.get_workload().try_into().unwrap(), Ordering::AcqRel);
                             continue;
                         } else {
                             let hash = state_ref.calculate_pow(nonces[0]);
@@ -404,8 +430,8 @@ impl MinerManager {
                             assert!(false);
                         }*/
 
-                    hashes_tried.fetch_add(gpu_work.get_workload().try_into().unwrap(), Ordering::AcqRel);
-                    worker_hashes_tried.fetch_add(gpu_work.get_workload().try_into().unwrap(), Ordering::AcqRel);
+                    hashes_tried.fetch_add(box_.get_workload().try_into().unwrap(), Ordering::AcqRel);
+                    worker_hashes_tried.fetch_add(box_.get_workload().try_into().unwrap(), Ordering::AcqRel);
 
                     {
                         if let Some(new_cmd) = block_channel.get_changed()? {
@@ -420,7 +446,7 @@ impl MinerManager {
                 Ok(())
             })()
             .map_err(|e: Error| {
-                error!("{}: GPU thread crashed: {}", gpu_work.id(), e.to_string());
+                error!("{}: GPU thread crashed: {}", box_.id(), e.to_string());
                 e
             })
         })
