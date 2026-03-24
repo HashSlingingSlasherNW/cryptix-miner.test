@@ -54,8 +54,16 @@ impl Plugin for OpenCLPlugin {
             Err(e) => {
                 info!("OpenCL runtime not available: {}", e);
                 self._enabled = false;
+                return Ok(0);
             }
         };
+        if platforms.is_empty() {
+            info!("OpenCL runtime found, but no platforms are available");
+            self._enabled = false;
+            return Ok(0);
+        }
+        self._enabled = true;
+
         info!("OpenCL Found Platforms:");
         info!("=======================");
         for platform in &platforms {
@@ -72,14 +80,8 @@ impl Plugin for OpenCLPlugin {
             })
             .collect::<Vec<&Platform>>();
         let _platform: &Platform = match opts.opencl_platform {
-            Some(idx) => {
-                self._enabled = true;
-                &platforms[idx as usize]
-            }
-            None if !opts.opencl_amd_disable && !amd_platforms.is_empty() => {
-                self._enabled = true;
-                amd_platforms[0]
-            }
+            Some(idx) => &platforms[idx as usize],
+            None if !opts.opencl_amd_disable && !amd_platforms.is_empty() => amd_platforms[0],
             None => &platforms[0],
         };
         if self._enabled {
@@ -91,9 +93,6 @@ impl Plugin for OpenCLPlugin {
 
             let device_ids = _platform.get_devices(CL_DEVICE_TYPE_ALL).unwrap();
             let gpus = match opts.opencl_device {
-                Some(dev) => {
-                    self._enabled = true;
-                    dev.iter().map(|d| device_ids[*d as usize]).collect::<Vec<cl_device_id>>()
                 Some(dev) => dev.iter().map(|d| device_ids[*d as usize]).collect::<Vec<cl_device_id>>(),
                 None => device_ids,
             };
