@@ -1,662 +1,685 @@
-#include<stdint.h>
-#include <assert.h>
-#include "keccak-tiny.c"
+#include <stdint.h>
+#include <string.h>
+
 #include "xoshiro256starstar.c"
-#include "sha3.c"
-#include "blake3_compact.h"
 
-typedef uint8_t u8; 
-typedef uint64_t u64; 
-typedef int64_t i64; 
-
-typedef uint8_t Hash[32];
+typedef uint8_t u8;
+typedef uint32_t u32;
+typedef uint64_t u64;
 
 typedef union _uint256_t {
-    uint64_t number[4];
-    uint8_t hash[32];
+    u64 number[4];
+    u8 hash[32];
 } uint256_t;
 
-#define BLOCKDIM 256
 #define MATRIX_SIZE 64
-#define HALF_MATRIX_SIZE 32
-#define QUARTER_MATRIX_SIZE 16
 #define HASH_HEADER_SIZE 72
+#define MATRIX_ELEMS (MATRIX_SIZE * MATRIX_SIZE)
 
 #define RANDOM_LEAN 0
 #define RANDOM_XOSHIRO 1
 
-#define LT_U256(X,Y) (X.number[3] != Y.number[3] ? X.number[3] < Y.number[3] : X.number[2] != Y.number[2] ? X.number[2] < Y.number[2] : X.number[1] != Y.number[1] ? X.number[1] < Y.number[1] : X.number[0] < Y.number[0])
-
-__constant__ uint8_t matrix[MATRIX_SIZE][MATRIX_SIZE];
-__constant__ uint8_t hash_header[HASH_HEADER_SIZE];
+__constant__ u8 matrix[MATRIX_SIZE][MATRIX_SIZE];
+__constant__ u8 hash_header[HASH_HEADER_SIZE];
 __constant__ uint256_t target;
-__constant__ static const uint8_t powP[Plen] = { 0x3d, 0xd8, 0xf6, 0xa1, 0x0d, 0xff, 0x3c, 0x11, 0x3c, 0x7e, 0x02, 0xb7, 0x55, 0x88, 0xbf, 0x29, 0xd2, 0x44, 0xfb, 0x0e, 0x72, 0x2e, 0x5f, 0x1e, 0xa0, 0x69, 0x98, 0xf5, 0xa3, 0xa4, 0xa5, 0x1b, 0x65, 0x2d, 0x5e, 0x87, 0xca, 0xaf, 0x2f, 0x7b, 0x46, 0xe2, 0xdc, 0x29, 0xd6, 0x61, 0xef, 0x4a, 0x10, 0x5b, 0x41, 0xad, 0x1e, 0x98, 0x3a, 0x18, 0x9c, 0xc2, 0x9b, 0x78, 0x0c, 0xf6, 0x6b, 0x77, 0x40, 0x31, 0x66, 0x88, 0x33, 0xf1, 0xeb, 0xf8, 0xf0, 0x5f, 0x28, 0x43, 0x3c, 0x1c, 0x65, 0x2e, 0x0a, 0x4a, 0xf1, 0x40, 0x05, 0x07, 0x96, 0x0f, 0x52, 0x91, 0x29, 0x5b, 0x87, 0x67, 0xe3, 0x44, 0x15, 0x37, 0xb1, 0x25, 0xa4, 0xf1, 0x70, 0xec, 0x89, 0xda, 0xe9, 0x82, 0x8f, 0x5d, 0xc8, 0xe6, 0x23, 0xb2, 0xb4, 0x85, 0x1f, 0x60, 0x1a, 0xb2, 0x46, 0x6a, 0xa3, 0x64, 0x90, 0x54, 0x85, 0x34, 0x1a, 0x85, 0x2f, 0x7a, 0x1c, 0xdd, 0x06, 0x0f, 0x42, 0xb1, 0x3b, 0x56, 0x1d, 0x02, 0xa2, 0xc1, 0xe4, 0x68, 0x16, 0x45, 0xe4, 0xe5, 0x1d, 0xba, 0x8d, 0x5f, 0x09, 0x05, 0x41, 0x57, 0x02, 0xd1, 0x4a, 0xcf, 0xce, 0x9b, 0x84, 0x4e, 0xca, 0x89, 0xdb, 0x2e, 0x74, 0xa8, 0x27, 0x94, 0xb0, 0x48, 0x72, 0x52, 0x8b, 0xe7, 0x9c, 0xce, 0xfc, 0xb1, 0xbc, 0xa5, 0xaf, 0x82, 0xcf, 0x29, 0x11, 0x5d, 0x83, 0x43, 0x82, 0x6f, 0x78, 0x7c, 0xb9, 0x02 };
-__constant__ static const uint8_t heavyP[Plen] = { 0x09, 0x85, 0x24, 0xb2, 0x52, 0x4c, 0xd7, 0x3a, 0x16, 0x42, 0x9f, 0x2f, 0x0e, 0x9b, 0x62, 0x79, 0xee, 0xf8, 0xc7, 0x16, 0x48, 0xff, 0x14, 0x7a, 0x98, 0x64, 0x05, 0x80, 0x4c, 0x5f, 0xa7, 0x11, 0xda, 0xce, 0xee, 0x44, 0xdf, 0xe0, 0x20, 0xe7, 0x69, 0x40, 0xf3, 0x14, 0x2e, 0xd8, 0xc7, 0x72, 0xba, 0x35, 0x89, 0x93, 0x2a, 0xff, 0x00, 0xc1, 0x62, 0xc4, 0x0f, 0x25, 0x40, 0x90, 0x21, 0x5e, 0x48, 0x6a, 0xcf, 0x0d, 0xa6, 0xf9, 0x39, 0x80, 0x0c, 0x3d, 0x2a, 0x79, 0x9f, 0xaa, 0xbc, 0xa0, 0x26, 0xa2, 0xa9, 0xd0, 0x5d, 0xc0, 0x31, 0xf4, 0x3f, 0x8c, 0xc1, 0x54, 0xc3, 0x4c, 0x1f, 0xd3, 0x3d, 0xcc, 0x69, 0xa7, 0x01, 0x7d, 0x6b, 0x6c, 0xe4, 0x93, 0x24, 0x56, 0xd3, 0x5b, 0xc6, 0x2e, 0x44, 0xb0, 0xcd, 0x99, 0x3a, 0x4b, 0xf7, 0x4e, 0xb0, 0xf2, 0x34, 0x54, 0x83, 0x86, 0x4c, 0x77, 0x16, 0x94, 0xbc, 0x36, 0xb0, 0x61, 0xe9, 0x07, 0x07, 0xcc, 0x65, 0x77, 0xb1, 0x1d, 0x8f, 0x7e, 0x39, 0x6d, 0xc4, 0xba, 0x80, 0xdb, 0x8f, 0xea, 0x58, 0xca, 0x34, 0x7b, 0xd3, 0xf2, 0x92, 0xb9, 0x57, 0xb9, 0x81, 0x84, 0x04, 0xc5, 0x76, 0xc7, 0x2e, 0xc2, 0x12, 0x51, 0x67, 0x9f, 0xc3, 0x47, 0x0a, 0x0c, 0x29, 0xb5, 0x9d, 0x39, 0xbb, 0x92, 0x15, 0xc6, 0x9f, 0x2f, 0x31, 0xe0, 0x9a, 0x54, 0x35, 0xda, 0xb9, 0x10, 0x7d, 0x32, 0x19, 0x16 };
+__device__ __constant__ static const u64 POW_HASH_INITIAL_STATE[25] = {
+    1242148031264380989ULL, 3008272977830772284ULL, 2188519011337848018ULL, 1992179434288343456ULL,
+    8876506674959887717ULL, 5399642050693751366ULL, 1745875063082670864ULL, 8605242046444978844ULL,
+    17936695144567157056ULL, 3343109343542796272ULL, 1123092876221303306ULL, 4963925045340115282ULL,
+    17037383077651887893ULL, 16629644495023626889ULL, 12833675776649114147ULL, 3784524041015224902ULL,
+    1082795874807940378ULL, 13952716920571277634ULL, 13411128033953605860ULL, 15060696040649351053ULL,
+    9928834659948351306ULL, 5237849264682708699ULL, 12825353012139217522ULL, 6706187291358897596ULL,
+    196324915476054915ULL
+};
+__device__ __constant__ static const u64 HEAVY_HASH_INITIAL_STATE[25] = {
+    4239941492252378377ULL, 8746723911537738262ULL, 8796936657246353646ULL, 1272090201925444760ULL,
+    16654558671554924250ULL, 8270816933120786537ULL, 13907396207649043898ULL, 6782861118970774626ULL,
+    9239690602118867528ULL, 11582319943599406348ULL, 17596056728278508070ULL, 15212962468105129023ULL,
+    7812475424661425213ULL, 3370482334374859748ULL, 5690099369266491460ULL, 8596393687355028144ULL,
+    570094237299545110ULL, 9119540418498120711ULL, 16901969272480492857ULL, 13372017233735502424ULL,
+    14372891883993151831ULL, 5171152063242093102ULL, 10573107899694386186ULL, 6096431547456407061ULL,
+    1592359455985097269ULL
+};
+__device__ __constant__ static const u64 KECCAK_RNDC[24] = {
+    0x0000000000000001ULL, 0x0000000000008082ULL, 0x800000000000808AULL, 0x8000000080008000ULL,
+    0x000000000000808BULL, 0x0000000080000001ULL, 0x8000000080008081ULL, 0x8000000000008009ULL,
+    0x000000000000008AULL, 0x0000000000000088ULL, 0x0000000080008009ULL, 0x000000008000000AULL,
+    0x000000008000808BULL, 0x800000000000008BULL, 0x8000000000008089ULL, 0x8000000000008003ULL,
+    0x8000000000008002ULL, 0x8000000000000080ULL, 0x000000000000800AULL, 0x800000008000000AULL,
+    0x8000000080008081ULL, 0x8000000000008080ULL, 0x0000000080000001ULL, 0x8000000080008008ULL
+};
+__device__ __constant__ static const u32 KECCAK_PI_LANES[24] = {
+    10U, 7U, 11U, 17U, 18U, 3U, 5U, 16U, 8U, 21U, 24U, 4U,
+    15U, 23U, 19U, 13U, 12U, 2U, 20U, 14U, 22U, 9U, 6U, 1U
+};
+__device__ __constant__ static const u32 KECCAK_RHO_PI_ROT[24] = {
+    1U, 3U, 6U, 10U, 15U, 21U, 28U, 36U, 45U, 55U, 2U, 14U,
+    27U, 41U, 56U, 8U, 25U, 43U, 62U, 18U, 39U, 61U, 20U, 44U
+};
 
-__device__ __inline__ void amul4bit(uint32_t packed_vec1[32], uint32_t packed_vec2[32], uint32_t *ret) {
-    unsigned int res = 0;
-    #if __CUDA_ARCH__ < 610
-    char4 *a4 = (char4*)packed_vec1;
-    char4 *b4 = (char4*)packed_vec2;
-    #endif
-    #pragma unroll
-    for (int i = 0; i < QUARTER_MATRIX_SIZE; i++) {
-        #if __CUDA_ARCH__ >= 610
-        res = __dp4a(packed_vec1[i], packed_vec2[i], res);
-        #else
-        res += a4[i].x * b4[i].x;
-        res += a4[i].y * b4[i].y;
-        res += a4[i].z * b4[i].z;
-        res += a4[i].w * b4[i].w;
-        #endif
-    }
-    *ret = res;
+__device__ __constant__ static const u8 SBOX_SOURCE_SELECTORS[16] = {
+    0, 1, 2, 1, 3, 1, 0, 1, 3, 1, 2, 1, 3, 1, 0, 1
+};
+__device__ __constant__ static const u8 SBOX_VALUE_SELECTORS[16] = {
+    0, 1, 3, 2, 0, 1, 3, 2, 0, 1, 3, 2, 0, 1, 3, 2
+};
+__device__ __constant__ static const u8 SBOX_VALUE_MULTIPLIERS[16] = {
+    0x03, 0x05, 0x07, 0x0F, 0x11, 0x13, 0x17, 0x19,
+    0x1D, 0x1F, 0x23, 0x29, 0x2F, 0x31, 0x37, 0x3F
+};
+__device__ __constant__ static const u8 SBOX_VALUE_ADDERS[16] = {
+    0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22,
+    0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA
+};
+__device__ __constant__ static const u32 BLAKE3_IV[8] = {
+    0x6A09E667U, 0xBB67AE85U, 0x3C6EF372U, 0xA54FF53AU,
+    0x510E527FU, 0x9B05688CU, 0x1F83D9ABU, 0x5BE0CD19U
+};
+__device__ __constant__ static const u32 BLAKE3_MSG_PERMUTATION[16] = {
+    2, 6, 3, 10, 7, 0, 4, 13,
+    1, 11, 12, 5, 9, 14, 15, 8
+};
+__device__ __constant__ static const u8 AFTER_COMP_LUT[256] = {
+    0x75, 0x7C, 0xEB, 0x87, 0x24, 0xE7, 0x3D, 0x07, 0x48, 0x32, 0xB2, 0xEE, 0xEF, 0x97, 0xC2, 0x2B,
+    0xE9, 0x4B, 0xE2, 0xAF, 0x2F, 0xF3, 0x19, 0xE7, 0x83, 0x94, 0xB9, 0x4B, 0x09, 0x78, 0x95, 0x69,
+    0x55, 0xF7, 0xF7, 0x9F, 0x67, 0x01, 0x4A, 0xCE, 0xD1, 0x57, 0x64, 0x03, 0xE1, 0x72, 0x8D, 0xCD,
+    0x67, 0x41, 0x6A, 0x10, 0xC0, 0x55, 0x42, 0xBD, 0x28, 0x26, 0xEE, 0x75, 0x51, 0x2B, 0x7B, 0xE6,
+    0xE0, 0x38, 0xD7, 0x1D, 0x48, 0x7D, 0x6C, 0x17, 0x53, 0xFA, 0x7A, 0x89, 0x09, 0x8A, 0x43, 0x7B,
+    0x3B, 0xEE, 0x9F, 0x09, 0xD9, 0x07, 0xD6, 0x66, 0x23, 0x13, 0x82, 0x5B, 0x4B, 0x6B, 0xC2, 0xAF,
+    0xFD, 0xD8, 0x92, 0x0E, 0x40, 0x89, 0x32, 0xEE, 0x14, 0x9A, 0xA4, 0xAC, 0xEC, 0xF9, 0x9D, 0x3A,
+    0xBC, 0x51, 0x05, 0x6A, 0x11, 0xA7, 0xAC, 0x1B, 0x71, 0x40, 0x0D, 0x05, 0xD0, 0x61, 0x05, 0xE2,
+    0x5A, 0x1D, 0xCA, 0x4C, 0x56, 0x40, 0x2A, 0x49, 0x67, 0x61, 0x69, 0x21, 0x80, 0x85, 0x59, 0xB8,
+    0x2C, 0xD0, 0x20, 0xDA, 0x88, 0xAC, 0xCC, 0xD1, 0x70, 0x76, 0x98, 0x7F, 0x7C, 0x55, 0xD0, 0xD6,
+    0x2B, 0xA5, 0xB7, 0x03, 0x9E, 0x37, 0x9B, 0xB9, 0xF1, 0xE8, 0x1F, 0xE0, 0x42, 0x6B, 0x62, 0x63,
+    0xB7, 0xDC, 0x8E, 0xCC, 0x6C, 0xB7, 0x76, 0x27, 0xC1, 0xEC, 0x72, 0x17, 0xCE, 0x76, 0x65, 0x8C,
+    0x9F, 0x16, 0xDB, 0xB2, 0x5F, 0x7F, 0x14, 0x5A, 0x42, 0x89, 0xEC, 0x1D, 0xC5, 0xC9, 0xA0, 0x30,
+    0xDD, 0x3C, 0xDC, 0x7B, 0x8A, 0x47, 0x3E, 0xB5, 0xEA, 0xA9, 0xA9, 0x6A, 0x89, 0x65, 0x4D, 0x3A,
+    0xC8, 0xAD, 0xBB, 0xAD, 0xA0, 0xE5, 0xB8, 0xF6, 0xCD, 0x08, 0xA3, 0xE8, 0xA0, 0x5E, 0x18, 0xA6,
+    0x65, 0x27, 0x26, 0x5C, 0x21, 0xA8, 0xF4, 0x3C, 0xCA, 0x95, 0x15, 0xFC, 0x9C, 0x1B, 0x9A, 0x0B
+};
+
+__device__ __forceinline__ u8 rotl8(u8 value, u32 shift) {
+    shift &= 7U;
+    return (u8)((value << shift) | (value >> ((8U - shift) & 7U)));
+}
+__device__ __forceinline__ u8 rotr8(u8 value, u32 shift) {
+    shift &= 7U;
+    return (u8)((value >> shift) | (value << ((8U - shift) & 7U)));
+}
+__device__ __forceinline__ u32 rotl32(u32 value, u32 shift) {
+    shift &= 31U;
+    return (value << shift) | (value >> ((32U - shift) & 31U));
+}
+__device__ __forceinline__ u32 rotr32(u32 value, u32 shift) {
+    shift &= 31U;
+    return (value >> shift) | (value << ((32U - shift) & 31U));
+}
+__device__ __forceinline__ u64 rotl64(u64 value, u32 shift) {
+    shift &= 63U;
+    return (value << shift) | (value >> ((64U - shift) & 63U));
+}
+__device__ __forceinline__ u64 load64_le(const u8* in, u32 offset) {
+    const u32 base = offset;
+    return ((u64)in[base + 0]) |
+           ((u64)in[base + 1] << 8) |
+           ((u64)in[base + 2] << 16) |
+           ((u64)in[base + 3] << 24) |
+           ((u64)in[base + 4] << 32) |
+           ((u64)in[base + 5] << 40) |
+           ((u64)in[base + 6] << 48) |
+           ((u64)in[base + 7] << 56);
+}
+__device__ __forceinline__ u32 load32_le(const u8* in, u32 offset) {
+    const u32 base = offset;
+    return ((u32)in[base + 0]) |
+           ((u32)in[base + 1] << 8) |
+           ((u32)in[base + 2] << 16) |
+           ((u32)in[base + 3] << 24);
+}
+__device__ __forceinline__ void store64_le(u64 value, u8* out, u32 offset) {
+    const u32 base = offset;
+    out[base + 0] = (u8)(value & 0xFFULL);
+    out[base + 1] = (u8)((value >> 8) & 0xFFULL);
+    out[base + 2] = (u8)((value >> 16) & 0xFFULL);
+    out[base + 3] = (u8)((value >> 24) & 0xFFULL);
+    out[base + 4] = (u8)((value >> 32) & 0xFFULL);
+    out[base + 5] = (u8)((value >> 40) & 0xFFULL);
+    out[base + 6] = (u8)((value >> 48) & 0xFFULL);
+    out[base + 7] = (u8)((value >> 56) & 0xFFULL);
+}
+__device__ __forceinline__ void store32_le(u32 value, u8* out, u32 offset) {
+    const u32 base = offset;
+    out[base + 0] = (u8)(value & 0xFFU);
+    out[base + 1] = (u8)((value >> 8) & 0xFFU);
+    out[base + 2] = (u8)((value >> 16) & 0xFFU);
+    out[base + 3] = (u8)((value >> 24) & 0xFFU);
+}
+__device__ __forceinline__ u64 mul64_parts_by_u32(u32 a_lo, u32 a_hi, u32 b32) {
+    const u32 lo_lo = a_lo * b32;
+    const u32 lo_hi = __umulhi(a_lo, b32);
+    const u32 hi_lo = a_hi * b32;
+    const u32 upper = lo_hi + hi_lo;
+    return ((u64)lo_lo) | ((u64)upper << 32);
+}
+__device__ __forceinline__ u32 dot4_acc(u32 sum, const u8* row4, const u8* nib4) {
+#if __CUDA_ARCH__ >= 610
+    const u32 row_packed = ((u32)row4[0]) | ((u32)row4[1] << 8) | ((u32)row4[2] << 16) | ((u32)row4[3] << 24);
+    const u32 nib_packed = ((u32)nib4[0]) | ((u32)nib4[1] << 8) | ((u32)nib4[2] << 16) | ((u32)nib4[3] << 24);
+    return (u32)__dp4a((int)row_packed, (int)nib_packed, (int)sum);
+#else
+    return sum +
+           (u32)row4[0] * (u32)nib4[0] +
+           (u32)row4[1] * (u32)nib4[1] +
+           (u32)row4[2] * (u32)nib4[2] +
+           (u32)row4[3] * (u32)nib4[3];
+#endif
 }
 
-// ***Anti-FPGA Sidedoor***
-__device__ uint32_t wrapping_mul_32(uint32_t a, uint32_t b) {
-    return (a * b) & 0xFFFFFFFF;
-}
+__device__ __forceinline__ void keccak_f1600(u64 st[25]) {
+#pragma unroll
+    for (u32 round = 0; round < 24; round++) {
+        const u64 c0 = st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20];
+        const u64 c1 = st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21];
+        const u64 c2 = st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22];
+        const u64 c3 = st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23];
+        const u64 c4 = st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24];
 
-__device__ uint32_t rotate_left_32(uint32_t value, uint32_t shift) {
-    return (value << shift) | (value >> (32 - shift));
-}
+        const u64 d0 = c4 ^ rotl64(c1, 1U);
+        const u64 d1 = c0 ^ rotl64(c2, 1U);
+        const u64 d2 = c1 ^ rotl64(c3, 1U);
+        const u64 d3 = c2 ^ rotl64(c4, 1U);
+        const u64 d4 = c3 ^ rotl64(c0, 1U);
 
-__device__ uint32_t rotate_right_32(uint32_t value, uint32_t shift) {
-    return (value >> shift) | (value << (32 - shift));
-}
+        st[0] ^= d0; st[5] ^= d0; st[10] ^= d0; st[15] ^= d0; st[20] ^= d0;
+        st[1] ^= d1; st[6] ^= d1; st[11] ^= d1; st[16] ^= d1; st[21] ^= d1;
+        st[2] ^= d2; st[7] ^= d2; st[12] ^= d2; st[17] ^= d2; st[22] ^= d2;
+        st[3] ^= d3; st[8] ^= d3; st[13] ^= d3; st[18] ^= d3; st[23] ^= d3;
+        st[4] ^= d4; st[9] ^= d4; st[14] ^= d4; st[19] ^= d4; st[24] ^= d4;
 
-
-__device__ uint32_t chaotic_random(uint32_t x) {
-    return wrapping_mul_32(x, 362605) ^ 0xA5A5A5A5;
-}
-
-__device__ uint32_t memory_intensive_mix(uint32_t seed) {
-    uint32_t acc = seed;
-    for (int i = 0; i < 32; i++) {
-        acc = wrapping_mul_32(acc, 16625) ^ i;
-    }
-    return acc;
-}
-
-__device__ uint32_t recursive_fibonacci_modulated(uint32_t x, uint8_t depth) {
-    uint32_t a = 1, b = x | 1;
-    uint8_t actual_depth = (depth < 8) ? depth : 8;
-
-    for (int i = 0; i < actual_depth; i++) {
-        uint32_t temp = b;
-        b = b + (a ^ rotate_left_32(x, b % 17)); 
-        a = temp;
-        x = rotate_right_32(x, a % 13) ^ b; 
-    }
-    return x;
-}
-
-__device__ uint32_t anti_fpga_hash(uint32_t input) {
-    uint32_t x = input;
-    uint32_t noise = memory_intensive_mix(x);
-    uint8_t depth = ((noise & 0x0F) + 10) & 0xFF;
-
-    uint32_t prime_factor_sum = __popc(x); 
-    x ^= prime_factor_sum;
-
-    x = recursive_fibonacci_modulated(x ^ noise, depth);
-    x ^= memory_intensive_mix(rotate_left_32(x, 9));  
-    return x;
-}
-
-__device__ void compute_after_comp_product(uint8_t* pre_comp_product, uint8_t* after_comp_product) {
-    for (int i = 0; i < 32; i++) {
-        uint32_t input = pre_comp_product[i] ^ (i << 8);
-        uint32_t modified_input = chaotic_random(input % 256);
-
-        uint32_t hashed = anti_fpga_hash(modified_input);
-        after_comp_product[i] = (uint8_t)(hashed & 0xFF);
-    }
-}
-
-// Rotate left
-__device__ __inline__ uint8_t rotate_left(uint8_t value, int shift) {
-    return (value << shift) | (value >> (8 - shift));
-}
-
-// Rotate right
-__device__ __inline__ uint8_t rotate_right(uint8_t value, int shift) {
-    return (value >> shift) | (value << (8 - shift));
-}
-
-// Wrapping Mul
-__device__ u64 wrapping_mul(i64 a, i64 b) {
-    i64 high, low;
-    asm("mul.lo.u64 %0, %1, %2;" : "=l"(low) : "l"(a), "l"(b));
-    asm("mul.hi.u64 %0, %1, %2;" : "=l"(high) : "l"(a), "l"(b));
-    return low;  
-}
-
-// Wrapping Add u8
-__device__ uint8_t wrapping_add_8(uint8_t a, uint8_t b) {
-    return (a + b) & 0xFF;
-}
-
-// Wrapping Mul u8
-__device__ uint8_t wrapping_mul_8(uint8_t a, uint8_t b) {
-    return (a * b) & 0xFF;
-}
-
-// Octonion
-__device__ void octonion_multiply(const i64 *a, const i64 *b, i64 *result) {
-    volatile i64 res[8];
-
-    
-         /*
-            Multiplication table of octonions (non-commutative):
-
-                ×    |  1   e₁   e₂   e₃   e₄   e₅   e₆   e₇  
-                ------------------------------------------------
-                1    |  1   e₁   e₂   e₃   e₄   e₅   e₆   e₇  
-                e₁   | e₁  -1   e₃  -e₂   e₅  -e₆   e₄  -e₇  
-                e₂   | e₂  -e₃  -1    e₁   e₆   e₄  -e₅   e₇  
-                e₃   | e₃   e₂  -e₁  -1    e₄  -e₇   e₆  -e₅  
-                e₄   | e₄  -e₅  -e₆  -e₄  -1    e₇   e₂   e₃  
-                e₅   | e₅   e₆   e₄   e₇  -e₇  -1   -e₃   e₂  
-                e₆   | e₆  -e₄  -e₅   e₆  -e₂   e₃  -1    e₁  
-                e₇   | e₇   e₄  -e₇   e₅  -e₃  -e₂   e₁  -1  
-        */
-
-    res[0] = wrapping_mul(a[0], b[0]) - wrapping_mul(a[1], b[1]) - wrapping_mul(a[2], b[2]) - wrapping_mul(a[3], b[3]) 
-             - wrapping_mul(a[4], b[4]) - wrapping_mul(a[5], b[5]) - wrapping_mul(a[6], b[6]) - wrapping_mul(a[7], b[7]);
-
-    res[1] = wrapping_mul(a[0], b[1]) + wrapping_mul(a[1], b[0]) + wrapping_mul(a[2], b[3]) - wrapping_mul(a[3], b[2]) 
-             + wrapping_mul(a[4], b[5]) - wrapping_mul(a[5], b[4]) - wrapping_mul(a[6], b[7]) + wrapping_mul(a[7], b[6]);
-
-    res[2] = wrapping_mul(a[0], b[2]) - wrapping_mul(a[1], b[3]) + wrapping_mul(a[2], b[0]) + wrapping_mul(a[3], b[1]) 
-             + wrapping_mul(a[4], b[6]) - wrapping_mul(a[5], b[7]) + wrapping_mul(a[6], b[4]) - wrapping_mul(a[7], b[5]);
-
-    res[3] = wrapping_mul(a[0], b[3]) + wrapping_mul(a[1], b[2]) - wrapping_mul(a[2], b[1]) + wrapping_mul(a[3], b[0]) 
-             + wrapping_mul(a[4], b[7]) + wrapping_mul(a[5], b[6]) - wrapping_mul(a[6], b[5]) + wrapping_mul(a[7], b[4]);
-
-    res[4] = wrapping_mul(a[0], b[4]) - wrapping_mul(a[1], b[5]) - wrapping_mul(a[2], b[6]) - wrapping_mul(a[3], b[7]) 
-             + wrapping_mul(a[4], b[0]) + wrapping_mul(a[5], b[1]) + wrapping_mul(a[6], b[2]) + wrapping_mul(a[7], b[3]);
-
-    res[5] = wrapping_mul(a[0], b[5]) + wrapping_mul(a[1], b[4]) - wrapping_mul(a[2], b[7]) + wrapping_mul(a[3], b[6]) 
-             - wrapping_mul(a[4], b[1]) + wrapping_mul(a[5], b[0]) + wrapping_mul(a[6], b[3]) + wrapping_mul(a[7], b[2]);
-
-    res[6] = wrapping_mul(a[0], b[6]) + wrapping_mul(a[1], b[7]) + wrapping_mul(a[2], b[4]) - wrapping_mul(a[3], b[5]) 
-             - wrapping_mul(a[4], b[2]) + wrapping_mul(a[5], b[3]) + wrapping_mul(a[6], b[0]) + wrapping_mul(a[7], b[1]);
-
-    res[7] = wrapping_mul(a[0], b[7]) - wrapping_mul(a[1], b[6]) + wrapping_mul(a[2], b[5]) + wrapping_mul(a[3], b[4]) 
-             - wrapping_mul(a[4], b[3]) + wrapping_mul(a[5], b[2]) + wrapping_mul(a[6], b[1]) + wrapping_mul(a[7], b[0]);
-
-    for (int i = 0; i < 8; i++) {
-        result[i] = res[i];
-    }
-}
-
-// Octonion Hash
-__device__ void octonion_hash(const u8 *input_hash, i64 *oct) {
-
-    for (int i = 0; i < 8; i++) {
-        oct[i] = static_cast<i64>(input_hash[i]);
-    }
-
-    for (int i = 8; i < 32; i++) {
-        i64 rotation[8];
-
-        for (int j = 0; j < 8; j++) {
-            rotation[j] = static_cast<i64>(input_hash[(i + j) % 32]);
+        u64 t = st[1];
+#pragma unroll
+        for (u32 i = 0; i < 24; i++) {
+            const u32 lane = KECCAK_PI_LANES[i];
+            const u64 next = st[lane];
+            st[lane] = rotl64(t, KECCAK_RHO_PI_ROT[i]);
+            t = next;
         }
 
-        i64 result[8];
-        octonion_multiply(oct, rotation, result);
-
-        for (int j = 0; j < 8; j++) {
-            oct[j] = result[j];
+#pragma unroll
+        for (u32 row = 0; row < 25; row += 5U) {
+            const u64 r0 = st[row + 0U];
+            const u64 r1 = st[row + 1U];
+            const u64 r2 = st[row + 2U];
+            const u64 r3 = st[row + 3U];
+            const u64 r4 = st[row + 4U];
+            st[row + 0U] = r0 ^ ((~r1) & r2);
+            st[row + 1U] = r1 ^ ((~r2) & r3);
+            st[row + 2U] = r2 ^ ((~r3) & r4);
+            st[row + 3U] = r3 ^ ((~r4) & r0);
+            st[row + 4U] = r4 ^ ((~r0) & r1);
         }
+
+        st[0] ^= KECCAK_RNDC[round];
     }
 }
 
-// Main
+__device__ __forceinline__ void sha3_256_32bytes(const u8 input[32], u8 output[32]) {
+    u64 st[25];
+#pragma unroll
+    for (u32 i = 0; i < 25; i++) st[i] = 0ULL;
+
+    st[0] ^= load64_le(input, 0);
+    st[1] ^= load64_le(input, 8);
+    st[2] ^= load64_le(input, 16);
+    st[3] ^= load64_le(input, 24);
+    st[4] ^= 0x06ULL;
+    st[16] ^= (0x80ULL << 56);
+
+    keccak_f1600(st);
+
+    store64_le(st[0], output, 0);
+    store64_le(st[1], output, 8);
+    store64_le(st[2], output, 16);
+    store64_le(st[3], output, 24);
+}
+
+__device__ __forceinline__ void blake3_permute(u32 m[16]) {
+    u32 p[16];
+#pragma unroll
+    for (u32 i = 0; i < 16; i++) p[i] = m[BLAKE3_MSG_PERMUTATION[i]];
+#pragma unroll
+    for (u32 i = 0; i < 16; i++) m[i] = p[i];
+}
+__device__ __forceinline__ void blake3_g(u32 v[16], u32 a, u32 b, u32 c, u32 d, u32 mx, u32 my) {
+    v[a] = v[a] + v[b] + mx;
+    v[d] = rotr32(v[d] ^ v[a], 16U);
+    v[c] = v[c] + v[d];
+    v[b] = rotr32(v[b] ^ v[c], 12U);
+    v[a] = v[a] + v[b] + my;
+    v[d] = rotr32(v[d] ^ v[a], 8U);
+    v[c] = v[c] + v[d];
+    v[b] = rotr32(v[b] ^ v[c], 7U);
+}
+__device__ __forceinline__ void blake3_round(u32 v[16], u32 m[16]) {
+    blake3_g(v, 0, 4, 8, 12, m[0], m[1]);
+    blake3_g(v, 1, 5, 9, 13, m[2], m[3]);
+    blake3_g(v, 2, 6, 10, 14, m[4], m[5]);
+    blake3_g(v, 3, 7, 11, 15, m[6], m[7]);
+    blake3_g(v, 0, 5, 10, 15, m[8], m[9]);
+    blake3_g(v, 1, 6, 11, 12, m[10], m[11]);
+    blake3_g(v, 2, 7, 8, 13, m[12], m[13]);
+    blake3_g(v, 3, 4, 9, 14, m[14], m[15]);
+}
+__device__ __forceinline__ void blake3_compress_32(const u8 input[32], u8 output[32]) {
+    u32 m[16];
+    u32 v[16];
+#pragma unroll
+    for (u32 i = 0; i < 16; i++) m[i] = 0U;
+#pragma unroll
+    for (u32 i = 0; i < 8; i++) m[i] = load32_le(input, i * 4U);
+#pragma unroll
+    for (u32 i = 0; i < 8; i++) v[i] = BLAKE3_IV[i];
+
+    v[8] = BLAKE3_IV[0];
+    v[9] = BLAKE3_IV[1];
+    v[10] = BLAKE3_IV[2];
+    v[11] = BLAKE3_IV[3];
+    v[12] = 0U;
+    v[13] = 0U;
+    v[14] = 32U;
+    v[15] = 1U | 2U | 8U;
+
+#pragma unroll
+    for (u32 round = 0; round < 7; round++) {
+        blake3_round(v, m);
+        if (round + 1U < 7U) blake3_permute(m);
+    }
+#pragma unroll
+    for (u32 i = 0; i < 8; i++) store32_le(v[i] ^ v[i + 8], output, i * 4U);
+}
+
+__device__ __forceinline__ void octonion_hash(const u8 input_hash[32], u64 out_oct[8]) {
+    u64 a0 = (u64)input_hash[0], a1 = (u64)input_hash[1], a2 = (u64)input_hash[2], a3 = (u64)input_hash[3];
+    u64 a4 = (u64)input_hash[4], a5 = (u64)input_hash[5], a6 = (u64)input_hash[6], a7 = (u64)input_hash[7];
+    u8 b0 = input_hash[8], b1 = input_hash[9], b2 = input_hash[10], b3 = input_hash[11];
+    u8 b4 = input_hash[12], b5 = input_hash[13], b6 = input_hash[14], b7 = input_hash[15];
+
+#pragma unroll
+    for (u32 i = 8; i < 32; i++) {
+        const u32 a0_lo = (u32)a0, a0_hi = (u32)(a0 >> 32);
+        const u32 a1_lo = (u32)a1, a1_hi = (u32)(a1 >> 32);
+        const u32 a2_lo = (u32)a2, a2_hi = (u32)(a2 >> 32);
+        const u32 a3_lo = (u32)a3, a3_hi = (u32)(a3 >> 32);
+        const u32 a4_lo = (u32)a4, a4_hi = (u32)(a4 >> 32);
+        const u32 a5_lo = (u32)a5, a5_hi = (u32)(a5 >> 32);
+        const u32 a6_lo = (u32)a6, a6_hi = (u32)(a6 >> 32);
+        const u32 a7_lo = (u32)a7, a7_hi = (u32)(a7 >> 32);
+        const u32 b0_u = (u32)b0, b1_u = (u32)b1, b2_u = (u32)b2, b3_u = (u32)b3;
+        const u32 b4_u = (u32)b4, b5_u = (u32)b5, b6_u = (u32)b6, b7_u = (u32)b7;
+
+        const u64 r0 = mul64_parts_by_u32(a0_lo, a0_hi, b0_u) - mul64_parts_by_u32(a1_lo, a1_hi, b1_u)
+                     - mul64_parts_by_u32(a2_lo, a2_hi, b2_u) - mul64_parts_by_u32(a3_lo, a3_hi, b3_u)
+                     - mul64_parts_by_u32(a4_lo, a4_hi, b4_u) - mul64_parts_by_u32(a5_lo, a5_hi, b5_u)
+                     - mul64_parts_by_u32(a6_lo, a6_hi, b6_u) - mul64_parts_by_u32(a7_lo, a7_hi, b7_u);
+        const u64 r1 = mul64_parts_by_u32(a0_lo, a0_hi, b1_u) + mul64_parts_by_u32(a1_lo, a1_hi, b0_u)
+                     + mul64_parts_by_u32(a2_lo, a2_hi, b3_u) - mul64_parts_by_u32(a3_lo, a3_hi, b2_u)
+                     + mul64_parts_by_u32(a4_lo, a4_hi, b5_u) - mul64_parts_by_u32(a5_lo, a5_hi, b4_u)
+                     - mul64_parts_by_u32(a6_lo, a6_hi, b7_u) + mul64_parts_by_u32(a7_lo, a7_hi, b6_u);
+        const u64 r2 = mul64_parts_by_u32(a0_lo, a0_hi, b2_u) - mul64_parts_by_u32(a1_lo, a1_hi, b3_u)
+                     + mul64_parts_by_u32(a2_lo, a2_hi, b0_u) + mul64_parts_by_u32(a3_lo, a3_hi, b1_u)
+                     + mul64_parts_by_u32(a4_lo, a4_hi, b6_u) - mul64_parts_by_u32(a5_lo, a5_hi, b7_u)
+                     + mul64_parts_by_u32(a6_lo, a6_hi, b4_u) - mul64_parts_by_u32(a7_lo, a7_hi, b5_u);
+        const u64 r3 = mul64_parts_by_u32(a0_lo, a0_hi, b3_u) + mul64_parts_by_u32(a1_lo, a1_hi, b2_u)
+                     - mul64_parts_by_u32(a2_lo, a2_hi, b1_u) + mul64_parts_by_u32(a3_lo, a3_hi, b0_u)
+                     + mul64_parts_by_u32(a4_lo, a4_hi, b7_u) + mul64_parts_by_u32(a5_lo, a5_hi, b6_u)
+                     - mul64_parts_by_u32(a6_lo, a6_hi, b5_u) + mul64_parts_by_u32(a7_lo, a7_hi, b4_u);
+        const u64 r4 = mul64_parts_by_u32(a0_lo, a0_hi, b4_u) - mul64_parts_by_u32(a1_lo, a1_hi, b5_u)
+                     - mul64_parts_by_u32(a2_lo, a2_hi, b6_u) - mul64_parts_by_u32(a3_lo, a3_hi, b7_u)
+                     + mul64_parts_by_u32(a4_lo, a4_hi, b0_u) + mul64_parts_by_u32(a5_lo, a5_hi, b1_u)
+                     + mul64_parts_by_u32(a6_lo, a6_hi, b2_u) + mul64_parts_by_u32(a7_lo, a7_hi, b3_u);
+        const u64 r5 = mul64_parts_by_u32(a0_lo, a0_hi, b5_u) + mul64_parts_by_u32(a1_lo, a1_hi, b4_u)
+                     - mul64_parts_by_u32(a2_lo, a2_hi, b7_u) + mul64_parts_by_u32(a3_lo, a3_hi, b6_u)
+                     - mul64_parts_by_u32(a4_lo, a4_hi, b1_u) + mul64_parts_by_u32(a5_lo, a5_hi, b0_u)
+                     + mul64_parts_by_u32(a6_lo, a6_hi, b3_u) + mul64_parts_by_u32(a7_lo, a7_hi, b2_u);
+        const u64 r6 = mul64_parts_by_u32(a0_lo, a0_hi, b6_u) + mul64_parts_by_u32(a1_lo, a1_hi, b7_u)
+                     + mul64_parts_by_u32(a2_lo, a2_hi, b4_u) - mul64_parts_by_u32(a3_lo, a3_hi, b5_u)
+                     - mul64_parts_by_u32(a4_lo, a4_hi, b2_u) + mul64_parts_by_u32(a5_lo, a5_hi, b3_u)
+                     + mul64_parts_by_u32(a6_lo, a6_hi, b0_u) + mul64_parts_by_u32(a7_lo, a7_hi, b1_u);
+        const u64 r7 = mul64_parts_by_u32(a0_lo, a0_hi, b7_u) - mul64_parts_by_u32(a1_lo, a1_hi, b6_u)
+                     + mul64_parts_by_u32(a2_lo, a2_hi, b5_u) + mul64_parts_by_u32(a3_lo, a3_hi, b4_u)
+                     - mul64_parts_by_u32(a4_lo, a4_hi, b3_u) + mul64_parts_by_u32(a5_lo, a5_hi, b2_u)
+                     + mul64_parts_by_u32(a6_lo, a6_hi, b1_u) + mul64_parts_by_u32(a7_lo, a7_hi, b0_u);
+        a0 = r0; a1 = r1; a2 = r2; a3 = r3; a4 = r4; a5 = r5; a6 = r6; a7 = r7;
+
+        if (i < 31U) {
+            b0 = b1; b1 = b2; b2 = b3; b3 = b4;
+            b4 = b5; b5 = b6; b6 = b7;
+            b7 = input_hash[(i + 8U) & 31U];
+        }
+    }
+    out_oct[0] = a0; out_oct[1] = a1; out_oct[2] = a2; out_oct[3] = a3;
+    out_oct[4] = a4; out_oct[5] = a5; out_oct[6] = a6; out_oct[7] = a7;
+}
+
+__device__ __forceinline__ u8 pick_ref_value(u8 ref_type, u32 idx, const u8 nibble_product[32], const u8 product_before_oct[32], const u8 product[32], const u8 hash_bytes[32]) {
+    switch (ref_type) {
+        case 0: return nibble_product[idx];
+        case 1: return product_before_oct[idx];
+        case 2: return product[idx];
+        default: return hash_bytes[idx];
+    }
+}
+__device__ __forceinline__ u8 pick_array_byte(u8 selector, u32 idx, const u8 product[32], const u8 hash_bytes[32], const u8 nibble_product[32], const u8 product_before_oct[32]) {
+    switch (selector) {
+        case 0: return product[idx];
+        case 1: return hash_bytes[idx];
+        case 2: return nibble_product[idx];
+        default: return product_before_oct[idx];
+    }
+}
+__device__ __forceinline__ u8 compute_sbox_entry(
+    u32 sbox_idx,
+    const u8 rotate_left_bases[16],
+    const u8 rotate_right_bases[16],
+    const u8 product[32],
+    const u8 hash_bytes[32],
+    const u8 nibble_product[32],
+    const u8 product_before_oct[32],
+    u32 sbox_iterations
+) {
+    const u32 segment = sbox_idx >> 4;
+    const u32 lane = sbox_idx & 15U;
+    const u8 p1 = product[(sbox_idx + 1U) & 31U];
+    const u8 h2 = hash_bytes[(sbox_idx + 2U) & 31U];
+
+    u8 value = (u8)(
+        pick_array_byte(SBOX_VALUE_SELECTORS[segment], lane, product, hash_bytes, nibble_product, product_before_oct) *
+            SBOX_VALUE_MULTIPLIERS[segment] +
+        (u8)(lane * SBOX_VALUE_ADDERS[segment])
+    );
+    const u8 rotation_left = rotl8(rotate_left_bases[segment], (((u32)p1) + sbox_idx) & 7U);
+    const u8 rotation_right = rotr8(rotate_right_bases[segment], (((u32)h2) + sbox_idx) & 7U);
+    const u32 source_index = (sbox_idx + (u32)rotation_left + (u32)rotation_right) & 31U;
+    value ^= pick_array_byte(SBOX_SOURCE_SELECTORS[segment], source_index, product, hash_bytes, nibble_product, product_before_oct);
+
+    const u32 rotate_left_shift2 = (((u32)p1) + (sbox_idx << 2U)) & 7U;
+    const u32 rotate_right_shift2 = (((u32)h2) + (sbox_idx * 6U)) & 7U;
+    const u8 base_value = (u8)(sbox_idx + (u32)(product[(sbox_idx * 3U) & 31U] ^ hash_bytes[(sbox_idx * 7U) & 31U])) ^ (u8)0xA5;
+    const u8 xor_value = rotl8(base_value, sbox_idx & 7U) ^ (u8)0x55;
+
+    u8 rotated_value = (u8)(rotl8(value, rotate_left_shift2) | rotr8(value, rotate_right_shift2));
+    value ^= rotated_value ^ xor_value;
+    if (sbox_iterations == 2U) {
+        rotated_value = (u8)(rotl8(value, rotate_left_shift2) | rotr8(value, rotate_right_shift2));
+        value ^= rotated_value ^ xor_value;
+    }
+    return value;
+}
+
+__device__ __forceinline__ void cryptix_hash_v2_hash(const u8 input[32], u8 output[32]) {
+    u64 st[25];
+#pragma unroll
+    for (u32 i = 0; i < 25; i++) st[i] = HEAVY_HASH_INITIAL_STATE[i];
+
+    st[0] ^= load64_le(input, 0);
+    st[1] ^= load64_le(input, 8);
+    st[2] ^= load64_le(input, 16);
+    st[3] ^= load64_le(input, 24);
+    keccak_f1600(st);
+
+    store64_le(st[0], output, 0);
+    store64_le(st[1], output, 8);
+    store64_le(st[2], output, 16);
+    store64_le(st[3], output, 24);
+}
+
+__device__ __forceinline__ void cryptix_hash_matrix(const u8* matrix_local, const u8 hash_bytes[32], u8 output[32]) {
+    u8 product[32];
+    u8 nibble_product[32];
+    const u8* row_ptr0 = matrix_local;
+    const u8* row_ptr1 = matrix_local + 64U;
+    const u8* row_ptr2 = matrix_local + 128U;
+    const u8* row_ptr3 = matrix_local + 192U;
+
+#pragma unroll
+    for (u32 i = 0; i < 32; i++) {
+        u32 sum1 = 0U, sum2 = 0U, sum3 = 0U, sum4 = 0U;
+#pragma unroll
+        for (u32 block = 0; block < 16U; block++) {
+            const u32 hidx = block << 1U;
+            const u8 hb0 = hash_bytes[hidx];
+            const u8 hb1 = hash_bytes[hidx + 1U];
+            u8 nib[4] = {(u8)(hb0 >> 4), (u8)(hb0 & 0x0FU), (u8)(hb1 >> 4), (u8)(hb1 & 0x0FU)};
+
+            const u8* row_vec = row_ptr0 + (block << 2U); sum1 = dot4_acc(sum1, row_vec, nib);
+            row_vec = row_ptr1 + (block << 2U); sum2 = dot4_acc(sum2, row_vec, nib);
+            row_vec = row_ptr2 + (block << 2U); sum3 = dot4_acc(sum3, row_vec, nib);
+            row_vec = row_ptr3 + (block << 2U); sum4 = dot4_acc(sum4, row_vec, nib);
+        }
+        row_ptr0 += 128U; row_ptr1 += 128U; row_ptr2 += 64U; row_ptr3 += 64U;
+
+        const u32 a_nibble = (sum1 & 0xFU) ^ ((sum2 >> 4) & 0xFU) ^ ((sum3 >> 8) & 0xFU)
+            ^ ((sum1 * 0xABCDU >> 12) & 0xFU) ^ ((sum1 * 0x1234U >> 8) & 0xFU)
+            ^ ((sum2 * 0x5678U >> 16) & 0xFU) ^ ((sum3 * 0x9ABCU >> 4) & 0xFU)
+            ^ ((rotl32(sum1, 3U) & 0xFU) ^ (rotr32(sum3, 5U) & 0xFU));
+        const u32 b_nibble = (sum2 & 0xFU) ^ ((sum1 >> 4) & 0xFU) ^ ((sum4 >> 8) & 0xFU)
+            ^ ((sum2 * 0xDCBAU >> 14) & 0xFU) ^ ((sum2 * 0x8765U >> 10) & 0xFU)
+            ^ ((sum1 * 0x4321U >> 6) & 0xFU) ^ ((rotl32(sum4, 2U) ^ rotr32(sum1, 1U)) & 0xFU);
+        const u32 c_nibble = (sum3 & 0xFU) ^ ((sum2 >> 4) & 0xFU) ^ ((sum2 >> 8) & 0xFU)
+            ^ ((sum3 * 0xF135U >> 10) & 0xFU) ^ ((sum3 * 0x2468U >> 12) & 0xFU)
+            ^ ((sum4 * 0xACEFU >> 8) & 0xFU) ^ ((sum2 * 0x1357U >> 4) & 0xFU)
+            ^ ((rotl32(sum3, 5U) & 0xFU) ^ (rotr32(sum1, 7U) & 0xFU));
+        const u32 d_nibble = (sum1 & 0xFU) ^ ((sum4 >> 4) & 0xFU) ^ ((sum1 >> 8) & 0xFU)
+            ^ ((sum4 * 0x57A3U >> 6) & 0xFU) ^ ((sum3 * 0xD4E3U >> 12) & 0xFU)
+            ^ ((sum1 * 0x9F8BU >> 10) & 0xFU) ^ ((rotl32(sum4, 4U) ^ (sum1 + sum2)) & 0xFU);
+
+        const u8 h = hash_bytes[i];
+        nibble_product[i] = (u8)((((c_nibble & 0xFU) << 4) | (d_nibble & 0xFU)) ^ h);
+        product[i] = (u8)((((a_nibble & 0xFU) << 4) | (b_nibble & 0xFU)) ^ h);
+    }
+
+    u8 product_before_oct[32];
+#pragma unroll
+    for (u32 i = 0; i < 32; i++) product_before_oct[i] = product[i];
+
+    u64 oct_result[8];
+    octonion_hash(product, oct_result);
+#pragma unroll
+    for (u32 i = 0; i < 4; i++) {
+        const u32 off = i * 8U;
+        store64_le(load64_le(product, off) ^ oct_result[i], product, off);
+    }
+
+    const u8 rotate_left_bases[16] = {
+        (u8)((nibble_product[3] ^ (u8)0x4F) * (u8)3), (u8)((product[7] ^ (u8)0xA6) * (u8)2),
+        (u8)((product_before_oct[1] ^ (u8)0x9C) * (u8)9), (u8)((product[6] ^ (u8)0x71) * (u8)4),
+        (u8)((nibble_product[4] ^ (u8)0xB2) * (u8)3), (u8)((product[0] ^ (u8)0x58) * (u8)6),
+        (u8)((product_before_oct[2] ^ (u8)0x37) * (u8)2), (u8)((product[5] ^ (u8)0x1A) * (u8)5),
+        (u8)((nibble_product[3] ^ (u8)0x93) * (u8)7), (u8)((product[7] ^ (u8)0x29) * (u8)9),
+        (u8)((product_before_oct[1] ^ (u8)0x4E) * (u8)4), (u8)((nibble_product[6] ^ (u8)0xF3) * (u8)5),
+        (u8)((product[4] ^ (u8)0xB7) * (u8)6), (u8)((product[0] ^ (u8)0x2D) * (u8)8),
+        (u8)((product_before_oct[2] ^ (u8)0x6F) * (u8)3), (u8)((nibble_product[5] ^ (u8)0xE1) * (u8)7)
+    };
+    const u8 rotate_right_bases[16] = {
+        (u8)((hash_bytes[2] ^ (u8)0xD3) * (u8)5), (u8)((nibble_product[5] ^ (u8)0x5B) * (u8)7),
+        (u8)((product[0] ^ (u8)0x8E) * (u8)3), (u8)((product_before_oct[3] ^ (u8)0x2F) * (u8)5),
+        (u8)((hash_bytes[7] ^ (u8)0x6D) * (u8)7), (u8)((nibble_product[1] ^ (u8)0xEE) * (u8)9),
+        (u8)((hash_bytes[6] ^ (u8)0x44) * (u8)6), (u8)((hash_bytes[4] ^ (u8)0x7C) * (u8)8),
+        (u8)((product[2] ^ (u8)0xAF) * (u8)3), (u8)((nibble_product[5] ^ (u8)0xDC) * (u8)2),
+        (u8)((hash_bytes[0] ^ (u8)0x8B) * (u8)3), (u8)((product_before_oct[3] ^ (u8)0x62) * (u8)8),
+        (u8)((product[7] ^ (u8)0x15) * (u8)2), (u8)((product_before_oct[1] ^ (u8)0xC8) * (u8)7),
+        (u8)((nibble_product[6] ^ (u8)0x99) * (u8)9), (u8)((hash_bytes[4] ^ (u8)0x3B) * (u8)5)
+    };
+
+    const u32 update_index = ((u32)(product_before_oct[2] & (u8)7U)) + 1U;
+    const u32 sbox_iterations = 1U + ((u32)(product[update_index] & (u8)1U));
+    const u32 index_blake = ((u32)(product_before_oct[5] & (u8)7U)) + 1U;
+    const u32 iterations_blake = 1U + ((u32)(product[index_blake] % (u8)3));
+
+#pragma unroll
+    for (u32 i = 0; i < 32; i++) output[i] = product[i];
+
+    if (iterations_blake == 1U) {
+        blake3_compress_32(output, output);
+    } else if (iterations_blake == 2U) {
+        blake3_compress_32(output, output);
+        blake3_compress_32(output, output);
+    } else {
+        blake3_compress_32(output, output);
+        blake3_compress_32(output, output);
+        blake3_compress_32(output, output);
+    }
+
+    u32 ref_idx = 0U, product_idx = 0U, hash_idx = 0U, mix_term = 0U;
+#pragma unroll
+    for (u32 i = 0; i < 32; i++) {
+        const u8 ref_val = pick_ref_value((u8)(i & 3U), ref_idx, nibble_product, product_before_oct, product, hash_bytes);
+        const u32 index = ((u32)ref_val + (u32)product[product_idx] + (u32)hash_bytes[hash_idx] + mix_term) & 255U;
+        const u8 sbox_byte = compute_sbox_entry(index, rotate_left_bases, rotate_right_bases, product, hash_bytes, nibble_product, product_before_oct, sbox_iterations);
+        output[i] ^= sbox_byte ^ AFTER_COMP_LUT[(u32)product[i]];
+        ref_idx = (ref_idx + 13U) & 31U;
+        product_idx = (product_idx + 31U) & 31U;
+        hash_idx = (hash_idx + 19U) & 31U;
+        mix_term = (mix_term + 41U) & 255U;
+    }
+
+    cryptix_hash_v2_hash(output, output);
+}
+
+__device__ __forceinline__ void pow_hash_finalize_from_header(const u8* header, u64 nonce, u8 output[32]) {
+    u64 st[25];
+#pragma unroll
+    for (u32 i = 0; i < 25; i++) st[i] = POW_HASH_INITIAL_STATE[i];
+
+#pragma unroll
+    for (u32 i = 0; i < 9; i++) st[i] ^= load64_le(header, i * 8U);
+    st[9] ^= nonce;
+    keccak_f1600(st);
+
+    store64_le(st[0], output, 0);
+    store64_le(st[1], output, 8);
+    store64_le(st[2], output, 16);
+    store64_le(st[3], output, 24);
+}
+
+__device__ __forceinline__ void calculate_pow_pre_matrix_from_header(const u8* header, u64 nonce, u8 output[32]) {
+    u8 current_hash[32];
+    pow_hash_finalize_from_header(header, nonce, current_hash);
+    const u32 iterations = ((u32)current_hash[0] & 1U) + 1U;
+
+#pragma unroll
+    for (u32 i = 0; i < 2U; i++) {
+        if (i >= iterations) break;
+        sha3_256_32bytes(current_hash, current_hash);
+
+        if ((current_hash[1] & (u8)3U) == 0U) {
+            const u32 repeat = ((u32)(current_hash[2] & (u8)3U)) + 1U;
+#pragma unroll
+            for (u32 r = 0; r < 4U; r++) {
+                if (r >= repeat) break;
+                const u32 target_byte = (((u32)current_hash[1]) + i) & 31U;
+                current_hash[target_byte] ^= (current_hash[i & 15U] ^ (u8)0xA5);
+                const u8 rotation_byte = current_hash[i & 31U];
+                const u32 rotation_amount = (((u32)current_hash[1] + (u32)current_hash[3]) & 3U) + 2U;
+                current_hash[target_byte] = ((rotation_byte & 1U) == 0U) ? rotl8(current_hash[target_byte], rotation_amount) : rotr8(current_hash[target_byte], rotation_amount);
+                const u32 shift_amount = (((u32)current_hash[5] + (u32)current_hash[1]) % 3U) + 1U;
+                current_hash[target_byte] ^= rotl8(current_hash[target_byte], shift_amount);
+            }
+        } else if ((current_hash[3] % (u8)3) == 0) {
+            const u32 repeat = ((u32)(current_hash[4] % (u8)5)) + 1U;
+#pragma unroll
+            for (u32 r = 0; r < 5U; r++) {
+                if (r >= repeat) break;
+                const u32 target_byte = (((u32)current_hash[6]) + i) & 31U;
+                current_hash[target_byte] ^= (current_hash[i & 15U] ^ (u8)0x55);
+                const u8 rotation_byte = current_hash[i & 31U];
+                const u32 rotation_amount = (((u32)current_hash[7] + (u32)current_hash[2]) % 6U) + 1U;
+                current_hash[target_byte] = ((rotation_byte & 1U) == 0U) ? rotl8(current_hash[target_byte], rotation_amount) : rotr8(current_hash[target_byte], rotation_amount);
+                const u32 shift_amount = (((u32)current_hash[1] + (u32)current_hash[3]) % 4U) + 1U;
+                current_hash[target_byte] ^= rotl8(current_hash[target_byte], shift_amount);
+            }
+        } else if ((current_hash[2] % (u8)6) == 0) {
+            const u32 repeat = ((u32)(current_hash[6] & (u8)3U)) + 1U;
+#pragma unroll
+            for (u32 r = 0; r < 4U; r++) {
+                if (r >= repeat) break;
+                const u32 target_byte = (((u32)current_hash[10]) + i) & 31U;
+                current_hash[target_byte] ^= (current_hash[i & 15U] ^ (u8)0xFF);
+                const u8 rotation_byte = current_hash[i & 31U];
+                const u32 rotation_amount = (((u32)current_hash[7] + (u32)current_hash[7]) % 7U) + 1U;
+                current_hash[target_byte] = ((rotation_byte & 1U) == 0U) ? rotl8(current_hash[target_byte], rotation_amount) : rotr8(current_hash[target_byte], rotation_amount);
+                const u32 shift_amount = (((u32)current_hash[3] + (u32)current_hash[5]) % 5U) + 2U;
+                current_hash[target_byte] ^= rotl8(current_hash[target_byte], shift_amount);
+            }
+        } else if ((current_hash[7] % (u8)5) == 0) {
+            const u32 repeat = ((u32)(current_hash[8] & (u8)3U)) + 1U;
+#pragma unroll
+            for (u32 r = 0; r < 4U; r++) {
+                if (r >= repeat) break;
+                const u32 target_byte = (((u32)current_hash[25]) + i) & 31U;
+                current_hash[target_byte] ^= (current_hash[i & 15U] ^ (u8)0x66);
+                const u8 rotation_byte = current_hash[i & 31U];
+                const u32 rotation_amount = (((u32)current_hash[1] + (u32)current_hash[3]) & 3U) + 2U;
+                current_hash[target_byte] = ((rotation_byte & 1U) == 0U) ? rotl8(current_hash[target_byte], rotation_amount) : rotr8(current_hash[target_byte], rotation_amount);
+                const u32 shift_amount = (((u32)current_hash[1] + (u32)current_hash[3]) & 3U) + 1U;
+                current_hash[target_byte] ^= rotl8(current_hash[target_byte], shift_amount);
+            }
+        } else if ((current_hash[8] % (u8)7) == 0) {
+            const u32 repeat = ((u32)(current_hash[9] % (u8)5)) + 1U;
+#pragma unroll
+            for (u32 r = 0; r < 5U; r++) {
+                if (r >= repeat) break;
+                const u32 target_byte = (((u32)current_hash[30]) + i) & 31U;
+                current_hash[target_byte] ^= (current_hash[i & 15U] ^ (u8)0x77);
+                const u8 rotation_byte = current_hash[i & 31U];
+                const u32 rotation_amount = (((u32)current_hash[2] + (u32)current_hash[5]) % 5U) + 1U;
+                current_hash[target_byte] = ((rotation_byte & 1U) == 0U) ? rotl8(current_hash[target_byte], rotation_amount) : rotr8(current_hash[target_byte], rotation_amount);
+                const u32 shift_amount = (((u32)current_hash[7] + (u32)current_hash[9]) % 6U) + 2U;
+                current_hash[target_byte] ^= rotl8(current_hash[target_byte], shift_amount);
+            }
+        }
+    }
+#pragma unroll
+    for (u32 i = 0; i < 32; i++) output[i] = current_hash[i];
+}
+
+__device__ __forceinline__ void calculate_pow_with_header_and_matrix(const u8* matrix_local, const u8* header, u64 nonce, u8 output[32]) {
+    u8 current_hash[32];
+    calculate_pow_pre_matrix_from_header(header, nonce, current_hash);
+    cryptix_hash_matrix(matrix_local, current_hash, output);
+}
+
+__device__ __forceinline__ int hash_meets_target_words(const u8 hash_bytes[32], const u64 target_words[4]) {
+    for (int i = 3; i >= 0; i--) {
+        const u64 hash_word = load64_le(hash_bytes, (u32)(i * 8));
+        const u64 target_word = target_words[i];
+        if (hash_word < target_word) return 1;
+        if (hash_word > target_word) return 0;
+    }
+    return 1;
+}
+
 extern "C" {
-    __global__ void heavy_hash(const uint64_t nonce_mask, const uint64_t nonce_fixed, const uint64_t nonces_len, uint8_t random_type, void* states, uint64_t *final_nonce) {
-        
-        uint8_t sha3_hash[32];
-        
-        int nonceId = threadIdx.x + blockIdx.x * blockDim.x;
-        if (nonceId < nonces_len) {
-            if (nonceId == 0) *final_nonce = 0;
-            uint64_t nonce;
-            switch (random_type) {
-                case RANDOM_LEAN:
-                    nonce = ((uint64_t *)states)[0] ^ nonceId;
-                    break;
-                case RANDOM_XOSHIRO:
-                default:
-                    nonce = xoshiro256_next(((ulonglong4 *)states) + nonceId);
-                    break;
-            }
-            nonce = (nonce & nonce_mask) | nonce_fixed;
+__global__ void heavy_hash(const u64 nonce_mask, const u64 nonce_fixed, const u64 nonces_len, u8 random_type, void* states, u64* final_nonce) {
+    const u64 gid = (u64)threadIdx.x + (u64)blockIdx.x * (u64)blockDim.x;
+    if (gid >= nonces_len) return;
+    if (*(volatile u64*)final_nonce != 0ULL) return;
 
-            uint8_t input[80];
-            memcpy(input, hash_header, HASH_HEADER_SIZE);
-
-            uint256_t hash_;
-            memcpy(input + HASH_HEADER_SIZE, (uint8_t *)(&nonce), 8);
-            hash(powP, hash_.hash, input);
-
-            // Sha3 - The first byte modulo 3, plus 1 for the range [1 - 2]
-            uint8_t first_byte = hash_.hash[0]; 
-            uint8_t iteration_count = (uint8_t)((first_byte % 2) + 1); 
-            
-            for (int i = 0; i < 32; i++) {
-                sha3_hash[i] = hash_.hash[i];
-            }
-            
-            // Iterative SHA3 process
-            for (uint8_t i = 0; i < iteration_count; ++i) {
-                sha3(sha3_hash, 32, sha3_hash, 32);  // Perform SHA3 operation on sha3_hash
-
-                // Dynamic hash transformation based on conditions
-                if (sha3_hash[1] % 4 == 0) {
-                    uint8_t repeat = (sha3_hash[2] % 4) + 1; // 1-4 iterations based on the value of byte 2
-                    for (uint8_t j = 0; j < repeat; ++j) {
-                        // Dynamically select the byte to modify based on a combination of hash bytes and iteration
-                        uint8_t target_byte = ((sha3_hash[1] + i) % 32);  // Dynamic byte position for XOR
-                        uint8_t xor_value = sha3_hash[i % 16] ^ 0xA5; // Dynamic XOR value based on iteration index and hash
-                        sha3_hash[target_byte] ^= xor_value;  // XOR on dynamically selected byte
-
-                        // Dynamically choose the byte to calculate rotation based on the current iteration
-                        uint8_t rotation_byte = sha3_hash[i % 32];  // Use different byte based on iteration index
-                        uint8_t rotation_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 2; // Combined rotation calculation
-
-                        // Perform rotation based on whether the rotation byte is even or odd
-                        if (rotation_byte % 2 == 0) {
-                            // Rotate byte at dynamic position to the left by 'rotation_amount' positions
-                            sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
-                        } else {
-                            // Rotate byte at dynamic position to the right by 'rotation_amount' positions
-                            sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
-                        }
-
-                        // Perform additional bitwise manipulation on the target byte using a shift
-                        uint8_t shift_amount = (sha3_hash[5] + sha3_hash[1]) % 3 + 1; // Combined shift calculation
-                        sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount); // XOR with rotated value
-                    }
-                } else if (sha3_hash[3] % 3 == 0) {
-                    uint8_t repeat = (sha3_hash[4] % 5) + 1;
-                    for (uint8_t j = 0; j < repeat; ++j) {
-                        uint8_t target_byte = ((sha3_hash[6] + i) % 32); 
-                        uint8_t xor_value = sha3_hash[i % 16] ^ 0x55;
-                        sha3_hash[target_byte] ^= xor_value;
-
-                        uint8_t rotation_byte = sha3_hash[i % 32];
-                        uint8_t rotation_amount = (sha3_hash[7] + sha3_hash[2]) % 6 + 1;
-                        if (rotation_byte % 2 == 0) {
-                            sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
-                        } else {
-                            sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
-                        }
-
-                        uint8_t shift_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 1; 
-                        sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
-                    }
-                } else if (sha3_hash[2] % 6 == 0) {
-                    uint8_t repeat = (sha3_hash[6] % 4) + 1;
-                    for (uint8_t j = 0; j < repeat; ++j) {
-                        uint8_t target_byte = ((sha3_hash[10] + i) % 32); 
-                        uint8_t xor_value = sha3_hash[i % 16] ^ 0xFF;
-                        sha3_hash[target_byte] ^= xor_value;
-
-                        uint8_t rotation_byte = sha3_hash[i % 32];  
-                        uint8_t rotation_amount = (sha3_hash[7] + sha3_hash[7]) % 7 + 1;
-                        if (rotation_byte % 2 == 0) {
-                            sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
-                        } else {
-                            sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
-                        }
-
-                        uint8_t shift_amount = (sha3_hash[3] + sha3_hash[5]) % 5 + 2; 
-                        sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
-                    }
-                } else if (sha3_hash[7] % 5 == 0) {
-                    uint8_t repeat = (sha3_hash[8] % 4) + 1;
-                    for (uint8_t j = 0; j < repeat; ++j) {
-                        uint8_t target_byte = ((sha3_hash[25] + i) % 32); 
-                        uint8_t xor_value = sha3_hash[i % 16] ^ 0x66;
-                        sha3_hash[target_byte] ^= xor_value;
-
-                        uint8_t rotation_byte = sha3_hash[i % 32]; 
-                        uint8_t rotation_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 2;
-                        if (rotation_byte % 2 == 0) {
-                            sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
-                        } else {
-                            sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
-                        }
-
-                        uint8_t shift_amount = (sha3_hash[1] + sha3_hash[3]) % 4 + 1; 
-                        sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
-                    }
-                } else if (sha3_hash[8] % 7 == 0) {
-                    uint8_t repeat = (sha3_hash[9] % 5) + 1;
-                    for (uint8_t j = 0; j < repeat; ++j) {
-                        uint8_t target_byte = ((sha3_hash[30] + i) % 32); 
-                        uint8_t xor_value = sha3_hash[i % 16] ^ 0x77; 
-                        sha3_hash[target_byte] ^= xor_value;
-
-                        uint8_t rotation_byte = sha3_hash[i % 32];  
-                        uint8_t rotation_amount = (sha3_hash[2] + sha3_hash[5]) % 5 + 1;
-                        if (rotation_byte % 2 == 0) {
-                            sha3_hash[target_byte] = rotate_left(sha3_hash[target_byte], rotation_amount);
-                        } else {
-                            sha3_hash[target_byte] = rotate_right(sha3_hash[target_byte], rotation_amount);
-                        }
-
-                        uint8_t shift_amount = (sha3_hash[7] + sha3_hash[9]) % 6 + 2; 
-                        sha3_hash[target_byte] ^= rotate_left(sha3_hash[target_byte], shift_amount);
-                    }
-                }
-            }
-
-            // **Matrix Transformation**
-            uchar4 packed_hash[QUARTER_MATRIX_SIZE];
-
-            #pragma unroll
-            for (int i = 0; i < QUARTER_MATRIX_SIZE; i++) {
-                uint8_t h1 = sha3_hash[2 * i], h2 = sha3_hash[2 * i + 1];
-                packed_hash[i] = make_uchar4((h1 >> 4), (h1 & 0xF), (h2 >> 4), (h2 & 0xF));
-            }
-
-            uint8_t product[32] = {0};
-            uint8_t nibble_product[32] = {0};
-            
-            #pragma unroll
-            for (int rowId = 0; rowId < HALF_MATRIX_SIZE; rowId++) {
-                uint32_t product1, product2, product3, product4;
-                amul4bit((uint32_t *)(matrix[(2 * rowId)]), (uint32_t *)(packed_hash), &product1);
-                amul4bit((uint32_t *)(matrix[(2 * rowId + 1)]), (uint32_t *)(packed_hash), &product2);
-                amul4bit((uint32_t *)(matrix[(1 * rowId + 2)]), (uint32_t *)(packed_hash), &product3);
-                amul4bit((uint32_t *)(matrix[(1 * rowId + 3)]), (uint32_t *)(packed_hash), &product4);
-
-                // Nibbles
-                // A
-                uint32_t a_nibble = (product1 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product3 >> 8) & 0xF) 
-                                    ^ ((wrapping_mul(product1, 0xABCD) >> 12) & 0xF) 
-                                    ^ ((wrapping_mul(product1, 0x1234) >> 8) & 0xF)
-                                    ^ ((wrapping_mul(product2, 0x5678) >> 16) & 0xF)
-                                    ^ ((wrapping_mul(product3, 0x9ABC) >> 4) & 0xF)
-                                    ^ (((product1 << 3) | (product1 >> (32 - 3))) & 0xF)
-                                    ^ (((product3 >> 5) | (product3 << (32 - 5))) & 0xF); 
-
-                // B
-                uint32_t b_nibble = (product2 & 0xF) ^ ((product1 >> 4) & 0xF) ^ ((product4 >> 8) & 0xF) 
-                                    ^ ((wrapping_mul(product2, 0xDCBA) >> 14) & 0xF)
-                                    ^ ((wrapping_mul(product2, 0x8765) >> 10) & 0xF) 
-                                    ^ ((wrapping_mul(product1, 0x4321) >> 6) & 0xF)
-                                    ^ (((product4 << 2) | (product4 >> (32 - 2))) & 0xF) 
-                                    ^ (((product1 >> 1) | (product1 << (32 - 1))) & 0xF); 
-
-                // C
-                uint32_t c_nibble = (product3 & 0xF) ^ ((product2 >> 4) & 0xF) ^ ((product2 >> 8) & 0xF) 
-                                    ^ ((wrapping_mul(product3, 0xF135) >> 10) & 0xF)
-                                    ^ ((wrapping_mul(product3, 0x2468) >> 12) & 0xF) 
-                                    ^ ((wrapping_mul(product4, 0xACEF) >> 8) & 0xF)
-                                    ^ ((wrapping_mul(product2, 0x1357) >> 4) & 0xF)
-                                    ^ (((product3 << 5) | (product3 >> (32 - 5))) & 0xF)
-                                    ^ (((product1 >> 7) | (product1 << (32 - 7))) & 0xF);
-
-                // D
-                uint32_t d_nibble = (product1 & 0xF) ^ ((product4 >> 4) & 0xF) ^ ((product1 >> 8) & 0xF)
-                                    ^ ((wrapping_mul(product4, 0x57A3) >> 6) & 0xF)
-                                    ^ ((wrapping_mul(product3, 0xD4E3) >> 12) & 0xF)
-                                    ^ ((wrapping_mul(product1, 0x9F8B) >> 10) & 0xF)
-                                    ^ (((product4 << 4) | (product4 >> (32 - 4))) & 0xF) 
-                                    ^ ((product1 + product2) & 0xF);
-
-            
-                // Store in product array
-                product[rowId] = static_cast<u8>((a_nibble << 4) | b_nibble);
-       
-                // Store in nibble_product array
-                nibble_product[rowId] = static_cast<u8>((c_nibble << 4) | d_nibble);
-            }
-            
-            uint8_t product_before_oct[32]; 
-
-            // XOR the product with the original hash   
-            #pragma unroll
-            for (int i = 0; i < 32; i++) {
-                product[i] ^= sha3_hash[i];
-                product_before_oct[i] = product[i];
-            }
-
-            // XOR the nibble_product with the original hash   
-            #pragma unroll
-            for (int i = 0; i < 32; i++) {
-                nibble_product[i] ^= sha3_hash[i];
-            }
-
-            // ** Octonion**
-            i64 octonion_result[8];
-            octonion_hash(product, octonion_result);
-
-            #pragma unroll
-            for (int i = 0; i < 32; i++) {
-                i64 oct_value = octonion_result[i / 8];
-            
-                u8 oct_value_u8 = (u8)((oct_value >> (8 * (i % 8))) & 0xFF);
-            
-                product[i] ^= oct_value_u8;
-            }
-
-            // **Non-Linear S-Box** (Optimized)
-            uint8_t sbox[256];
-
-            // Pre-calculate rotation values (only 16 unique calculations needed)
-            uint8_t rot_left_vals[16];
-            uint8_t rot_right_vals[16];
-            rot_left_vals[0] = ((nibble_product[3] ^ 0x4F) * 3) % 256;
-            rot_right_vals[0] = ((sha3_hash[2] ^ 0xD3) * 5) % 256;
-            rot_left_vals[1] = ((product[7] ^ 0xA6) * 2) % 256;
-            rot_right_vals[1] = ((nibble_product[5] ^ 0x5B) * 7) % 256;
-            rot_left_vals[2] = ((product_before_oct[1] ^ 0x9C) * 9) % 256;
-            rot_right_vals[2] = ((product[0] ^ 0x8E) * 3) % 256;
-            rot_left_vals[3] = ((product[6] ^ 0x71) * 4) % 256;
-            rot_right_vals[3] = ((product_before_oct[3] ^ 0x2F) * 5) % 256;
-            rot_left_vals[4] = ((nibble_product[4] ^ 0xB2) * 3) % 256;
-            rot_right_vals[4] = ((sha3_hash[7] ^ 0x6D) * 7) % 256;
-            rot_left_vals[5] = ((product[0] ^ 0x58) * 6) % 256;
-            rot_right_vals[5] = ((nibble_product[1] ^ 0xEE) * 9) % 256;
-            rot_left_vals[6] = ((product_before_oct[2] ^ 0x37) * 2) % 256;
-            rot_right_vals[6] = ((sha3_hash[6] ^ 0x44) * 6) % 256;
-            rot_left_vals[7] = ((product[5] ^ 0x1A) * 5) % 256;
-            rot_right_vals[7] = ((sha3_hash[4] ^ 0x7C) * 8) % 256;
-            rot_left_vals[8] = ((nibble_product[3] ^ 0x93) * 7) % 256;
-            rot_right_vals[8] = ((product[2] ^ 0xAF) * 3) % 256;
-            rot_left_vals[9] = ((product[7] ^ 0x29) * 9) % 256;
-            rot_right_vals[9] = ((nibble_product[5] ^ 0xDC) * 2) % 256;
-            rot_left_vals[10] = ((product_before_oct[1] ^ 0x4E) * 4) % 256;
-            rot_right_vals[10] = ((sha3_hash[0] ^ 0x8B) * 3) % 256;
-            rot_left_vals[11] = ((nibble_product[6] ^ 0xF3) * 5) % 256;
-            rot_right_vals[11] = ((product_before_oct[3] ^ 0x62) * 8) % 256;
-            rot_left_vals[12] = ((product[4] ^ 0xB7) * 6) % 256;
-            rot_right_vals[12] = ((product[7] ^ 0x15) * 2) % 256;
-            rot_left_vals[13] = ((product[0] ^ 0x2D) * 8) % 256;
-            rot_right_vals[13] = ((product_before_oct[1] ^ 0xC8) * 7) % 256;
-            rot_left_vals[14] = ((product_before_oct[2] ^ 0x6F) * 3) % 256;
-            rot_right_vals[14] = ((nibble_product[6] ^ 0x99) * 9) % 256;
-            rot_left_vals[15] = ((nibble_product[5] ^ 0xE1) * 7) % 256;
-            rot_right_vals[15] = ((sha3_hash[4] ^ 0x3B) * 5) % 256;
-
-            #pragma unroll 16
-            for (int i = 0; i < 256; i++) {
-                uint8_t i_u8 = (uint8_t)i;
-                uint8_t block = i_u8 >> 4;  // Divide by 16
-            
-                const uint8_t* source_array;
-                if (block == 0 || block == 6 || block == 14) source_array = product;
-                else if (block == 2 || block == 10) source_array = nibble_product;
-                else if (block == 4 || block == 8 || block == 12) source_array = product_before_oct;
-                else source_array = sha3_hash;
-                
-                uint8_t rotate_left_val = rot_left_vals[block];
-                uint8_t rotate_right_val = rot_right_vals[block];
-                                
-                uint8_t value = 
-                    (i_u8 < 16) ? (uint8_t)((product[i_u8 % 32] * 0x03 + i_u8 * 0xAA) & 0xFF) :
-                    (i_u8 < 32) ? (uint8_t)((sha3_hash[(i_u8 - 16) % 32] * 0x05 + (i_u8 - 16) * 0xBB) & 0xFF) :
-                    (i_u8 < 48) ? (uint8_t)((product_before_oct[(i_u8 - 32) % 32] * 0x07 + (i_u8 - 32) * 0xCC) & 0xFF) :
-                    (i_u8 < 64) ? (uint8_t)((nibble_product[(i_u8 - 48) % 32] * 0x0F + (i_u8 - 48) * 0xDD) & 0xFF) :
-                    (i_u8 < 80) ? (uint8_t)((product[(i_u8 - 64) % 32] * 0x11 + (i_u8 - 64) * 0xEE) & 0xFF) :
-                    (i_u8 < 96) ? (uint8_t)((sha3_hash[(i_u8 - 80) % 32] * 0x13 + (i_u8 - 80) * 0xFF) & 0xFF) :
-                    (i_u8 < 112) ? (uint8_t)((product_before_oct[(i_u8 - 96) % 32] * 0x17 + (i_u8 - 96) * 0x11) & 0xFF) :
-                    (i_u8 < 128) ? (uint8_t)((nibble_product[(i_u8 - 112) % 32] * 0x19 + (i_u8 - 112) * 0x22) & 0xFF) :
-                    (i_u8 < 144) ? (uint8_t)((product[(i_u8 - 128) % 32] * 0x1D + (i_u8 - 128) * 0x33) & 0xFF) :
-                    (i_u8 < 160) ? (uint8_t)((sha3_hash[(i_u8 - 144) % 32] * 0x1F + (i_u8 - 144) * 0x44) & 0xFF) :
-                    (i_u8 < 176) ? (uint8_t)((product_before_oct[(i_u8 - 160) % 32] * 0x23 + (i_u8 - 160) * 0x55) & 0xFF) :
-                    (i_u8 < 192) ? (uint8_t)((nibble_product[(i_u8 - 176) % 32] * 0x29 + (i_u8 - 176) * 0x66) & 0xFF) :
-                    (i_u8 < 208) ? (uint8_t)((product[(i_u8 - 192) % 32] * 0x2F + (i_u8 - 192) * 0x77) & 0xFF) :
-                    (i_u8 < 224) ? (uint8_t)((sha3_hash[(i_u8 - 208) % 32] * 0x31 + (i_u8 - 208) * 0x88) & 0xFF) :
-                    (i_u8 < 240) ? (uint8_t)((product_before_oct[(i_u8 - 224) % 32] * 0x37 + (i_u8 - 224) * 0x99) & 0xFF) :
-                                   (uint8_t)((nibble_product[(i_u8 - 240) % 32] * 0x3F + (i_u8 - 240) * 0xAA) & 0xFF);
-           
-                int rotate_left_shift = (product[(i + 1) % 32] + i) % 8;
-                int rotate_right_shift = (sha3_hash[(i + 2) % 32] + i) % 8;
-            
-                int rotation_left = (rotate_left_val << rotate_left_shift) | (rotate_left_val >> (8 - rotate_left_shift));
-                int rotation_right = (rotate_right_val >> rotate_right_shift) | (rotate_right_val << (8 - rotate_right_shift));
-            
-                rotation_left &= 0xFF;
-                rotation_right &= 0xFF;
-            
-                int index = (i + rotation_left + rotation_right) % 32;
-                sbox[i] = source_array[index] ^ value;
-            }
-            
-            // Update Sbox Values (Optimized - no memcpy)
-            size_t sbox_idx = ((size_t)product_before_oct[2] % 8) + 1;  
-            int iterations = 1 + (product[sbox_idx] % 2);            
-
-            #pragma unroll 2
-            for (int iter = 0; iter < iterations; iter++) {
-                uint8_t temp_sbox[256];
-                
-                // Copy and transform in one pass
-                #pragma unroll 16
-                for (int i = 0; i < 256; i++) {
-                    uint8_t value = sbox[i];
-
-                    uint8_t rotate_left_shift = (product[(i + 1) % 32] + i + (i * 3)) % 8;
-                    uint8_t rotate_right_shift = (sha3_hash[(i + 2) % 32] + i + (i * 5)) % 8;
-
-                    uint8_t rotated_value = rotate_left(value, rotate_left_shift) | rotate_right(value, rotate_right_shift);
-
-                    uint8_t base_value = ((i + (product[(i * 3) % 32] ^ sha3_hash[(i * 7) % 32])) & 0xFF) ^ 0xA5;
-                    uint8_t shifted_value = rotate_left(base_value, i % 8);
-                    uint8_t xor_value = shifted_value ^ 0x55;
-
-                    temp_sbox[i] = value ^ rotated_value ^ xor_value;
-                }
-                
-                // Copy back
-                #pragma unroll 16
-                for (int i = 0; i < 256; i++) {
-                    sbox[i] = temp_sbox[i];
-                }
-            }
-
-            // Anti FPGA Sidedoor
-            uint8_t after_comp_product[32];
-            compute_after_comp_product(product, after_comp_product);
-
-            // Blake3 Chaining
-            size_t index_blake = ((size_t)product_before_oct[5] % 8) + 1;  
-            int iterations_blake = 1 + (product[index_blake] % 3);            
-
-            uint8_t product_blake3[32];  
-            memcpy(product_blake3, product, 32); 
-
-            #pragma unroll
-            for (int iter = 0; iter < iterations_blake; iter++) {
-                blake3_hasher b3_hasher;
-                blake3_hasher_init(&b3_hasher);
-                
-                blake3_hasher_update(&b3_hasher, product_blake3, 32); 
-
-                uint8_t temp_blake3[32];  
-                blake3_hasher_finalize(&b3_hasher, temp_blake3, 32);
-                
-                memcpy(product_blake3, temp_blake3, 32);  
-            }
-
-            // Sinus (Testnet)          
-            // uint8_t sinus_in[32];  
-            // uint8_t sinus_out[32];
-            // sinusoidal_multiply(sinus_in, sinus_out);
-
-            // **Apply S-Box**
-            #pragma unroll
-            for (int i = 0; i < 32; i++) {
-                int array_selector = (i * 31) % 4;
-                const uint8_t* ref_array;
-
-                switch (array_selector) {
-                    case 0: ref_array = nibble_product; break;
-                    case 1: ref_array = sha3_hash; break;
-                    case 2: ref_array = product; break;
-                    default: ref_array = product_before_oct; break;
-                }
-
-                int byte_val = ref_array[(i * 13) % 32];  
-
-                int index = (byte_val 
-                            + product[(i * 31) % 32] 
-                            + sha3_hash[(i * 19) % 32] 
-                            + i * 41) % 256;  
-
-                product_blake3[i] ^= sbox[index];
-                // product_blake3[i] ^= sbox[index] ^ sinus_out;
-            }
-
-            // Final XOR 
-            #pragma unroll
-            for (int i = 0; i < 32; i++) {
-                product_blake3[i] ^= after_comp_product[i];
-            }
-
-            memset(input, 0, 80);
-            memcpy(input, product_blake3, 32);
-            hash(heavyP, hash_.hash, input);
-
-            if (LT_U256(hash_, target)) {
-                atomicCAS((unsigned long long int*)final_nonce, 0, (unsigned long long int)nonce);
-            }
-        }
+    __shared__ u8 matrix_local[MATRIX_ELEMS];
+    for (u32 idx = threadIdx.x; idx < MATRIX_ELEMS; idx += blockDim.x) {
+        matrix_local[idx] = ((const u8*)matrix)[idx];
     }
+    __syncthreads();
+
+    u64 nonce;
+    if (random_type == (u8)RANDOM_LEAN) nonce = ((u64*)states)[0] ^ gid;
+    else nonce = xoshiro256_next(((ulonglong4*)states) + gid);
+
+    nonce = (nonce & nonce_mask) | nonce_fixed;
+
+    u8 result[32];
+    calculate_pow_with_header_and_matrix(matrix_local, hash_header, nonce, result);
+    if (!hash_meets_target_words(result, target.number)) return;
+    atomicCAS((unsigned long long int*)final_nonce, 0ULL, (unsigned long long int)nonce);
 }
-
-/*
-// Sinusoidal (It needs to be tested in the testnet first due to arch rounding errors)
-__device__ __inline__ void sinusoidal_multiply(uint8_t sinus_in, uint8_t &sinus_out) {
-    uint8_t left = (sinus_in >> 4) & 0x0F;  
-    uint8_t right = sinus_in & 0x0F;   
-
-    for (int i = 0; i < 16; i++) {
-        uint8_t temp = right;
-        right = (left ^ ((right * 31 + 13) & 0xFF) ^ (right >> 3) ^ (right * 5)) & 0x0F; 
-        left = temp;
-    }
-
-    uint8_t complex_op = (left * right + 97) & 0xFF;  
-    uint8_t nonlinear_op = (complex_op ^ (right >> 4) ^ (left * 11)) & 0xFF;
-
-    uint16_t sinus_in_u16 = static_cast<uint16_t>(sinus_in); 
-    float angle = (sinus_in_u16 % 360) * (3.14159265359f / 180.0f);
-    float sin_value = __sinf(angle);  
-    uint8_t sin_lookup = static_cast<uint8_t>(fabsf(sin_value) * 255.0f); 
-
-    uint8_t modulated_value = (sin_lookup ^ (sin_lookup >> 3) ^ (sin_lookup << 1) ^ 0xA5) & 0xFF;
-    uint8_t sbox_val = ((modulated_value ^ (modulated_value >> 4)) * 43 + 17) & 0xFF;
-    uint8_t obfuscated = ((sbox_val >> 2) | (sbox_val << 6)) ^ 0xF3 ^ 0xA5;
-
-    sinus_out = ((obfuscated ^ (sbox_val * 7) ^ nonlinear_op) + 0xF1) & 0xFF;
 }
-*/

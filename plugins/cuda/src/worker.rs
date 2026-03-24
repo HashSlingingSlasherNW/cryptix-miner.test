@@ -99,6 +99,7 @@ impl<'gpu> Worker for CudaGPUWorker<'gpu> {
     fn calculate_hash(&mut self, _nonces: Option<&Vec<u64>>, nonce_mask: u64, nonce_fixed: u64) {
         let func = &self.heavy_hash_kernel.func;
         let stream = &self.stream;
+        self.final_nonce_buff.copy_from(&[0u64]).unwrap();
         let random: u8 = match self.random {
             NonceGenEnum::Lean => {
                 self.rand_state.copy_from(&[rand::thread_rng().next_u64()]).unwrap();
