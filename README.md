@@ -6,9 +6,9 @@ Supports CPU & GPU + HTTP + Stratum Pool
 - Local Mining on Node via 127.0.0.1
 - HTTP Mining on Node via Webaddress
 - Mining on Stratum Pools
-- No Support now for Stratum Bridge
-- Supports NVIDIA / CUDA
-- No Support now for AMD / OPENCL
+- Support for the Stratum Bridge
+- Supports NVIDIA / CUDA 
+- Supports AMD / INTEL / NVIDIA / OPENCL
 
 
 ## Installation
