@@ -10,6 +10,10 @@ Supports CPU & GPU + HTTP + Stratum Pool + Stratum Bridge
 - Supports NVIDIA / CUDA
 - OpenCL support for AMD / NVIDIA / Intel / onboard GPUs
 
+###  Startup:
+The software starts OpenCL by default for all devices, including Nvidia, because it offers the fastest integration. If an error occurs with OpenCL, it automatically falls back to CUDA.
+
+OpenCL can also be disabled at startup with: `--opencl-disable`
 
 ## Installation
 Stratum Bridge is supported directly. If you want to use external mining software, you can also use this bridge:
