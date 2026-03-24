@@ -276,3 +276,4 @@ https://discord.cryptix-network.org/
 ## Credits
 
 https://github.com/elichai/
+@Cryptis - Cryptix Network
