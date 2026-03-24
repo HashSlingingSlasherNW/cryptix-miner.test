@@ -285,12 +285,7 @@ Join our discord server using the following link: [https://discord.cryptix-netwo
 
 # Devfund
 
-The devfund is a fund managed by the Cryptix community in order to fund Cryptix development <br>
-A miner that wants to mine higher percentage into the dev-fund can pass the following flags: <br>
-`--devfund-precent=XX.YY` to mine only XX.YY% of the blocks into the devfund.
-
-**This version automatically sets the devfund donation to the community designated address. 
-Due to community decision, the minimum amount in the precompiled binaries is 1%**
+0% Devfee
 
 # Donation Addresses
 **Hotifx**: `cryptix:qrjefk2r8wp607rmyvxmgjansqcwugjazpu2kk2r7057gltxetdvk8gl9fs0w`
