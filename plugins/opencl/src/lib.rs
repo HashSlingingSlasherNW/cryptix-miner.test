@@ -47,12 +47,13 @@ impl Plugin for OpenCLPlugin {
     //noinspection RsTypeCheck
     fn process_option(&mut self, matches: &ArgMatches) -> Result<usize, cryptix_miner::Error> {
         let opts: OpenCLOpt = OpenCLOpt::from_arg_matches(matches)?;
+        self.specs.clear();
 
-        self._enabled = opts.opencl_enable;
         let platforms = match get_platforms() {
             Ok(p) => p,
             Err(e) => {
-                return Err(e.to_string().into());
+                info!("OpenCL runtime not available: {}", e);
+                self._enabled = false;
             }
         };
         info!("OpenCL Found Platforms:");
@@ -93,7 +94,7 @@ impl Plugin for OpenCLPlugin {
                 Some(dev) => {
                     self._enabled = true;
                     dev.iter().map(|d| device_ids[*d as usize]).collect::<Vec<cl_device_id>>()
-                }
+                Some(dev) => dev.iter().map(|d| device_ids[*d as usize]).collect::<Vec<cl_device_id>>(),
                 None => device_ids,
             };
 

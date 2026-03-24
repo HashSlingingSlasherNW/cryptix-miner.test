@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. /hive/miners/custom/cryptix_miner_hive_sheet_v029/h-manifest.conf
+. /hive/miners/custom/cryptix_miner_hive_sheet_v0210/h-manifest.conf
 
 stats_raw=$(grep -w "hashrate" "$CUSTOM_LOG_BASENAME.log" | tail -n 1)
 shares_accepted=$(grep -oP 'Accepted: \K[0-9]+' "$CUSTOM_LOG_BASENAME.log" | tail -n1)

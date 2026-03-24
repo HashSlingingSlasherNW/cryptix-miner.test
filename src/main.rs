@@ -30,7 +30,7 @@ mod pow;
 mod target;
 mod watch;
 
-const WHITELIST: [&str; 2] = ["libcryptixcuda", "cryptixcuda"];
+const WHITELIST: [&str; 4] = ["libcryptixcuda", "cryptixcuda", "libcryptixopencl", "cryptixopencl"];
 
 pub mod proto {
     #![allow(clippy::derive_partial_eq_without_eq)]

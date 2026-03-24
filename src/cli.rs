@@ -13,7 +13,12 @@ pub struct Opt {
     #[clap(short = 's', long = "cryptixd-address", default_value = "127.0.0.1", help = "The IP of the cryptixd instance")]
     pub cryptixd_address: String,
 
-    #[clap(long = "devfund-percent", help = "The percentage of blocks to send to the devfund (minimum 1%)", default_value = "1", parse(try_from_str = parse_devfund_percent))]
+    #[clap(
+        long = "devfund-percent",
+        help = "The percentage of blocks to send to the devfund (0 disables devfund)",
+        default_value = "0",
+        parse(try_from_str = parse_devfund_percent)
+    )]
     pub devfund_percent: u16,
 
     #[clap(short, long, help = "Cryptixd port [default: Mainnet = 19201, Testnet = 19202]")]
@@ -53,10 +58,6 @@ fn parse_devfund_percent(s: &str) -> Result<u16, &'static str> {
     // can't be more than 99.99%,
     if prefix >= 100 || postfix >= 100 {
         return Err(err);
-    }
-    if prefix < 1 {
-        // Force at least 1 percent
-        return Ok(100u16);  // 1% = 100
     }
     // DevFund is out of 10_000
     Ok(prefix * 100 + postfix)

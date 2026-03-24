@@ -161,7 +161,7 @@ Choose a generic coin like:
 
 Name:
 
-    Custom Miner Name: cryptix_miner_hive_sheet_v029
+    Custom Miner Name: cryptix_miner_hive_sheet_v0210
 
 Wallet
 
@@ -179,7 +179,7 @@ Miner
 Custom miner configuration:
 
     Installation URL:
-    https://github.com/cryptix-network/cryptix-miner/releases/download/v0.2.9/cryptix_miner_hive_sheet_v029.tar.gz
+    https://github.com/cryptix-network/cryptix-miner/releases/download/v0.2.10/cryptix_miner_hive_sheet_v0210.tar.gz
 
 Start it:
 
@@ -199,9 +199,9 @@ mkdir cryptix
 cd cryptix
 
 Install the Miner Files:
-wget https://github.com/cryptix-network/cryptix-miner/releases/download/v0.2.9/cryptix-miner-hiveos-v-0-2-9.tar
-tar -xf cryptix-miner-hiveos-v-0-2-9.tar
-cd cryptix-miner-hiveos-v-0-2-9
+wget https://github.com/cryptix-network/cryptix-miner/releases/download/v0.2.10/cryptix-miner-hiveos-v-0-2-10.tar
+tar -xf cryptix-miner-hiveos-v-0-2-10.tar
+cd cryptix-miner-hiveos-v-0-2-10
 
 Start the Miner:
 ./cryptix-miner -s "xxxxxxx" --mining-address="xxxxxxxxxx" -t "x"

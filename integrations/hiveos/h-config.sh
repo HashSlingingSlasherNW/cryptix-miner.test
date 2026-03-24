@@ -1,5 +1,5 @@
-[[ -e /hive/custom ]] && . /hive/custom/cryptix_miner_hive_sheet_v029/h-manifest.conf
-[[ -e /hive/miners/custom ]] && . /hive/miners/custom/cryptix_miner_hive_sheet_v029/h-manifest.conf
+[[ -e /hive/custom ]] && . /hive/custom/cryptix_miner_hive_sheet_v0210/h-manifest.conf
+[[ -e /hive/miners/custom ]] && . /hive/miners/custom/cryptix_miner_hive_sheet_v0210/h-manifest.conf
 
 conf=""
 conf+=" --cryptixd-address=$CUSTOM_URL --mining-address $CUSTOM_TEMPLATE"

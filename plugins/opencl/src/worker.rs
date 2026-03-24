@@ -11,7 +11,7 @@ use opencl3::event::{release_event, retain_event, wait_for_events};
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, ClMem, CL_MAP_WRITE, CL_MEM_READ_ONLY, CL_MEM_READ_WRITE, CL_MEM_WRITE_ONLY};
 use opencl3::platform::Platform;
-use opencl3::program::{Program, CL_FINITE_MATH_ONLY, CL_MAD_ENABLE, CL_STD_2_0};
+use opencl3::program::{Program, CL_FINITE_MATH_ONLY, CL_MAD_ENABLE};
 use opencl3::types::{cl_event, cl_uchar, cl_ulong, CL_BLOCKING};
 use rand::{thread_rng, Fill, RngCore};
 use std::borrow::Borrow;
@@ -321,8 +321,6 @@ impl OpenCLGPUWorker {
     }
 }
 fn from_source(context: &Context, device: &Device, options: &str) -> Result<Program, String> {
-    let version = device.version()?;
-    let v = version.split(' ').nth(1).unwrap();
     let platform_name = Platform::new(device.platform().unwrap())
         .name()
         .unwrap_or_else(|_| "Unknown".into())
@@ -331,21 +329,7 @@ fn from_source(context: &Context, device: &Device, options: &str) -> Result<Prog
     let mut compile_options = options.to_string();
     compile_options += CL_MAD_ENABLE;
     compile_options += CL_FINITE_MATH_ONLY;
-
-    // NVIDIA: reports "OpenCL 3.0", but only supports real OpenCL 1.2 → CL2.0 breaks kernel args
-    //
-    if platform_name.contains("nvidia") {
-        info!("NVIDIA detected → forcing OpenCL 1.2");
-        compile_options += "-cl-std=CL1.2 ";
-    }
-    // AMD / Intel: use CL2.0 if supported; OpenCL 3.0 is backward compatible with CL2.0 features
-    else if v == "2.0" || v == "2.1" || v == "3.0" {
-        info!("Compiling with OpenCl 2");
-        compile_options += CL_STD_2_0;
-    }
-    //
-    // ------------------------
-    //
+    compile_options += "-cl-std=CL1.2 ";
 
     // Add platform macro
     compile_options += &format!(
@@ -379,5 +363,4 @@ fn from_source(context: &Context, device: &Device, options: &str) -> Result<Prog
     info!("Build OpenCL with {}", compile_options);
 
     Program::create_and_build_from_source(context, PROGRAM_SOURCE, compile_options.as_str())
-
 }
