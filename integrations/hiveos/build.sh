@@ -1,9 +1,25 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-NAME="cryptix_miner_hive_sheet_v0210"
-VERSION="v0.2.10"
-MINERBIN="cryptix-miner"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-mkdir -p $NAME
-cp h-manifest.conf *.sh $MINERBIN $NAME/
-tar czf $NAME.tar.gz $NAME
+. "$SCRIPT_DIR/h-manifest.conf"
+
+NAME="$CUSTOM_NAME"
+VERSION="$CUSTOM_VERSION"
+MINERBIN="$CUSTOM_MINERBIN"
+PACKAGE_DIR="$NAME"
+ARCHIVE_NAME="$NAME.tar.gz"
+
+if [[ ! -f "$MINERBIN" ]]; then
+    echo "Missing miner binary: $SCRIPT_DIR/$MINERBIN"
+    exit 1
+fi
+
+rm -rf "$PACKAGE_DIR" "$ARCHIVE_NAME"
+mkdir -p "$PACKAGE_DIR"
+cp h-manifest.conf h-config.sh h-run.sh h-stats.sh "$MINERBIN" "$PACKAGE_DIR/"
+tar -czf "$ARCHIVE_NAME" "$PACKAGE_DIR"
+
+echo "Created $ARCHIVE_NAME for $NAME ($VERSION)"

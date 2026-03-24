@@ -1,10 +1,20 @@
-[[ -e /hive/custom ]] && . /hive/custom/cryptix_miner_hive_sheet_v0210/h-manifest.conf
-[[ -e /hive/miners/custom ]] && . /hive/miners/custom/cryptix_miner_hive_sheet_v0210/h-manifest.conf
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+MANIFEST_PATH="$SCRIPT_DIR/h-manifest.conf"
+
+if [[ ! -f "$MANIFEST_PATH" ]]; then
+    echo "Missing manifest file: $MANIFEST_PATH"
+    exit 1
+fi
+
+. "$MANIFEST_PATH"
 
 conf=""
-conf+=" --cryptixd-address=$CUSTOM_URL --mining-address $CUSTOM_TEMPLATE"
+[[ -n "${CUSTOM_URL:-}" ]] && conf+=" --cryptixd-address=$CUSTOM_URL"
+[[ -n "${CUSTOM_TEMPLATE:-}" ]] && conf+=" --mining-address $CUSTOM_TEMPLATE"
+[[ -n "${CUSTOM_USER_CONFIG:-}" ]] && conf+=" $CUSTOM_USER_CONFIG"
 
-[[ ! -z $CUSTOM_USER_CONFIG ]] && conf+=" $CUSTOM_USER_CONFIG"
-
+mkdir -p "$(dirname "$CUSTOM_CONFIG_FILENAME")"
 echo "$conf"
 echo "$conf" > "$CUSTOM_CONFIG_FILENAME"
