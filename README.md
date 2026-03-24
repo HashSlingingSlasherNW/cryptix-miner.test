@@ -1,18 +1,18 @@
 # Cryptix-miner CPU & GPU
-Supports CPU & GPU + HTTP + Stratum Pool
+Supports CPU & GPU + HTTP + Stratum Pool + Stratum Bridge
 ![cryptix-miner](https://github.com/user-attachments/assets/912d2770-8b90-4e43-bdc2-101799c47e3f)
 
 ### Supports:
 - Local Mining on Node via 127.0.0.1
 - HTTP Mining on Node via Webaddress
 - Mining on Stratum Pools
-- No Support now for Stratum Bridge
+- Stratum Bridge Support
 - Supports NVIDIA / CUDA
-- No Support now for AMD / OPENCL
+- OpenCL support for AMD / NVIDIA / Intel / onboard GPUs
 
 
 ## Installation
-If you have difficulties with our miner, you can also use this bridge with an external mining software:
+Stratum Bridge is supported directly. If you want to use external mining software, you can also use this bridge:
 [Cryptix Stratum Bridge](https://github.com/cryptix-network/cryptix-stratum-bridge)
 
 ### From Git Sources
@@ -99,12 +99,13 @@ OPTIONS:
         --cuda-workload <CUDA_WORKLOAD>                    Ratio of nonces to GPU possible parrallel run [default: 64]
         --cuda-workload-absolute                           The values given by workload are not ratio, but absolute number of nonces [default: false]
     -d, --debug                                            Enable debug logging level
-        --devfund-percent <DEVFUND_PERCENT>                The percentage of blocks to send to the devfund (minimum 2%) [default: 2]
+        --devfund-percent <DEVFUND_PERCENT>                The percentage of blocks to send to the devfund (0 disables devfund) [default: 0]
         --experimental-amd                                 Uses SMID instructions in AMD. Miner will crash if instruction is not supported
     -h, --help                                             Print help information
         --mine-when-not-synced                             Mine even when cryptixd says it is not synced
         --nonce-gen <NONCE_GEN>                            The random method used to generate nonces. Options: (i) xoshiro (ii) lean [default: lean]
-        --opencl-amd-disable                               Disables AMD mining (does not override opencl-enable)
+        --opencl-amd-disable                               Disables AMD mining
+        --opencl-disable                                   Disable OpenCL mining on all platforms and vendors
         --opencl-device <OPENCL_DEVICE>                    Which OpenCL GPUs to use on a specific platform
         --opencl-enable                                    Enable opencl, and take all devices of the chosen platform
         --opencl-no-amd-binary                             Disable fetching of precompiled AMD kernel (if exists)
@@ -130,6 +131,10 @@ This will run the miner on all the available CPU (2 Threads) and GPU devcies.
 This will run the miner on the CPU (4 Threads) without CUDA GPU.
 
 `./cryptix-miner -s 127.0.0.1 --port 19201  --mining-address cryptix:XXXXX --threads 4 --cuda-disable`
+
+Disable OpenCL completely (AMD/NVIDIA/Intel/onboard):
+
+`./cryptix-miner -s 127.0.0.1 --port 19201 --mining-address cryptix:XXXXX --opencl-disable`
 
 
 Connect a Pool:
@@ -285,12 +290,9 @@ Join our discord server using the following link: [https://discord.cryptix-netwo
 
 # Devfund
 
-The devfund is a fund managed by the Cryptix community in order to fund Cryptix development <br>
-A miner that wants to mine higher percentage into the dev-fund can pass the following flags: <br>
-`--devfund-precent=XX.YY` to mine only XX.YY% of the blocks into the devfund.
-
-**This version automatically sets the devfund donation to the community designated address. 
-Due to community decision, the minimum amount in the precompiled binaries is 1%**
+The devfund is optional and defaults to 0%.
+A miner that wants to mine a share into the dev-fund can pass:
+`--devfund-percent=XX.YY`
 
 # Donation Addresses
 **Hotifx**: `cryptix:qrjefk2r8wp607rmyvxmgjansqcwugjazpu2kk2r7057gltxetdvk8gl9fs0w`

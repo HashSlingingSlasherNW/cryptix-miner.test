@@ -50,13 +50,16 @@ impl Worker for OpenCLGPUWorker {
         device.name().unwrap()
     }
 
-    fn load_block_constants(&mut self, hash_header: &[u8; 72], matrix: &[[u16; 64]; 64], target: &[u64; 4]) {
+    fn load_block_constants(&mut self, hash_header: &[u8; 72], matrix: &[[u8; 64]; 64], target: &[u64; 4]) {
         let cl_uchar_matrix = match self.experimental_amd {
             true => matrix
                 .iter()
-                .flat_map(|row| row.chunks(2).map(|v| ((v[0] << 4) | v[1]) as cl_uchar))
+                .flat_map(|row| row.chunks_exact(2).map(|v| ((v[0] << 4) | v[1]) as cl_uchar))
                 .collect::<Vec<cl_uchar>>(),
-            false => matrix.iter().flat_map(|row| row.map(|v| v as cl_uchar)).collect::<Vec<cl_uchar>>(),
+            false => matrix
+                .iter()
+                .flat_map(|row| row.iter().copied().map(|v| v as cl_uchar))
+                .collect::<Vec<cl_uchar>>(),
         };
         self.queue
             .enqueue_write_buffer(&mut self.final_nonce, CL_BLOCKING, 0, &[0], &[])

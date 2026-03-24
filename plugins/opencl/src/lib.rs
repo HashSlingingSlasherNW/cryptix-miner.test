@@ -48,6 +48,11 @@ impl Plugin for OpenCLPlugin {
     fn process_option(&mut self, matches: &ArgMatches) -> Result<usize, cryptix_miner::Error> {
         let opts: OpenCLOpt = OpenCLOpt::from_arg_matches(matches)?;
         self.specs.clear();
+        if opts.opencl_disable {
+            info!("OpenCL disabled via --opencl-disable");
+            self._enabled = false;
+            return Ok(0);
+        }
 
         let platforms = match get_platforms() {
             Ok(p) => p,

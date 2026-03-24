@@ -34,6 +34,8 @@ pub struct OpenCLOpt {
     pub opencl_workload_absolute: bool,
     #[clap(long = "opencl-enable", help = "Enable opencl, and take all devices of the chosen platform")]
     pub opencl_enable: bool,
+    #[clap(long = "opencl-disable", help = "Disable OpenCL mining on all platforms and vendors")]
+    pub opencl_disable: bool,
     #[clap(long = "opencl-amd-disable", help = "Disables AMD mining (does not override opencl-enable)")]
     pub opencl_amd_disable: bool,
     #[clap(long = "opencl-no-amd-binary", help = "Disable fetching of precompiled AMD kernel (if exists)")]

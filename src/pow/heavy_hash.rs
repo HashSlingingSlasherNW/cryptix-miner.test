@@ -1,10 +1,187 @@
 
 use crate::pow::{hasher::HeavyHasher, xoshiro::XoShiRo256PlusPlus};
 use crate::Hash;
+use once_cell::sync::OnceCell;
+#[cfg(target_arch = "x86")]
+use std::arch::x86::*;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
 use std::mem::MaybeUninit;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
-pub struct Matrix(pub [[u16; 64]; 64]);
+pub struct Matrix(pub [[u8; 64]; 64]);
+
+const SEL_PRODUCT: u8 = 0;
+const SEL_HASH: u8 = 1;
+const SEL_NIBBLE: u8 = 2;
+const SEL_BEFORE_OCT: u8 = 3;
+const SBOX_SOURCE_SELECTORS: [u8; 16] = [
+    SEL_PRODUCT,
+    SEL_HASH,
+    SEL_NIBBLE,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_HASH,
+    SEL_PRODUCT,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_HASH,
+    SEL_NIBBLE,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_HASH,
+    SEL_PRODUCT,
+    SEL_HASH,
+];
+const SBOX_VALUE_SELECTORS: [u8; 16] = [
+    SEL_PRODUCT,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_NIBBLE,
+    SEL_PRODUCT,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_NIBBLE,
+    SEL_PRODUCT,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_NIBBLE,
+    SEL_PRODUCT,
+    SEL_HASH,
+    SEL_BEFORE_OCT,
+    SEL_NIBBLE,
+];
+const SBOX_VALUE_MULTIPLIERS: [u8; 16] = [
+    0x03, 0x05, 0x07, 0x0F, 0x11, 0x13, 0x17, 0x19, 0x1D, 0x1F, 0x23, 0x29, 0x2F, 0x31, 0x37, 0x3F,
+];
+const SBOX_VALUE_ADDERS: [u8; 16] = [
+    0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+];
+const AFTER_COMP_LUT: [u8; 256] = [
+    0x75, 0x7C, 0xEB, 0x87, 0x24, 0xE7, 0x3D, 0x07, 0x48, 0x32, 0xB2, 0xEE, 0xEF, 0x97, 0xC2, 0x2B,
+    0xE9, 0x4B, 0xE2, 0xAF, 0x2F, 0xF3, 0x19, 0xE7, 0x83, 0x94, 0xB9, 0x4B, 0x09, 0x78, 0x95, 0x69,
+    0x55, 0xF7, 0xF7, 0x9F, 0x67, 0x01, 0x4A, 0xCE, 0xD1, 0x57, 0x64, 0x03, 0xE1, 0x72, 0x8D, 0xCD,
+    0x67, 0x41, 0x6A, 0x10, 0xC0, 0x55, 0x42, 0xBD, 0x28, 0x26, 0xEE, 0x75, 0x51, 0x2B, 0x7B, 0xE6,
+    0xE0, 0x38, 0xD7, 0x1D, 0x48, 0x7D, 0x6C, 0x17, 0x53, 0xFA, 0x7A, 0x89, 0x09, 0x8A, 0x43, 0x7B,
+    0x3B, 0xEE, 0x9F, 0x09, 0xD9, 0x07, 0xD6, 0x66, 0x23, 0x13, 0x82, 0x5B, 0x4B, 0x6B, 0xC2, 0xAF,
+    0xFD, 0xD8, 0x92, 0x0E, 0x40, 0x89, 0x32, 0xEE, 0x14, 0x9A, 0xA4, 0xAC, 0xEC, 0xF9, 0x9D, 0x3A,
+    0xBC, 0x51, 0x05, 0x6A, 0x11, 0xA7, 0xAC, 0x1B, 0x71, 0x40, 0x0D, 0x05, 0xD0, 0x61, 0x05, 0xE2,
+    0x5A, 0x1D, 0xCA, 0x4C, 0x56, 0x40, 0x2A, 0x49, 0x67, 0x61, 0x69, 0x21, 0x80, 0x85, 0x59, 0xB8,
+    0x2C, 0xD0, 0x20, 0xDA, 0x88, 0xAC, 0xCC, 0xD1, 0x70, 0x76, 0x98, 0x7F, 0x7C, 0x55, 0xD0, 0xD6,
+    0x2B, 0xA5, 0xB7, 0x03, 0x9E, 0x37, 0x9B, 0xB9, 0xF1, 0xE8, 0x1F, 0xE0, 0x42, 0x6B, 0x62, 0x63,
+    0xB7, 0xDC, 0x8E, 0xCC, 0x6C, 0xB7, 0x76, 0x27, 0xC1, 0xEC, 0x72, 0x17, 0xCE, 0x76, 0x65, 0x8C,
+    0x9F, 0x16, 0xDB, 0xB2, 0x5F, 0x7F, 0x14, 0x5A, 0x42, 0x89, 0xEC, 0x1D, 0xC5, 0xC9, 0xA0, 0x30,
+    0xDD, 0x3C, 0xDC, 0x7B, 0x8A, 0x47, 0x3E, 0xB5, 0xEA, 0xA9, 0xA9, 0x6A, 0x89, 0x65, 0x4D, 0x3A,
+    0xC8, 0xAD, 0xBB, 0xAD, 0xA0, 0xE5, 0xB8, 0xF6, 0xCD, 0x08, 0xA3, 0xE8, 0xA0, 0x5E, 0x18, 0xA6,
+    0x65, 0x27, 0x26, 0x5C, 0x21, 0xA8, 0xF4, 0x3C, 0xCA, 0x95, 0x15, 0xFC, 0x9C, 0x1B, 0x9A, 0x0B,
+];
+
+#[inline(always)]
+fn avx2_available() -> bool {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        static HAS_AVX2: OnceCell<bool> = OnceCell::new();
+        *HAS_AVX2.get_or_init(|| std::is_x86_feature_detected!("avx2"))
+    }
+    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+    {
+        false
+    }
+}
+
+#[inline(always)]
+fn dot_products_4rows(
+    row0: &[u8; 64],
+    row1: &[u8; 64],
+    row2: &[u8; 64],
+    row3: &[u8; 64],
+    nibbles: &[u8; 64],
+    use_avx2: bool,
+) -> (u32, u32, u32, u32) {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    if use_avx2 {
+        // SAFETY: AVX2 availability is checked by caller.
+        return unsafe { dot_products_4rows_avx2(row0, row1, row2, row3, nibbles) };
+    }
+
+    let mut sum1 = 0u32;
+    let mut sum2 = 0u32;
+    let mut sum3 = 0u32;
+    let mut sum4 = 0u32;
+    let mut j = 0usize;
+    while j < 64 {
+        let e0 = nibbles[j] as u32;
+        let e1 = nibbles[j + 1] as u32;
+        let e2 = nibbles[j + 2] as u32;
+        let e3 = nibbles[j + 3] as u32;
+        sum1 +=
+            (row0[j] as u32) * e0 + (row0[j + 1] as u32) * e1 + (row0[j + 2] as u32) * e2 + (row0[j + 3] as u32) * e3;
+        sum2 +=
+            (row1[j] as u32) * e0 + (row1[j + 1] as u32) * e1 + (row1[j + 2] as u32) * e2 + (row1[j + 3] as u32) * e3;
+        sum3 +=
+            (row2[j] as u32) * e0 + (row2[j + 1] as u32) * e1 + (row2[j + 2] as u32) * e2 + (row2[j + 3] as u32) * e3;
+        sum4 +=
+            (row3[j] as u32) * e0 + (row3[j + 1] as u32) * e1 + (row3[j + 2] as u32) * e2 + (row3[j + 3] as u32) * e3;
+        j += 4;
+    }
+    (sum1, sum2, sum3, sum4)
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[target_feature(enable = "avx2")]
+unsafe fn dot_products_4rows_avx2(
+    row0: &[u8; 64],
+    row1: &[u8; 64],
+    row2: &[u8; 64],
+    row3: &[u8; 64],
+    nibbles: &[u8; 64],
+) -> (u32, u32, u32, u32) {
+    let ones = _mm256_set1_epi16(1);
+    let n0 = _mm256_loadu_si256(nibbles.as_ptr() as *const __m256i);
+    let n1 = _mm256_loadu_si256(nibbles.as_ptr().add(32) as *const __m256i);
+
+    let mut acc0 = _mm256_setzero_si256();
+    let mut acc1 = _mm256_setzero_si256();
+    let mut acc2 = _mm256_setzero_si256();
+    let mut acc3 = _mm256_setzero_si256();
+
+    macro_rules! accum_row_chunk {
+        ($acc:ident, $row:expr, $nib:expr, $offset:expr) => {{
+            let row_vec = _mm256_loadu_si256($row.as_ptr().add($offset) as *const __m256i);
+            let mul16 = _mm256_maddubs_epi16(row_vec, $nib);
+            let mul32 = _mm256_madd_epi16(mul16, ones);
+            $acc = _mm256_add_epi32($acc, mul32);
+        }};
+    }
+
+    accum_row_chunk!(acc0, row0, n0, 0);
+    accum_row_chunk!(acc1, row1, n0, 0);
+    accum_row_chunk!(acc2, row2, n0, 0);
+    accum_row_chunk!(acc3, row3, n0, 0);
+
+    accum_row_chunk!(acc0, row0, n1, 32);
+    accum_row_chunk!(acc1, row1, n1, 32);
+    accum_row_chunk!(acc2, row2, n1, 32);
+    accum_row_chunk!(acc3, row3, n1, 32);
+
+    (
+        hsum_u32x8_avx2(acc0),
+        hsum_u32x8_avx2(acc1),
+        hsum_u32x8_avx2(acc2),
+        hsum_u32x8_avx2(acc3),
+    )
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[target_feature(enable = "avx2")]
+unsafe fn hsum_u32x8_avx2(v: __m256i) -> u32 {
+    let lo = _mm256_castsi256_si128(v);
+    let hi = _mm256_extracti128_si256(v, 1);
+    let sum128 = _mm_add_epi32(lo, hi);
+    let sum64 = _mm_add_epi32(sum128, _mm_srli_si128(sum128, 8));
+    let sum32 = _mm_add_epi32(sum64, _mm_srli_si128(sum64, 4));
+    _mm_cvtsi128_si32(sum32) as u32
+}
 
 impl Matrix {
 
@@ -28,7 +205,7 @@ impl Matrix {
                 if shift == 0 {
                     val = generator.u64();
                 }
-                (val >> (4 * shift) & 0x0F) as u16
+                (val >> (4 * shift) & 0x0F) as u8
             })
         }))
     }
@@ -83,61 +260,11 @@ impl Matrix {
     }
 
     // ***Anti-FPGA Sidedoor***
-    fn chaotic_random(x: u32) -> u32 {
-        (x.wrapping_mul(362605)) ^ 0xA5A5A5A5
-    }
-    
-    fn memory_intensive_mix(seed: u32) -> u32 {
-        let mut acc = seed;
-        for i in 0..32 {
-             acc = acc.wrapping_mul(16625) ^ i;
-        }
-        acc
-    }
-    
-    fn recursive_fibonacci_modulated(mut x: u32, depth: u8) -> u32 {
-        let mut a = 1u32;
-        let mut b = x | 1;
-        
-        let actual_depth = depth.min(8);
-    
-        for _ in 0..actual_depth {
-            let temp = b;
-            b = b.wrapping_add(a ^ (x.rotate_left((b % 17) as u32)));
-            a = temp;
-            x = x.rotate_right((a % 13) as u32) ^ b;
-        }
-    
-        x
-    }
-    
-    fn anti_fpga_hash(input: u32) -> u32 {
-        let mut x = input;
-        let noise = Self::memory_intensive_mix(x);
-        let depth = ((noise & 0x0F) + 10) as u8;
-    
-        let prime_factor_sum = x.count_ones() as u32;
-    
-        x ^= prime_factor_sum;
-    
-        x = Self::recursive_fibonacci_modulated(x ^ noise, depth);
-        x ^= Self::memory_intensive_mix(x.rotate_left(9));
-    
-        x
-    }
-    
     fn compute_after_comp_product(pre_comp_product: [u8; 32]) -> [u8; 32] {
         let mut after_comp_product = [0u8; 32];
-    
         for i in 0..32 {
-            let input = pre_comp_product[i] as u32 ^ ((i as u32) << 8);
-            let normalized_input = input % 256;
-            let modified_input = Self::chaotic_random(normalized_input);
-    
-            let hashed = Self::anti_fpga_hash(modified_input);
-            after_comp_product[i] = (hashed & 0xFF) as u8;
+            after_comp_product[i] = AFTER_COMP_LUT[pre_comp_product[i] as usize];
         }
-    
         after_comp_product
     }
     
@@ -282,231 +409,185 @@ impl Matrix {
 
     pub fn heavy_hash(&self, hash: Hash) -> Hash {
         let hash_bytes = hash.to_le_bytes();
-           
-        // Create an array containing the nibbles
-        let mut nibbles = [0u8; 64];
-        for (i, &byte) in hash_bytes.iter().enumerate() {
-            nibbles[2 * i] = byte >> 4;
-            nibbles[2 * i + 1] = byte & 0x0F;
-        }
-    
-        // Matrix and vector multiplication
+        let nibbles = {
+            let mut arr = [0u8; 64];
+            for (i, &byte) in hash_bytes.iter().enumerate() {
+                arr[2 * i] = byte >> 4;
+                arr[2 * i + 1] = byte & 0x0F;
+            }
+            arr
+        };
+        let use_avx2 = avx2_available();
+
         let mut product = [0u8; 32];
         let mut nibble_product = [0u8; 32];
 
         for i in 0..32 {
-            let mut sum1: u32 = 0;
-            let mut sum2: u32 = 0;
-            let mut sum3: u32 = 0;
-            let mut sum4: u32 = 0;
-    
-            for j in 0..64 {
-                let elem = nibbles[j] as u32;
-                sum1 += (self.0[2 * i][j] as u32) * elem;
-                sum2 += (self.0[2 * i + 1][j] as u32) * elem;
-                sum3 += (self.0[1 * i + 2][j] as u32) * elem;
-                sum4 += (self.0[1 * i + 3][j] as u32) * elem;                
-            }
+            let row0 = &self.0[2 * i];
+            let row1 = &self.0[2 * i + 1];
+            let row2 = &self.0[i + 2];
+            let row3 = &self.0[i + 3];
 
-           // Nibbles
-           //A
-           let a_nibble = (sum1 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum3 >> 8) & 0xF) 
-                ^ ((sum1.wrapping_mul(0xABCD) >> 12) & 0xF) 
+            let (sum1, sum2, sum3, sum4) = dot_products_4rows(row0, row1, row2, row3, &nibbles, use_avx2);
+
+            let a_nibble = (sum1 & 0xF)
+                ^ ((sum2 >> 4) & 0xF)
+                ^ ((sum3 >> 8) & 0xF)
+                ^ ((sum1.wrapping_mul(0xABCD) >> 12) & 0xF)
                 ^ ((sum1.wrapping_mul(0x1234) >> 8) & 0xF)
                 ^ ((sum2.wrapping_mul(0x5678) >> 16) & 0xF)
                 ^ ((sum3.wrapping_mul(0x9ABC) >> 4) & 0xF)
-                ^ ((sum1.rotate_left(3) & 0xF) ^ (sum3.rotate_right(5) & 0xF));  
+                ^ ((sum1.rotate_left(3) & 0xF) ^ (sum3.rotate_right(5) & 0xF));
 
-            // B
-            let b_nibble = (sum2 & 0xF) ^ ((sum1 >> 4) & 0xF) ^ ((sum4 >> 8) & 0xF) 
+            let b_nibble = (sum2 & 0xF)
+                ^ ((sum1 >> 4) & 0xF)
+                ^ ((sum4 >> 8) & 0xF)
                 ^ ((sum2.wrapping_mul(0xDCBA) >> 14) & 0xF)
-                ^ ((sum2.wrapping_mul(0x8765) >> 10) & 0xF) 
+                ^ ((sum2.wrapping_mul(0x8765) >> 10) & 0xF)
                 ^ ((sum1.wrapping_mul(0x4321) >> 6) & 0xF)
-                ^ ((sum4.rotate_left(2) ^ sum1.rotate_right(1)) & 0xF); 
+                ^ ((sum4.rotate_left(2) ^ sum1.rotate_right(1)) & 0xF);
 
-            // C
-            let c_nibble = (sum3 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum2 >> 8) & 0xF) 
+            let c_nibble = (sum3 & 0xF)
+                ^ ((sum2 >> 4) & 0xF)
+                ^ ((sum2 >> 8) & 0xF)
                 ^ ((sum3.wrapping_mul(0xF135) >> 10) & 0xF)
-                ^ ((sum3.wrapping_mul(0x2468) >> 12) & 0xF) 
+                ^ ((sum3.wrapping_mul(0x2468) >> 12) & 0xF)
                 ^ ((sum4.wrapping_mul(0xACEF) >> 8) & 0xF)
                 ^ ((sum2.wrapping_mul(0x1357) >> 4) & 0xF)
                 ^ ((sum3.rotate_left(5) & 0xF) ^ (sum1.rotate_right(7) & 0xF));
 
-            // D
-            let d_nibble = (sum1 & 0xF) ^ ((sum4 >> 4) & 0xF) ^ ((sum1 >> 8) & 0xF)
+            let d_nibble = (sum1 & 0xF)
+                ^ ((sum4 >> 4) & 0xF)
+                ^ ((sum1 >> 8) & 0xF)
                 ^ ((sum4.wrapping_mul(0x57A3) >> 6) & 0xF)
                 ^ ((sum3.wrapping_mul(0xD4E3) >> 12) & 0xF)
                 ^ ((sum1.wrapping_mul(0x9F8B) >> 10) & 0xF)
                 ^ ((sum4.rotate_left(4) ^ sum1.wrapping_add(sum2)) & 0xF);
 
-            // Combine c_nibble and d_nibble to form nibble_product
-            nibble_product[i] = ((c_nibble << 4) | d_nibble) as u8; 
-            
-            // Combine a_nibble and b_nibble to form product
-            product[i] = ((a_nibble << 4) | b_nibble) as u8;
+            let hash_byte = hash_bytes[i];
+            nibble_product[i] = (((c_nibble << 4) | d_nibble) as u8) ^ hash_byte;
+            product[i] = (((a_nibble << 4) | b_nibble) as u8) ^ hash_byte;
         }
-    
-        // XOR the product with the original hash   
-        product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
-        nibble_product.iter_mut().zip(hash_bytes.iter()).for_each(|(p, h)| *p ^= h);
 
-        let product_before_oct = product.clone();
+        let product_before_oct = product;
 
-        // ** Octonion Function **
         let octonion_result = Self::octonion_hash(&product);
-        
-        // XOR with i64 values - convert to u8
-        for i in 0..32 {
-            let oct_value = octonion_result[i / 8];
-            
-            // Extract the relevant byte from the i64 value
-            let oct_value_u8 = ((oct_value >> (8 * (i % 8))) & 0xFF) as u8; 
-
-            // XOR the values and store the result in the product
-            product[i] ^= oct_value_u8;
-        }
-
-        // Debug before Sbox
-        // println!("Product before calculation: {:?}", product);
-
-        
-        // **Nonlinear S-Box**
-        let mut sbox: [u8; 256] = [0; 256];
-
-        for i in 0..256 {
-            let i = i as u8;
-        
-            let (source_array, rotate_left_val, rotate_right_val) = 
-                if i < 16 { (&product, (nibble_product[3] ^ 0x4F).wrapping_mul(3) as u8, (hash_bytes[2] ^ 0xD3).wrapping_mul(5) as u8) }
-                else if i < 32 { (&hash_bytes, (product[7] ^ 0xA6).wrapping_mul(2) as u8, (nibble_product[5] ^ 0x5B).wrapping_mul(7) as u8) }
-                else if i < 48 { (&nibble_product, (product_before_oct[1] ^ 0x9C).wrapping_mul(9) as u8, (product[0] ^ 0x8E).wrapping_mul(3) as u8) }
-                else if i < 64 { (&hash_bytes, (product[6] ^ 0x71).wrapping_mul(4) as u8, (product_before_oct[3] ^ 0x2F).wrapping_mul(5) as u8) }
-                else if i < 80 { (&product_before_oct, (nibble_product[4] ^ 0xB2).wrapping_mul(3) as u8, (hash_bytes[7] ^ 0x6D).wrapping_mul(7) as u8) }
-                else if i < 96 { (&hash_bytes, (product[0] ^ 0x58).wrapping_mul(6) as u8, (nibble_product[1] ^ 0xEE).wrapping_mul(9) as u8) }
-                else if i < 112 { (&product, (product_before_oct[2] ^ 0x37).wrapping_mul(2) as u8, (hash_bytes[6] ^ 0x44).wrapping_mul(6) as u8) }
-                else if i < 128 { (&hash_bytes, (product[5] ^ 0x1A).wrapping_mul(5) as u8, (hash_bytes[4] ^ 0x7C).wrapping_mul(8) as u8) }
-                else if i < 144 { (&product_before_oct, (nibble_product[3] ^ 0x93).wrapping_mul(7) as u8, (product[2] ^ 0xAF).wrapping_mul(3) as u8) }
-                else if i < 160 { (&hash_bytes, (product[7] ^ 0x29).wrapping_mul(9) as u8, (nibble_product[5] ^ 0xDC).wrapping_mul(2) as u8) }
-                else if i < 176 { (&nibble_product, (product_before_oct[1] ^ 0x4E).wrapping_mul(4) as u8, (hash_bytes[0] ^ 0x8B).wrapping_mul(3) as u8) }
-                else if i < 192 { (&hash_bytes, (nibble_product[6] ^ 0xF3).wrapping_mul(5) as u8, (product_before_oct[3] ^ 0x62).wrapping_mul(8) as u8) }
-                else if i < 208 { (&product_before_oct, (product[4] ^ 0xB7).wrapping_mul(6) as u8, (product[7] ^ 0x15).wrapping_mul(2) as u8) }
-                else if i < 224 { (&hash_bytes, (product[0] ^ 0x2D).wrapping_mul(8) as u8, (product_before_oct[1] ^ 0xC8).wrapping_mul(7) as u8) }
-                else if i < 240 { (&product, (product_before_oct[2] ^ 0x6F).wrapping_mul(3) as u8, (nibble_product[6] ^ 0x99).wrapping_mul(9) as u8) }
-                else { (&hash_bytes, (nibble_product[5] ^ 0xE1).wrapping_mul(7) as u8, (hash_bytes[4] ^ 0x3B).wrapping_mul(5) as u8) }; 
-
-                // println!("End of iteration {}: source_array: {:?}, rotate_left_val: {:02X}, rotate_right_val: {:02X}", i, source_array, rotate_left_val, rotate_right_val);
-
-            let value = 
-                if i < 16 { (product[i as usize % 32].wrapping_mul(0x03).wrapping_add(i.wrapping_mul(0xAA))) & 0xFF }
-                else if i < 32 { (hash_bytes[(i - 16) as usize % 32].wrapping_mul(0x05).wrapping_add((i - 16).wrapping_mul(0xBB))) & 0xFF }
-                else if i < 48 { (product_before_oct[(i - 32) as usize % 32].wrapping_mul(0x07).wrapping_add((i - 32).wrapping_mul(0xCC))) & 0xFF }
-                else if i < 64 { (nibble_product[(i - 48) as usize % 32].wrapping_mul(0x0F).wrapping_add((i - 48).wrapping_mul(0xDD))) & 0xFF }
-                else if i < 80 { (product[(i - 64) as usize % 32].wrapping_mul(0x11).wrapping_add((i - 64).wrapping_mul(0xEE))) & 0xFF }
-                else if i < 96 { (hash_bytes[(i - 80) as usize % 32].wrapping_mul(0x13).wrapping_add((i - 80).wrapping_mul(0xFF))) & 0xFF }
-                else if i < 112 { (product_before_oct[(i - 96) as usize % 32].wrapping_mul(0x17).wrapping_add((i - 96).wrapping_mul(0x11))) & 0xFF }
-                else if i < 128 { (nibble_product[(i - 112) as usize % 32].wrapping_mul(0x19).wrapping_add((i - 112).wrapping_mul(0x22))) & 0xFF }
-                else if i < 144 { (product[(i - 128) as usize % 32].wrapping_mul(0x1D).wrapping_add((i - 128).wrapping_mul(0x33))) & 0xFF }
-                else if i < 160 { (hash_bytes[(i - 144) as usize % 32].wrapping_mul(0x1F).wrapping_add((i - 144).wrapping_mul(0x44))) & 0xFF }
-                else if i < 176 { (product_before_oct[(i - 160) as usize % 32].wrapping_mul(0x23).wrapping_add((i - 160).wrapping_mul(0x55))) & 0xFF }
-                else if i < 192 { (nibble_product[(i - 176) as usize % 32].wrapping_mul(0x29).wrapping_add((i - 176).wrapping_mul(0x66))) & 0xFF }
-                else if i < 208 { (product[(i - 192) as usize % 32].wrapping_mul(0x2F).wrapping_add((i - 192).wrapping_mul(0x77))) & 0xFF }
-                else if i < 224 { (hash_bytes[(i - 208) as usize % 32].wrapping_mul(0x31).wrapping_add((i - 208).wrapping_mul(0x88))) & 0xFF }
-                else if i < 240 { (product_before_oct[(i - 224) as usize % 32].wrapping_mul(0x37).wrapping_add((i - 224).wrapping_mul(0x99))) & 0xFF }
-                else { (nibble_product[(i - 240) as usize % 32].wrapping_mul(0x3F).wrapping_add((i - 240).wrapping_mul(0xAA))) & 0xFF }; 
-                
-               // println!("i: {}, value: {:02X}", i, value);
-        
-            let rotate_left_shift = (product[(i as usize + 1) % product.len()] as u32 + i as u32) % 8;
-            let rotate_right_shift = (hash_bytes[(i as usize + 2) % hash_bytes.len()] as u32 + i as u32) % 8;
-        
-            let rotation_left = rotate_left_val.rotate_left(rotate_left_shift);
-            let rotation_right = rotate_right_val.rotate_right(rotate_right_shift);
-        
-            let index = (i as usize + rotation_left as usize + rotation_right as usize) % source_array.len();
-            sbox[i as usize] = source_array[index] ^ value;
-
-            // println!("  SBox[{}]: {:02X}", i, sbox[i as usize]);
-        }
-
-        // Update Sbox Values
-        let index = ((product_before_oct[2] % 8) + 1) as usize;  
-        let iterations = 1 + (product[index] % 2);
-
-        for _ in 0..iterations {
-            let mut temp_sbox = sbox;
-
-            for i in 0..256 {
-                let mut value = temp_sbox[i];
-
-                let rotate_left_shift = (product[(i + 1) % product.len()] as u32 + i as u32 + (i * 3) as u32) % 8;  
-                let rotate_right_shift = (hash_bytes[(i + 2) % hash_bytes.len()] as u32 + i as u32 + (i * 5) as u32) % 8; 
-
-                let rotated_value = value.rotate_left(rotate_left_shift) | value.rotate_right(rotate_right_shift);
-
-                let xor_value = {
-                    let base_value = (i as u8).wrapping_add(product[(i * 3) % product.len()] ^ hash_bytes[(i * 7) % hash_bytes.len()]) ^ 0xA5;
-                    let shifted_value = base_value.rotate_left((i % 8) as u32); 
-                    shifted_value ^ 0x55 
-                };
-
-                value ^= rotated_value ^ xor_value;
-                temp_sbox[i] = value; 
+        for i in 0..4 {
+            let bytes = octonion_result[i].to_le_bytes();
+            for j in 0..8 {
+                product[(i * 8) + j] ^= bytes[j];
             }
-
-            sbox = temp_sbox;
         }
 
-        // Anti FPGA Sidedoor
-        let pre_comp_product: [u8; 32] = product;
-        let after_comp_product = Self::compute_after_comp_product(pre_comp_product);
-        
-        // Blake3 Chaining
-        let index_blake = ((product_before_oct[5] % 8) + 1) as usize;  
-        let iterations_blake = 1 + (product[index_blake] % 3);
+        let mut sbox = [0u8; 256];
+        let rotate_left_bases: [u8; 16] = [
+            (nibble_product[3] ^ 0x4F).wrapping_mul(3),
+            (product[7] ^ 0xA6).wrapping_mul(2),
+            (product_before_oct[1] ^ 0x9C).wrapping_mul(9),
+            (product[6] ^ 0x71).wrapping_mul(4),
+            (nibble_product[4] ^ 0xB2).wrapping_mul(3),
+            (product[0] ^ 0x58).wrapping_mul(6),
+            (product_before_oct[2] ^ 0x37).wrapping_mul(2),
+            (product[5] ^ 0x1A).wrapping_mul(5),
+            (nibble_product[3] ^ 0x93).wrapping_mul(7),
+            (product[7] ^ 0x29).wrapping_mul(9),
+            (product_before_oct[1] ^ 0x4E).wrapping_mul(4),
+            (nibble_product[6] ^ 0xF3).wrapping_mul(5),
+            (product[4] ^ 0xB7).wrapping_mul(6),
+            (product[0] ^ 0x2D).wrapping_mul(8),
+            (product_before_oct[2] ^ 0x6F).wrapping_mul(3),
+            (nibble_product[5] ^ 0xE1).wrapping_mul(7),
+        ];
+        let rotate_right_bases: [u8; 16] = [
+            (hash_bytes[2] ^ 0xD3).wrapping_mul(5),
+            (nibble_product[5] ^ 0x5B).wrapping_mul(7),
+            (product[0] ^ 0x8E).wrapping_mul(3),
+            (product_before_oct[3] ^ 0x2F).wrapping_mul(5),
+            (hash_bytes[7] ^ 0x6D).wrapping_mul(7),
+            (nibble_product[1] ^ 0xEE).wrapping_mul(9),
+            (hash_bytes[6] ^ 0x44).wrapping_mul(6),
+            (hash_bytes[4] ^ 0x7C).wrapping_mul(8),
+            (product[2] ^ 0xAF).wrapping_mul(3),
+            (nibble_product[5] ^ 0xDC).wrapping_mul(2),
+            (hash_bytes[0] ^ 0x8B).wrapping_mul(3),
+            (product_before_oct[3] ^ 0x62).wrapping_mul(8),
+            (product[7] ^ 0x15).wrapping_mul(2),
+            (product_before_oct[1] ^ 0xC8).wrapping_mul(7),
+            (nibble_product[6] ^ 0x99).wrapping_mul(9),
+            (hash_bytes[4] ^ 0x3B).wrapping_mul(5),
+        ];
 
-        let mut b3_hash_array = product.clone(); 
-        for _ in 0..iterations_blake {
-            // BLAKE3 Hashing
-            let mut b3_hasher = blake3::Hasher::new();
-            b3_hasher.update(&b3_hash_array);
-            let product_blake3 = b3_hasher.finalize();
-            let b3_hash_bytes = product_blake3.as_bytes();
-
-            // Convert
-            b3_hash_array.copy_from_slice(b3_hash_bytes);
-        }
-
-        // Sinus (Testnet)
-        // let sinus_in = product.clone();    
-        // let sinus_out = Self::sinusoidal_multiply(&sinus_in);
- 
-        // Apply S-Box to the product with XOR
-        for i in 0..32 {
-            let ref_array = match (i * 31) % 4 { 
-                0 => &nibble_product,
-                1 => &hash_bytes,
-                2 => &product,
+        for i in 0..256usize {
+            let segment = i >> 4;
+            let local = i & 15;
+            let source_array: &[u8; 32] = match SBOX_SOURCE_SELECTORS[segment] {
+                SEL_PRODUCT => &product,
+                SEL_HASH => &hash_bytes,
+                SEL_NIBBLE => &nibble_product,
+                _ => &product_before_oct,
+            };
+            let value_array: &[u8; 32] = match SBOX_VALUE_SELECTORS[segment] {
+                SEL_PRODUCT => &product,
+                SEL_HASH => &hash_bytes,
+                SEL_NIBBLE => &nibble_product,
                 _ => &product_before_oct,
             };
 
-            let byte_val = ref_array[(i * 13) % ref_array.len()] as usize;
-
-            let index = (byte_val 
-                        + product[(i * 31) % product.len()] as usize 
-                        + hash_bytes[(i * 19) % hash_bytes.len()] as usize 
-                        + i * 41) % 256;  
-            
-           b3_hash_array[i] ^= sbox[index]; 
+            let value = value_array[local]
+                .wrapping_mul(SBOX_VALUE_MULTIPLIERS[segment])
+                .wrapping_add((local as u8).wrapping_mul(SBOX_VALUE_ADDERS[segment]));
+            let rotate_left_shift = (product[(i + 1) & 31] as u32 + i as u32) & 7;
+            let rotate_right_shift = (hash_bytes[(i + 2) & 31] as u32 + i as u32) & 7;
+            let rotation_left = rotate_left_bases[segment].rotate_left(rotate_left_shift);
+            let rotation_right = rotate_right_bases[segment].rotate_right(rotate_right_shift);
+            let index = (i + rotation_left as usize + rotation_right as usize) & 31;
+            sbox[i] = source_array[index] ^ value;
         }
-      
-        // Final Xor
+
+        let update_index = ((product_before_oct[2] % 8) + 1) as usize;
+        let sbox_iterations = 1 + (product[update_index] % 2);
+        for _ in 0..sbox_iterations {
+            for i in 0..256usize {
+                let mut value = sbox[i];
+                let rotate_left_shift = (product[(i + 1) & 31] as u32 + i as u32 + (i * 3) as u32) & 7;
+                let rotate_right_shift = (hash_bytes[(i + 2) & 31] as u32 + i as u32 + (i * 5) as u32) & 7;
+                let rotated_value = value.rotate_left(rotate_left_shift) | value.rotate_right(rotate_right_shift);
+                let xor_value = {
+                    let base_value = (i as u8).wrapping_add(product[(i * 3) & 31] ^ hash_bytes[(i * 7) & 31]) ^ 0xA5;
+                    base_value.rotate_left((i % 8) as u32) ^ 0x55
+                };
+                value ^= rotated_value ^ xor_value;
+                sbox[i] = value;
+            }
+        }
+
+        let after_comp_product = Self::compute_after_comp_product(product);
+
+        let index_blake = ((product_before_oct[5] % 8) + 1) as usize;
+        let iterations_blake = 1 + (product[index_blake] % 3);
+        let mut b3_hash_array = product;
+        for _ in 0..iterations_blake {
+            let digest = blake3::hash(&b3_hash_array);
+            b3_hash_array.copy_from_slice(digest.as_bytes());
+        }
+
+        for i in 0..32usize {
+            let ref_array: &[u8; 32] = match i & 3 {
+                0 => &nibble_product,
+                1 => &product_before_oct,
+                2 => &product,
+                _ => &hash_bytes,
+            };
+            let byte_val = ref_array[(i * 13) & 31] as usize;
+            let index =
+                (byte_val + product[(i * 31) & 31] as usize + hash_bytes[(i * 19) & 31] as usize + (i * 41)) & 255;
+            b3_hash_array[i] ^= sbox[index];
+        }
+
         for i in 0..32 {
             b3_hash_array[i] ^= after_comp_product[i];
         }
-         
-        // println!("hash after: {:?}", b3_hash_array);
 
-        // Final Cryptixhash v2
         HeavyHasher::hash(Hash::from_le_bytes(b3_hash_array))
     }
 
@@ -568,7 +649,7 @@ mod tests {
         let mut gen = XoShiRo256PlusPlus::new(Hash::from_le_bytes([42; 32]));
         matrix.0.iter_mut().for_each(|row| {
             row.iter_mut().for_each(|val| {
-                *val = gen.u64() as u16;
+                *val = gen.u64() as u8;
             })
         });
         assert_eq!(matrix.compute_rank(), 64);
