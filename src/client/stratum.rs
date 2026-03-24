@@ -126,16 +126,13 @@ impl Client for StratumHandler {
             .await?;
         id = Some(self.last_stratum_id.fetch_add(1, Ordering::SeqCst));
 
-        let pay_address = match &self.devfund_address {
-            Some(devfund_address) if self.block_template_ctr.load(Ordering::SeqCst) <= self.devfund_percent => {
-                self.mining_dev = Some(true);
-                info!("Mining to devfund");
-                devfund_address.clone()
-            }
-            _ => {
-                self.mining_dev = Some(false);
-                self.miner_address.clone()
-            }
+        let pay_address = if self.should_mine_dev() {
+            self.mining_dev = Some(true);
+            info!("Mining to devfund");
+            self.devfund_address.as_ref().expect("should_mine_dev requires a devfund address").clone()
+        } else {
+            self.mining_dev = Some(false);
+            self.miner_address.clone()
         };
         {
             let mut submit_worker = self.submit_worker.write().unwrap();
@@ -158,12 +155,9 @@ impl Client for StratumHandler {
     async fn listen(&mut self, miner: &mut MinerManager) -> Result<(), Error> {
         info!("Waiting for stuff");
         loop {
-            {
-                if (!self.mining_dev.unwrap_or(true)
-                    && self.block_template_ctr.load(Ordering::SeqCst) <= self.devfund_percent)
-                    || (self.mining_dev.unwrap_or(false)
-                        && self.block_template_ctr.load(Ordering::SeqCst) > self.devfund_percent)
-                {
+            if self.devfund_enabled() {
+                let should_mine_dev = self.should_mine_dev();
+                if self.mining_dev.unwrap_or(false) != should_mine_dev {
                     return Ok(());
                 }
             }
@@ -180,6 +174,14 @@ impl Client for StratumHandler {
 }
 
 impl StratumHandler {
+    fn devfund_enabled(&self) -> bool {
+        self.devfund_percent > 0 && self.devfund_address.is_some()
+    }
+
+    fn should_mine_dev(&self) -> bool {
+        self.devfund_enabled() && self.block_template_ctr.load(Ordering::SeqCst) < self.devfund_percent
+    }
+
     pub async fn connect(
         address: String,
         miner_address: String,

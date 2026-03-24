@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::num::Wrapping;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -183,7 +183,8 @@ impl MinerManager {
     ) -> Vec<MinerHandler> {
         let mut vec = Vec::<MinerHandler>::new();
         let specs = manager.build().unwrap();
-        for spec in specs {
+        let planned_specs = Self::plan_gpu_specs(specs);
+        for (spec, fallback_spec) in planned_specs {
             let worker_hashes_tried = Arc::new(AtomicU64::new(0));
             hashes_by_worker.lock().unwrap().insert(spec.id(), worker_hashes_tried.clone());
             vec.push(Self::launch_gpu_miner(
@@ -191,10 +192,88 @@ impl MinerManager {
                 work_channel.clone(),
                 Arc::clone(&hashes_tried),
                 spec,
+                fallback_spec,
                 worker_hashes_tried,
             ));
         }
         vec
+    }
+
+    fn is_cuda_id(id: &str) -> bool {
+        id.contains('(') && id.contains(')')
+    }
+
+    fn normalize_gpu_name(id: &str) -> String {
+        let trimmed = id.trim();
+        let base = if let (Some(start), Some(end)) = (trimmed.find('('), trimmed.rfind(')')) {
+            if end > start + 1 {
+                &trimmed[(start + 1)..end]
+            } else {
+                trimmed
+            }
+        } else if trimmed.starts_with('#') {
+            trimmed.split_once(' ').map(|(_, rest)| rest).unwrap_or(trimmed)
+        } else {
+            trimmed
+        };
+        base.trim().to_ascii_lowercase()
+    }
+
+    fn gpu_slot(id: &str) -> String {
+        let trimmed = id.trim();
+        if trimmed.starts_with('#') {
+            trimmed.split_whitespace().next().unwrap_or("").to_ascii_lowercase()
+        } else {
+            String::new()
+        }
+    }
+
+    fn nvidia_match_key(id: &str) -> String {
+        format!("{}|{}", Self::gpu_slot(id), Self::normalize_gpu_name(id))
+    }
+
+    fn plan_gpu_specs(
+        specs: Vec<Box<dyn WorkerSpec>>,
+    ) -> Vec<(Box<dyn WorkerSpec>, Option<Box<dyn WorkerSpec>>)> {
+        let mut nvidia_cuda_names = HashSet::<String>::new();
+        for spec in &specs {
+            let id = spec.id();
+            let normalized = Self::normalize_gpu_name(&id);
+            if normalized.contains("nvidia") && Self::is_cuda_id(&id) {
+                nvidia_cuda_names.insert(Self::nvidia_match_key(&id));
+            }
+        }
+
+        let mut planned = Vec::<(Box<dyn WorkerSpec>, Option<Box<dyn WorkerSpec>>)>::new();
+        let mut nvidia_opencl_fallbacks = HashMap::<String, Box<dyn WorkerSpec>>::new();
+        let mut nvidia_cuda_primary = Vec::<(String, Box<dyn WorkerSpec>)>::new();
+
+        for spec in specs {
+            let id = spec.id();
+            let normalized = Self::normalize_gpu_name(&id);
+            let is_nvidia = normalized.contains("nvidia");
+            let is_cuda = Self::is_cuda_id(&id);
+
+            if !is_nvidia {
+                planned.push((spec, None));
+                continue;
+            }
+
+            if is_cuda {
+                nvidia_cuda_primary.push((Self::nvidia_match_key(&id), spec));
+            } else if nvidia_cuda_names.contains(&Self::nvidia_match_key(&id)) {
+                nvidia_opencl_fallbacks.entry(Self::nvidia_match_key(&id)).or_insert(spec);
+            } else {
+                planned.push((spec, None));
+            }
+        }
+
+        for (normalized, cuda_spec) in nvidia_cuda_primary {
+            let fallback = nvidia_opencl_fallbacks.remove(&normalized);
+            planned.push((cuda_spec, fallback));
+        }
+
+        planned
     }
 
     pub async fn process_block(&mut self, block: Option<BlockSeed>) -> Result<(), Error> {
@@ -224,10 +303,21 @@ impl MinerManager {
         mut block_channel: watch::Receiver<Option<WorkerCommand>>,
         hashes_tried: Arc<AtomicU64>,
         spec: Box<dyn WorkerSpec>,
+        fallback_spec: Option<Box<dyn WorkerSpec>>,
         worker_hashes_tried: Arc<AtomicU64>,
     ) -> MinerHandler {
         std::thread::spawn(move || {
-            let mut box_ = spec.build();
+            let mut box_ = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| spec.build())) {
+                Ok(worker) => worker,
+                Err(_) => {
+                    if let Some(fallback) = fallback_spec {
+                        warn!("Primary GPU worker failed to initialize, switching to OpenCL fallback");
+                        fallback.build()
+                    } else {
+                        return Err("GPU worker failed to initialize".into());
+                    }
+                }
+            };
             let gpu_work = box_.as_mut();
             (|| {
                 info!("Spawned Thread for GPU {}", gpu_work.id());
