@@ -15,13 +15,65 @@ use {
 
 pub type Error = Box<dyn StdError + Send + Sync + 'static>;
 
+#[cfg(feature = "overclock")]
+mod autotune;
 mod cli;
 mod worker;
 
-use crate::cli::{CudaOpt, NonceGenEnum};
+use crate::cli::{CudaOpt, KernelVariant, NonceGenEnum};
 use crate::worker::CudaGPUWorker;
 
 const DEFAULT_WORKLOAD_SCALE: f32 = 1024.;
+
+// `AutotuneSetting` exists in both builds so `CudaWorkerSpec` and
+// `CudaGPUWorker::new` don't need separate signatures per feature flag.
+// Without the "overclock" feature there's no NVML access, so it's just `()`.
+#[cfg(feature = "overclock")]
+pub type AutotuneSetting = Option<autotune::AutotuneConfig>;
+#[cfg(not(feature = "overclock"))]
+pub type AutotuneSetting = ();
+
+#[cfg(feature = "overclock")]
+fn pick_indexed(values: &Option<Vec<u32>>, i: usize) -> Option<u32> {
+    match values {
+        Some(v) if i < v.len() => Some(v[i]),
+        Some(v) if !v.is_empty() => Some(*v.last().unwrap()),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "overclock")]
+fn build_autotune_setting(opts: &CudaOpt, i: usize) -> AutotuneSetting {
+    if !opts.overclock.cuda_autotune {
+        return None;
+    }
+    let min_power_w = pick_indexed(&opts.overclock.cuda_autotune_min_power_watts, i);
+    let mut max_power_w = pick_indexed(&opts.overclock.cuda_autotune_max_power_watts, i);
+    if max_power_w.is_none() {
+        // Respect an explicit static power limit as the autotune ceiling if
+        // the user didn't separately configure one, so autotune never goes
+        // above what was explicitly requested via --cuda-power-limits.
+        max_power_w = pick_indexed(&opts.overclock.cuda_power_limits, i);
+    }
+    Some(autotune::AutotuneConfig {
+        interval_secs: opts.overclock.cuda_autotune_interval_secs,
+        step_w: opts.overclock.cuda_autotune_power_step_watts.max(1),
+        min_power_w,
+        max_power_w,
+        max_temp_c: opts.overclock.cuda_autotune_max_temp_c,
+    })
+}
+
+#[cfg(not(feature = "overclock"))]
+fn build_autotune_setting(_opts: &CudaOpt, _i: usize) -> AutotuneSetting {}
+
+fn pick_kernel_variant(values: &Option<Vec<KernelVariant>>, i: usize) -> KernelVariant {
+    match values {
+        Some(v) if i < v.len() => v[i],
+        Some(v) if !v.is_empty() => *v.last().unwrap(),
+        _ => KernelVariant::default(),
+    }
+}
 
 pub struct CudaPlugin {
     specs: Vec<CudaWorkerSpec>,
@@ -131,6 +183,8 @@ impl Plugin for CudaPlugin {
                     is_absolute: opts.cuda_workload_absolute,
                     blocking_sync: !opts.cuda_no_blocking_sync,
                     random: opts.cuda_nonce_gen,
+                    kernel_variant: pick_kernel_variant(&opts.cuda_kernel_variant, i),
+                    autotune: build_autotune_setting(&opts, i),
                 })
                 .collect();
         }
@@ -145,6 +199,8 @@ struct CudaWorkerSpec {
     is_absolute: bool,
     blocking_sync: bool,
     random: NonceGenEnum,
+    kernel_variant: KernelVariant,
+    autotune: AutotuneSetting,
 }
 
 impl WorkerSpec for CudaWorkerSpec {
@@ -155,8 +211,16 @@ impl WorkerSpec for CudaWorkerSpec {
 
     fn build(&self) -> Box<dyn Worker> {
         Box::new(
-            CudaGPUWorker::new(self.device_id, self.workload, self.is_absolute, self.blocking_sync, self.random)
-                .unwrap(),
+            CudaGPUWorker::new(
+                self.device_id,
+                self.workload,
+                self.is_absolute,
+                self.blocking_sync,
+                self.random,
+                self.kernel_variant,
+                self.autotune,
+            )
+            .unwrap(),
         )
     }
 }

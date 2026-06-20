@@ -659,8 +659,25 @@ __device__ __forceinline__ int hash_meets_target_words(const u8 hash_bytes[32], 
     return 1;
 }
 
+// Optional launch-bounds hint for kernel variants. Untouched (both defines
+// unset) for every existing architecture build -- including the existing
+// sm_70 build -- so this is a no-op there and the generated PTX for those
+// targets is unaffected. Set via -DCRYPTIX_LB_THREADS=N -DCRYPTIX_LB_BLOCKS=M
+// on the nvcc command line to produce a variant tuned for a specific
+// resident-blocks-per-SM target (see plugins/cuda/README.md). This only
+// changes the compiler's register-allocation target for the *same* kernel
+// body below -- no computation, control flow, or data changes -- so it
+// cannot affect hash output, only how many blocks fit on an SM at once.
+#if defined(CRYPTIX_LB_THREADS) && defined(CRYPTIX_LB_BLOCKS)
+#define CRYPTIX_LAUNCH_BOUNDS __launch_bounds__(CRYPTIX_LB_THREADS, CRYPTIX_LB_BLOCKS)
+#elif defined(CRYPTIX_LB_THREADS)
+#define CRYPTIX_LAUNCH_BOUNDS __launch_bounds__(CRYPTIX_LB_THREADS)
+#else
+#define CRYPTIX_LAUNCH_BOUNDS
+#endif
+
 extern "C" {
-__global__ void heavy_hash(const u64 nonce_mask, const u64 nonce_fixed, const u64 nonces_len, u8 random_type, void* states, u64* final_nonce) {
+__global__ void CRYPTIX_LAUNCH_BOUNDS heavy_hash(const u64 nonce_mask, const u64 nonce_fixed, const u64 nonces_len, u8 random_type, void* states, u64* final_nonce) {
     const u64 gid = (u64)threadIdx.x + (u64)blockIdx.x * (u64)blockDim.x;
     if (gid >= nonces_len) return;
     if (*(volatile u64*)final_nonce != 0ULL) return;

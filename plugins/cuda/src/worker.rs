@@ -1,4 +1,4 @@
-use crate::{Error, NonceGenEnum};
+use crate::{AutotuneSetting, Error, KernelVariant, NonceGenEnum};
 use cust::context::CurrentContext;
 use cust::device::DeviceAttribute;
 use cust::function::Function;
@@ -10,6 +10,8 @@ use log::{error, info};
 use rand::{Fill, RngCore};
 use std::ffi::CString;
 use std::sync::{Arc, Weak};
+#[cfg(feature = "overclock")]
+use crate::autotune::{self, AutotuneHandle, AutotuneShared};
 
 static BPS: f32 = 1.;
 
@@ -22,6 +24,13 @@ static PTX_80: &str = include_str!("../resources/cryptix-cuda-sm80.ptx");
 static PTX_75: &str = include_str!("../resources/cryptix-cuda-sm75.ptx");
 static PTX_72: &str = include_str!("../resources/cryptix-cuda-sm72.ptx");
 static PTX_70: &str = include_str!("../resources/cryptix-cuda-sm70.ptx");
+// sm_70 (Volta) kernel variants. Same hash math as PTX_70 -- compiled from
+// the same source with only a __launch_bounds__ register/occupancy hint
+// added (see CRYPTIX_LAUNCH_BOUNDS in cryptix-cuda.cu). No other
+// architecture has more than one variant. See plugins/cuda/README.md for
+// the exact nvcc commands used to produce these.
+static PTX_70_HIGH_OCC: &str = include_str!("../resources/cryptix-cuda-sm70-high-occupancy.ptx");
+static PTX_70_LOW_REG: &str = include_str!("../resources/cryptix-cuda-sm70-low-register.ptx");
 static PTX_62: &str = include_str!("../resources/cryptix-cuda-sm62.ptx");
 static PTX_61: &str = include_str!("../resources/cryptix-cuda-sm61.ptx");
 static PTX_60: &str = include_str!("../resources/cryptix-cuda-sm60.ptx");
@@ -76,6 +85,13 @@ pub struct CudaGPUWorker<'gpu> {
     _context: Context,
 
     random: NonceGenEnum,
+
+    #[cfg(feature = "overclock")]
+    autotune_shared: Option<Arc<AutotuneShared>>,
+    // Held only to keep the autotuner thread alive for as long as this
+    // worker exists; dropping it signals the thread to stop and joins it.
+    #[cfg(feature = "overclock")]
+    _autotune_handle: Option<AutotuneHandle>,
 }
 
 impl<'gpu> Worker for CudaGPUWorker<'gpu> {
@@ -131,7 +147,14 @@ impl<'gpu> Worker for CudaGPUWorker<'gpu> {
     fn sync(&self) -> Result<(), Error> {
         //self.stream.synchronize()?;
         self.stop_event.synchronize()?;
-        if self.stop_event.elapsed_time_f32(&self.start_event)? > 1000. / BPS {
+        let elapsed_ms = self.stop_event.elapsed_time_f32(&self.start_event)?;
+
+        #[cfg(feature = "overclock")]
+        if let Some(shared) = &self.autotune_shared {
+            shared.record_sample(self.workload as f64, (elapsed_ms as f64) / 1000.0);
+        }
+
+        if elapsed_ms > 1000. / BPS {
             return Err("Cuda takes longer then block rate. Please reduce your workload.".into());
         }
         Ok(())
@@ -155,6 +178,8 @@ impl<'gpu> CudaGPUWorker<'gpu> {
         is_absolute: bool,
         blocking_sync: bool,
         random: NonceGenEnum,
+        kernel_variant: KernelVariant,
+        autotune: AutotuneSetting,
     ) -> Result<Self, Error> {
         info!("Starting a CUDA worker");
         let sync_flag = match blocking_sync {
@@ -205,8 +230,14 @@ impl<'gpu> CudaGPUWorker<'gpu> {
                 e
             })?);
         } else if major >= 7 && minor == 0 {
-            _module = Arc::new(Module::from_ptx(PTX_70, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
-                error!("Error loading PTX_70. Make sure you have the updated driver for you devices");
+            let (ptx, variant_name) = match kernel_variant {
+                KernelVariant::Baseline => (PTX_70, "baseline"),
+                KernelVariant::HighOccupancy => (PTX_70_HIGH_OCC, "high-occupancy"),
+                KernelVariant::LowRegister => (PTX_70_LOW_REG, "low-register"),
+            };
+            info!("GPU #{} loading sm_70 kernel variant: {}", device_id, variant_name);
+            _module = Arc::new(Module::from_ptx(ptx, &[ModuleJitOption::OptLevel(OptLevel::O4)]).map_err(|e| {
+                error!("Error loading PTX_70 ({}). Make sure you have the updated driver for you devices", variant_name);
                 e
             })?);
         } else if major >= 6 && minor == 2 {
@@ -283,6 +314,19 @@ impl<'gpu> CudaGPUWorker<'gpu> {
                 buffer
             }
         };
+
+        #[cfg(feature = "overclock")]
+        let (autotune_shared, _autotune_handle) = match autotune {
+            Some(cfg) => {
+                let shared = AutotuneShared::new();
+                let handle = autotune::spawn_autotuner(device_id, Arc::clone(&shared), cfg);
+                (Some(shared), Some(handle))
+            }
+            None => (None, None),
+        };
+        #[cfg(not(feature = "overclock"))]
+        let _ = autotune; // unused without NVML access
+
         Ok(Self {
             device_id,
             _context,
@@ -295,6 +339,10 @@ impl<'gpu> CudaGPUWorker<'gpu> {
             final_nonce_buff,
             heavy_hash_kernel,
             random,
+            #[cfg(feature = "overclock")]
+            autotune_shared,
+            #[cfg(feature = "overclock")]
+            _autotune_handle,
         })
     }
 }
